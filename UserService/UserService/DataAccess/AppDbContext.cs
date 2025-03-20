@@ -15,10 +15,9 @@ namespace UserService.DataAccess
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public DbSet<Lecturer> Lecturers { get; set; }
         public DbSet<ApplicationUser> Users { get; set; }
-        public DbSet<Department> Departments { get; set; }
         public DbSet<TrainingManager> TrainingManagers { get; set; }
+        public DbSet<Address> Addresses { get; set; }   
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -48,6 +47,13 @@ namespace UserService.DataAccess
 
             return base.SaveChangesAsync(cancellationToken);
         }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<ApplicationUser>()
+                .HasIndex(p => p.PersonId)
+                .IsUnique();
+        }
     }
 }

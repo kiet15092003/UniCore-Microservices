@@ -17,19 +17,16 @@ var builder = WebApplication.CreateBuilder(args);
 // Dynamic mode for testing
 var environment = builder.Environment.IsProduction();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+if (environment)
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("StudentServiceConn")));
-
-//if (environment)
-//{
-//    builder.Services.AddDbContext<AppDbContext>(options =>
-//        options.UseSqlServer(builder.Configuration.GetConnectionString("StudentServiceConn")));
-//}
-//else
-//{
-//    builder.Services.AddDbContext<AppDbContext>(options =>
-//        options.UseInMemoryDatabase("InMemoryDb"));
-//}
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("InMemoryDb"));
+}
 
 builder.Services.AddGrpc();
 builder.Services.AddHostedService<KafkaConsumerService>();

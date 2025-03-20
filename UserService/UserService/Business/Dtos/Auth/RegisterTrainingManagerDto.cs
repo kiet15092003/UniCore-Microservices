@@ -4,9 +4,6 @@ namespace UserService.Business.Dtos.Auth
 {
     public class RegisterTrainingManagerDto
     {
-        [Required]
-        public string FullName { get; set; }
-
         [Required, Phone]
         public string PhoneNumber { get; set; }
 
@@ -21,6 +18,15 @@ namespace UserService.Business.Dtos.Auth
 
         [Required]
         public DateTime Dob { get; set; }
+
+        [Required]
+        public string PersonId { get; set; }
+
+        [Required]
+        public string FirstName { get; set; }
+
+        [Required]
+        public string LastName { get; set; }
 
         [Required]
         public string TrainingManagerCode { get; set; }

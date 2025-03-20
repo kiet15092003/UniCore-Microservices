@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.InteropServices;
 
 namespace StudentService.Entities
 {
@@ -6,8 +7,15 @@ namespace StudentService.Entities
     {
         [Required]
         public string StudentCode { get; set; }
+
         [Required]
-        public int TotalCredits { get; set; }
+        public int AccumulateCredits { get; set; }
+
+        [Required]
+        public double AccumulateScore { get; set; }
+
+        [Required]
+        public int AccumulateActivityScore { get; set; }
 
         [Required]
         public Guid MajorId { get; set; }
@@ -16,7 +24,12 @@ namespace StudentService.Entities
         public Guid BatchId { get; set; }
         public Batch Batch { get; set; }
 
+        public Guid? GuardianId { get; set; }
+        public Guardian? Guardian { get; set; }
+
         [Required]
         public Guid ApplicationUserId { get; set; }
+
+
     }
 }

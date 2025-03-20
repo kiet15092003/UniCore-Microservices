@@ -5,9 +5,6 @@ namespace UserService.Business.Dtos.Auth
 {
     public class RegisterStudentDto
     {
-        [Required]
-        public string FullName { get; set; }
-
         [Required, Phone]
         public string PhoneNumber { get; set; }
 
@@ -21,10 +18,19 @@ namespace UserService.Business.Dtos.Auth
         public string Password { get; set; }
 
         [Required]
-        public DateTime Dob { get; set; }
+        public string PersonId { get; set; }
 
         [Required]
         public string StudentCode { get; set; }
+
+        [Required]
+        public string FirstName { get; set; }
+
+        [Required]
+        public string LastName { get; set; }
+
+        [Required]
+        public DateTime Dob { get; set; }
 
         [Required]
         public Guid MajorId { get; set; }

@@ -33,41 +33,62 @@ namespace MajorService.DataAccess
 
             await SeedMajorsAsync(context);
         }
-
         private static async Task SeedMajorsAsync(AppDbContext context)
         {
-            if (!context.Majors.Any())
+            if (!await context.Departments.AnyAsync())
             {
+                var department = new Department
+                {
+                    Name = "Information Technology",
+                    Code = "IT"
+                };
+
+                await context.Departments.AddAsync(department);
+                await context.SaveChangesAsync(); // Save to get the generated ID
+
+                Console.WriteLine($"Department Created: {department.Id}, Name: {department.Name}, Code: {department.Code}");
+
+                var majorGroups = new List<MajorGroup>
+                {
+                    new MajorGroup
+                    {
+                        Name = "Software Engineering",
+                        DepartmentId = department.Id, // Link to Department
+                    },
+                    new MajorGroup
+                    {
+                        Name = "Computer Science",
+                        DepartmentId = department.Id, // Link to Department
+                    }
+                };
+
+                await context.MajorGroups.AddRangeAsync(majorGroups);
+                await context.SaveChangesAsync(); // Save to get the generated IDs
+
+                Console.WriteLine("Major Groups Created:");
+                foreach (var mg in majorGroups)
+                {
+                    Console.WriteLine($"ID: {mg.Id}, Name: {mg.Name}, DepartmentId: {mg.DepartmentId}");
+                }
+
                 var majors = new List<Major>
                 {
-                    new Major { Id = new Guid("a1b2c3d4-e5f6-7890-1234-56789abcdef0"), Name = "Information Technology", Code = "IT" },
-                    new Major { Id = new Guid("b2c3d4e5-f678-9012-3456-789abcdef012"), Name = "Economic", Code = "E" },
-                    new Major { Id = new Guid("c3d4e5f6-7890-1234-5678-9abcdef01234"), Name = "Language", Code = "L" }
+                    new Major { Name = "Software Engineering High Quality", Code = "SE2", MajorGroupId = majorGroups[0].Id },
+                    new Major { Name = "Software Engineering Normal", Code = "SE1", MajorGroupId = majorGroups[0].Id },
+                    new Major { Name = "Computer Science High Quality", Code = "CS2", MajorGroupId = majorGroups[1].Id },
+                    new Major { Name = "Computer Science Normal", Code = "CS1", MajorGroupId = majorGroups[1].Id }
                 };
 
                 await context.Majors.AddRangeAsync(majors);
-
                 await context.SaveChangesAsync();
 
-                Console.WriteLine("Seeded Majors:");
-
+                Console.WriteLine("Majors Created:");
                 foreach (var major in majors)
                 {
-                    Console.WriteLine($"ID: {major.Id}, Name: {major.Name}");
+                    Console.WriteLine($"ID: {major.Id}, Name: {major.Name}, Code: {major.Code}, MajorGroupId: {major.MajorGroupId}");
                 }
 
-                // Construct the Kafka event
-                //var majorEvent = new MajorSeededEventDTO
-                //{
-                //    Data = new MajorSeededEventData
-                //    {
-                //        Majors = majors.Select(m => new MajorSingleData
-                //        {
-                //            Id = m.Id,
-                //            Name = m.Name
-                //        }).ToList()
-                //    }
-                //};
+                Console.WriteLine("Seeding Completed.");
             }
         }
     }

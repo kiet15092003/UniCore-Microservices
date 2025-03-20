@@ -44,50 +44,50 @@ namespace UserService.Controllers
             return ApiResponse<string>.SuccessResponse(result);
         }
 
-        [HttpGet("validate")]
-        public IActionResult ValidateToken()
-        {
-            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
-            if (authHeader == null || !authHeader.StartsWith("Bearer "))
-            {
-                return Unauthorized(new { message = "Missing or invalid token" });
-            }
+        //[HttpGet("validate")]
+        //public IActionResult ValidateToken()
+        //{
+        //    var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        //    if (authHeader == null || !authHeader.StartsWith("Bearer "))
+        //    {
+        //        return Unauthorized(new { message = "Missing or invalid token" });
+        //    }
 
-            var token = authHeader.Substring("Bearer ".Length);
-            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
+        //    var token = authHeader.Substring("Bearer ".Length);
+        //    var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            try
-            {
-                var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidIssuer = _config["Jwt:Issuer"],
-                    ValidAudience = _config["Jwt:Audience"],
-                    ClockSkew = TimeSpan.Zero
-                }, out var validatedToken);
+        //    var tokenHandler = new JwtSecurityTokenHandler();
+        //    try
+        //    {
+        //        var claimsPrincipal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+        //        {
+        //            ValidateIssuerSigningKey = true,
+        //            IssuerSigningKey = new SymmetricSecurityKey(key),
+        //            ValidateIssuer = true,
+        //            ValidateAudience = true,
+        //            ValidateLifetime = true,
+        //            ValidIssuer = _config["Jwt:Issuer"],
+        //            ValidAudience = _config["Jwt:Audience"],
+        //            ClockSkew = TimeSpan.Zero
+        //        }, out var validatedToken);
 
-                var jwtToken = (JwtSecurityToken)validatedToken;
-                var roles = jwtToken.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+        //        var jwtToken = (JwtSecurityToken)validatedToken;
+        //        var roles = jwtToken.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
 
-                return Ok(new { isValid = true, roles });
-            }
-            catch (SecurityTokenExpiredException)
-            {
-                return Unauthorized(new { message = "Token has expired" });
-            }
-            catch (SecurityTokenInvalidSignatureException)
-            {
-                return Unauthorized(new { message = "Invalid token signature" });
-            }
-            catch
-            {
-                return Unauthorized(new { message = "Invalid token" });
-            }
-        }
+        //        return Ok(new { isValid = true, roles });
+        //    }
+        //    catch (SecurityTokenExpiredException)
+        //    {
+        //        return Unauthorized(new { message = "Token has expired" });
+        //    }
+        //    catch (SecurityTokenInvalidSignatureException)
+        //    {
+        //        return Unauthorized(new { message = "Invalid token signature" });
+        //    }
+        //    catch
+        //    {
+        //        return Unauthorized(new { message = "Invalid token" });
+        //    }
+        //}
     }
 }

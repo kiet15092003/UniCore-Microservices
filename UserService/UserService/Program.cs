@@ -19,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Dynamic mode for testing
 var environment = builder.Environment.IsProduction();
 
+
 if (environment)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>

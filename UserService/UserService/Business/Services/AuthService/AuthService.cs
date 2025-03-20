@@ -53,12 +53,12 @@ namespace UserService.Business.Services.AuthService
             {
                 UserName = registerStudentDto.Email,
                 Email = registerStudentDto.Email,
-                FullName = registerStudentDto.FullName,
+                FirstName = registerStudentDto.FirstName,
+                LastName = registerStudentDto.LastName,
                 Dob = registerStudentDto.Dob,
-                Status = 1,
+                PersonId = registerStudentDto.PersonId,
                 PhoneNumber = registerStudentDto.PhoneNumber
             };
-
 
             var major = await _grpcClient.GetMajorByIdAsync(registerStudentDto.MajorId.ToString());
 
@@ -99,6 +99,59 @@ namespace UserService.Business.Services.AuthService
 
             return new OkObjectResult("Student registered successfully.");
         }
+
+        public async Task<IActionResult> RegisterTrainingManagerAsync(RegisterTrainingManagerDto registerTrainingManagerDto)
+        {
+            var userExists = await _userManager.FindByEmailAsync(registerTrainingManagerDto.Email);
+
+            if (userExists != null)
+                throw new KeyNotFoundException("User already exists.");
+
+            var newUser = new ApplicationUser
+            {
+                UserName = registerTrainingManagerDto.Email,
+                Email = registerTrainingManagerDto.Email,
+                FirstName = registerTrainingManagerDto.FirstName,
+                LastName = registerTrainingManagerDto.LastName,
+                Dob = registerTrainingManagerDto.Dob,
+                PersonId = registerTrainingManagerDto.PersonId,
+                PhoneNumber = registerTrainingManagerDto.PhoneNumber
+            };
+
+            var result = await _userManager.CreateAsync(newUser, registerTrainingManagerDto.Password);
+            if (!result.Succeeded)
+                throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            await _userManager.AddToRoleAsync(newUser, "TrainingManager");
+
+            var trainingManager = new TrainingManager
+            {
+                ApplicationUserId = newUser.Id,
+                ApplicationUser = newUser,
+                TrainingManagerCode = registerTrainingManagerDto.TrainingManagerCode
+            };
+
+            await _trainingManagerRepo.CreateTrainingManagerAsync(trainingManager);
+
+            // Kafka send message
+            //var trainingManagerSendData = new TrainingManagerCreatedEventDTO
+            //{
+            //    Data = new TrainingManagerCreatedEventData
+            //    {
+            //        Id = trainingManager.Id,
+            //        TrainingManagerCode = registerTrainingManagerDto.TrainingManagerCode,
+            //        Email = newUser.Email,
+            //        FullName = newUser.FullName,
+            //    }
+            //};
+            //
+            //await _kafkaProducerService.PublishMessageAsync("TrainingManagerCreatedEvent", trainingManagerSendData);
+
+            Console.WriteLine($"--------TrainingManager Created: {trainingManager.Id} - {trainingManager.TrainingManagerCode}");
+
+            return new OkObjectResult("TrainingManager registered successfully.");
+        }
+
         public async Task<string> LoginAsync(LoginDto model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
@@ -138,56 +191,6 @@ namespace UserService.Business.Services.AuthService
         {
             var users = await _userManager.Users.ToListAsync();
             return _mapper.Map<List<UserReadDto>>(users);
-        }
-        public async Task<IActionResult> RegisterTrainingManagerAsync(RegisterTrainingManagerDto registerTrainingManagerDto)
-        {
-            var userExists = await _userManager.FindByEmailAsync(registerTrainingManagerDto.Email);
-            
-            if (userExists != null)
-                throw new KeyNotFoundException("User already exists.");
-
-            var newUser = new ApplicationUser
-            {
-                UserName = registerTrainingManagerDto.Email,
-                Email = registerTrainingManagerDto.Email,
-                FullName = registerTrainingManagerDto.FullName,
-                Dob = registerTrainingManagerDto.Dob,
-                Status = 1,
-                PhoneNumber = registerTrainingManagerDto.PhoneNumber
-            };
-
-            var result = await _userManager.CreateAsync(newUser, registerTrainingManagerDto.Password);
-            if (!result.Succeeded)
-                throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
-
-            await _userManager.AddToRoleAsync(newUser, "TrainingManager");
-
-            var trainingManager = new TrainingManager
-            {
-                ApplicationUserId = newUser.Id,
-                ApplicationUser = newUser,
-                TrainingManagerCode = registerTrainingManagerDto.TrainingManagerCode
-            };
-
-            await _trainingManagerRepo.CreateTrainingManagerAsync(trainingManager);
-
-            // Kafka send message
-            //var trainingManagerSendData = new TrainingManagerCreatedEventDTO
-            //{
-            //    Data = new TrainingManagerCreatedEventData
-            //    {
-            //        Id = trainingManager.Id,
-            //        TrainingManagerCode = registerTrainingManagerDto.TrainingManagerCode,
-            //        Email = newUser.Email,
-            //        FullName = newUser.FullName,
-            //    }
-            //};
-            //
-            //await _kafkaProducerService.PublishMessageAsync("TrainingManagerCreatedEvent", trainingManagerSendData);
-
-            Console.WriteLine($"--------TrainingManager Created: {trainingManager.Id} - {trainingManager.TrainingManagerCode}");
-
-            return new OkObjectResult("TrainingManager registered successfully.");
         }
     }
 }

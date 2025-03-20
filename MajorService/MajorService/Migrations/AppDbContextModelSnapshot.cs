@@ -22,7 +22,7 @@ namespace MajorService.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("MajorService.Entities.Major", b =>
+            modelBuilder.Entity("MajorService.Entities.Department", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -50,7 +50,107 @@ namespace MajorService.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("Departments");
+                });
+
+            modelBuilder.Entity("MajorService.Entities.Major", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MajorGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MajorGroupId");
+
                     b.ToTable("Majors");
+                });
+
+            modelBuilder.Entity("MajorService.Entities.MajorGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("MajorGroups");
+                });
+
+            modelBuilder.Entity("MajorService.Entities.Major", b =>
+                {
+                    b.HasOne("MajorService.Entities.MajorGroup", "MajorGroup")
+                        .WithMany("Majors")
+                        .HasForeignKey("MajorGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MajorGroup");
+                });
+
+            modelBuilder.Entity("MajorService.Entities.MajorGroup", b =>
+                {
+                    b.HasOne("MajorService.Entities.Department", "Department")
+                        .WithMany("MajorGroups")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("MajorService.Entities.Department", b =>
+                {
+                    b.Navigation("MajorGroups");
+                });
+
+            modelBuilder.Entity("MajorService.Entities.MajorGroup", b =>
+                {
+                    b.Navigation("Majors");
                 });
 #pragma warning restore 612, 618
         }

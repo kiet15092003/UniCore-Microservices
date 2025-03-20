@@ -15,6 +15,8 @@ namespace MajorService.DataAccess
         }
 
         public DbSet<Major> Majors { get; set; }
+        public DbSet<MajorGroup> MajorGroups { get; set; }
+        public DbSet<Department> Departments { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

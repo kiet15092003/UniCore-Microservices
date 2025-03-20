@@ -16,6 +16,7 @@ namespace StudentService.DataAccess
 
         public DbSet<Student> Students { get; set; }
         public DbSet<Batch> Batches { get; set; }
+        public DbSet<Guardian> Guardians { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -45,6 +46,19 @@ namespace StudentService.DataAccess
 
             return base.SaveChangesAsync(cancellationToken);
         }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Guardian>()
+                .HasIndex(p => p.PhoneNumber)
+                .IsUnique();
+
+            modelBuilder.Entity<Student>()
+               .HasOne(p => p.Guardian)
+               .WithMany()
+               .HasForeignKey(p => p.GuardianId)
+               .IsRequired(false);
+        }
     }
 }

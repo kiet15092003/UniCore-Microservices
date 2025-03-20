@@ -12,8 +12,8 @@ using StudentService.DataAccess;
 namespace StudentService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250316124631_init")]
-    partial class init
+    [Migration("20250320162421_fix-guardian-optional")]
+    partial class fixguardianoptional
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -55,11 +55,58 @@ namespace StudentService.Migrations
                     b.ToTable("Batches");
                 });
 
+            modelBuilder.Entity("StudentService.Entities.Guardian", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Relationship")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PhoneNumber")
+                        .IsUnique();
+
+                    b.ToTable("Guardians");
+                });
+
             modelBuilder.Entity("StudentService.Entities.Student", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AccumulateActivityScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AccumulateCredits")
+                        .HasColumnType("int");
+
+                    b.Property<double>("AccumulateScore")
+                        .HasColumnType("float");
 
                     b.Property<Guid>("ApplicationUserId")
                         .HasColumnType("uniqueidentifier");
@@ -73,15 +120,18 @@ namespace StudentService.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("GuardianId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("GuardianId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("MajorId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("StudentCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TotalCredits")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -93,18 +143,42 @@ namespace StudentService.Migrations
 
                     b.HasIndex("BatchId");
 
+                    b.HasIndex("GuardianId");
+
+                    b.HasIndex("GuardianId1");
+
                     b.ToTable("Students");
                 });
 
             modelBuilder.Entity("StudentService.Entities.Student", b =>
                 {
                     b.HasOne("StudentService.Entities.Batch", "Batch")
-                        .WithMany()
+                        .WithMany("Students")
                         .HasForeignKey("BatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("StudentService.Entities.Guardian", "Guardian")
+                        .WithMany()
+                        .HasForeignKey("GuardianId");
+
+                    b.HasOne("StudentService.Entities.Guardian", null)
+                        .WithMany("Students")
+                        .HasForeignKey("GuardianId1");
+
                     b.Navigation("Batch");
+
+                    b.Navigation("Guardian");
+                });
+
+            modelBuilder.Entity("StudentService.Entities.Batch", b =>
+                {
+                    b.Navigation("Students");
+                });
+
+            modelBuilder.Entity("StudentService.Entities.Guardian", b =>
+                {
+                    b.Navigation("Students");
                 });
 #pragma warning restore 612, 618
         }

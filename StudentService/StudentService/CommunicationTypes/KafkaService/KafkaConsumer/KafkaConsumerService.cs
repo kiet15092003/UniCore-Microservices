@@ -23,11 +23,12 @@ public class KafkaConsumerService : BackgroundService
         // Get topics from configuration
         _topics = _configuration.GetSection("Kafka:Topics").Get<List<string>>() ?? new List<string>();
 
+        Console.WriteLine(_configuration["Kafka:BootstrapServers"]);
         var consumerConfig = new ConsumerConfig
         {
             BootstrapServers = _configuration["Kafka:BootstrapServers"],
             GroupId = _configuration["Kafka:GroupId"],
-            AutoOffsetReset = AutoOffsetReset.Latest,
+            AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false,
             SocketTimeoutMs = 10000,
             SessionTimeoutMs = 30000

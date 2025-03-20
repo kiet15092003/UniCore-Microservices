@@ -6,7 +6,6 @@ namespace StudentService.CommunicationTypes.KafkaService.KafkaConsumer.Templates
     {
         [Required]
         public string StudentCode { get; set; }
-        public int TotalCredits { get; set; }
 
         [Required]
         public Guid ApplicationUserId { get; set; }

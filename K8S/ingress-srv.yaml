@@ -25,3 +25,17 @@ spec:
                 name: course-clusterip-srv 
                 port:
                   number: 80
+          - path: /api/m/
+            pathType: Prefix
+            backend:
+              service:
+                name: major-clusterip-srv 
+                port:
+                  number: 80
+          - path: /api/s/
+            pathType: Prefix
+            backend:
+              service:
+                name: student-clusterip-srv
+                port:
+                  number: 80

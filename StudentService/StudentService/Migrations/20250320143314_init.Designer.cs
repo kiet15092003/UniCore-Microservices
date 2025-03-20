@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentService.DataAccess;
 
@@ -11,9 +12,11 @@ using StudentService.DataAccess;
 namespace StudentService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250320143314_init")]
+    partial class init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,9 +123,6 @@ namespace StudentService.Migrations
                     b.Property<Guid?>("GuardianId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("GuardianId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("MajorId")
                         .HasColumnType("uniqueidentifier");
 
@@ -142,15 +142,13 @@ namespace StudentService.Migrations
 
                     b.HasIndex("GuardianId");
 
-                    b.HasIndex("GuardianId1");
-
                     b.ToTable("Students");
                 });
 
             modelBuilder.Entity("StudentService.Entities.Student", b =>
                 {
                     b.HasOne("StudentService.Entities.Batch", "Batch")
-                        .WithMany("Students")
+                        .WithMany()
                         .HasForeignKey("BatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -159,23 +157,9 @@ namespace StudentService.Migrations
                         .WithMany()
                         .HasForeignKey("GuardianId");
 
-                    b.HasOne("StudentService.Entities.Guardian", null)
-                        .WithMany("Students")
-                        .HasForeignKey("GuardianId1");
-
                     b.Navigation("Batch");
 
                     b.Navigation("Guardian");
-                });
-
-            modelBuilder.Entity("StudentService.Entities.Batch", b =>
-                {
-                    b.Navigation("Students");
-                });
-
-            modelBuilder.Entity("StudentService.Entities.Guardian", b =>
-                {
-                    b.Navigation("Students");
                 });
 #pragma warning restore 612, 618
         }
