@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: major-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: majorservice
+  template:
+    metadata:
+      labels:
+        app: majorservice
+    spec:
+      containers:
+        - name: majorservice
+          image: kiet2003/majorservice:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: major-clusterip-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: majorservice
+  ports:
+    - name: majorservice
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+    - name: majorgrpc
+      protocol: TCP
+      port: 666
+      targetPort: 666

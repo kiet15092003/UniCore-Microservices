@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: course-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: courseservice
+  template:
+    metadata:
+      labels:
+        app: courseservice
+    spec:
+      containers:
+        - name: courseservice
+          image: kiet2003/courseservice:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: course-clusterip-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: courseservice
+  ports:
+    - name: courseservice
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+    - name: coursegrpc
+      protocol: TCP
+      port: 666
+      targetPort: 666
