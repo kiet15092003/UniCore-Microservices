@@ -5,6 +5,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/use-regex: 'true'
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
 spec:
   ingressClassName: nginx
   rules:
@@ -18,6 +19,13 @@ spec:
                 name: user-clusterip-srv
                 port:
                   number: 80
+          - path: /grpc/u/
+            pathType: Prefix
+            backend:
+              service:
+                name: user-clusterip-srv
+                port:
+                  number: 666
           - path: /api/c/
             pathType: Prefix
             backend:
@@ -25,6 +33,13 @@ spec:
                 name: course-clusterip-srv 
                 port:
                   number: 80
+          - path: /grpc/c/
+            pathType: Prefix
+            backend:
+              service:
+                name: course-clusterip-srv
+                port:
+                  number: 666
           - path: /api/m/
             pathType: Prefix
             backend:
@@ -32,6 +47,13 @@ spec:
                 name: major-clusterip-srv 
                 port:
                   number: 80
+          - path: /grpc/m/ 
+            pathType: Prefix
+            backend:
+              service:
+                name: major-clusterip-srv
+                port:
+                  number: 666
           - path: /api/s/
             pathType: Prefix
             backend:
@@ -39,3 +61,11 @@ spec:
                 name: student-clusterip-srv
                 port:
                   number: 80
+          - path: /grpc/s/ 
+            pathType: Prefix
+            backend:
+              service:
+                name: student-clusterip-srv
+                port:
+                  number: 666
+         

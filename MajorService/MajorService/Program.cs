@@ -130,7 +130,6 @@ builder.Services.AddCors(options => {
     });
 });
 
-// add Grpc
 builder.Services.AddGrpc();
 
 var app = builder.Build();

@@ -142,6 +142,9 @@ builder.Services.AddCors(options => {
         });
     });
 
+// Add GRPC:
+builder.Services.AddGrpc();
+
 var app = builder.Build();
 
 //Seed data
