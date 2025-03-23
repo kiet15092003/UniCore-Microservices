@@ -1,4 +1,4 @@
-﻿using CourseService.Business.Services.StudentService;
+﻿using CourseService.Business.Services;
 
 namespace CourseService.Business
 {
@@ -6,7 +6,7 @@ namespace CourseService.Business
     {
         public static void AddServices(this IServiceCollection services)
         {
-            services.AddScoped<IStudentService, StudentService>();
+            services.AddScoped<ICourseService, CourseSvc>();
         }
     }
 }

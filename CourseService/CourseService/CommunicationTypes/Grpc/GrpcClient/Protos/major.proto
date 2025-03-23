@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "CourseService";
+
+service GrpcMajor {
+    rpc GetMajorById (MajorRequest) returns (MajorResponse);
+}
+
+message MajorRequest {
+    string id = 1;
+}
+
+message MajorData {
+    string id = 1;
+    string name = 2;
+    string code = 3;
+}
+
+message MajorResponse {
+    bool success = 1;
+    MajorData data = 2;
+    repeated string error = 3;
+}

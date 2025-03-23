@@ -12,9 +12,11 @@ namespace CourseService.DataAccess
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public DbSet<Student> Students { get; set; }
-        public DbSet<Major> Majors { get; set; }  
-        public DbSet<TrainingManager> TrainingManagers { get; set; }
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<Material> Materials { get; set; }  
+        public DbSet<Certificate> Certificates { get; set; }
+        public DbSet<CourseCertificate> CourseCertificates { get; set; }
+        public DbSet<CourseMaterial> CourseMaterials { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

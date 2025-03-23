@@ -1,16 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using UserService.Business.Services.AuthService;
 using UserService.Middleware;
 using UserService.Business.Dtos.Auth;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UserService.Controllers
 {
     [Route("api/u/[controller]")]
     [ApiController]
+    //[Authorize(Roles = "Admin")]
+
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

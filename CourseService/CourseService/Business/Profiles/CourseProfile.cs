@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using CourseService.Business.Dtos.Student;
+using CourseService.Business.Dtos.Course;
 using CourseService.Entities;
 
 namespace CourseService.Business.Profiles
@@ -8,7 +8,24 @@ namespace CourseService.Business.Profiles
     {
         public CourseProfile()
         {
-            CreateMap<Student, StudentReadDto>();
+            CreateMap<CourseCreateDto, Course>();
+
+            // Map Course -> CourseReadDto
+            CreateMap<Course, CourseReadDto>()
+                .ForMember(dest => dest.CourseCertificates, opt => opt.MapFrom(src => src.CourseCertificates))
+                .ForMember(dest => dest.CourseMaterials, opt => opt.MapFrom(src => src.CourseMaterials));
+
+            // Map CourseCertificate -> CourseCertificateReadDto
+            CreateMap<CourseCertificate, CourseCertificateReadDto>()
+                .ForMember(dest => dest.CertificateId, opt => opt.MapFrom(src => src.CertificateId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Certificate.Name))
+                .ForMember(dest => dest.RequiredScore, opt => opt.MapFrom(src => src.Certificate.RequiredScore));
+
+            // Map CourseMaterial -> CourseMaterialReadDto
+            CreateMap<CourseMaterial, CourseMaterialReadDto>()
+                .ForMember(dest => dest.MaterialId, opt => opt.MapFrom(src => src.MaterialId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Material.Name))
+                .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.Material.FileUrl));
         }
     }
 }

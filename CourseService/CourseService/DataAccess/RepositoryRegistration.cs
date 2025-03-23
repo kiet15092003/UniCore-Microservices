@@ -1,6 +1,4 @@
-﻿using CourseService.DataAccess.Repositories.MajorRepo;
-using CourseService.DataAccess.Repositories.StudentRepo;
-using CourseService.DataAccess.Repositories.TrainingManagerRepo;
+﻿using CourseService.DataAccess.Repositories;
 
 namespace CourseService.DataAccess
 {
@@ -8,9 +6,7 @@ namespace CourseService.DataAccess
     {
         public static void AddRepositories(this IServiceCollection services)
         {
-            services.AddScoped<IStudentRepo, StudentRepo>();
-            services.AddScoped<ITrainingManagerRepo, TrainingManagerRepo>();
-            services.AddScoped<IMajorRepo, MajorRepo>();
+            services.AddScoped<ICourseRepository, CourseRepository>();
         }
     }
 }

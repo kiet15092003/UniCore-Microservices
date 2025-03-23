@@ -11,12 +11,12 @@ using CourseService.Business;
 using CourseService.Business.Profiles;
 using UserService.Middleware;
 using System.Security.Claims;
+using CourseService.CommunicationTypes.Grpc.GrpcClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Dynamic mode for testing
 var environment = builder.Environment.IsProduction();
-
 
 if (environment)
 {
@@ -28,8 +28,6 @@ else
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseInMemoryDatabase("InMemoryDb"));
 }
-
-builder.Services.AddHostedService<KafkaConsumerService>();
 
 // Configure JWT and authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -84,6 +82,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Add grpc
+builder.Services.AddSingleton<GrpcMajorClientService>();
+
 //Config DI
 builder.Services.AddRepositories();
 builder.Services.AddServices();
@@ -115,10 +116,10 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
-var app = builder.Build();
+// Add GRPC:
+builder.Services.AddGrpc();
 
-//Seed data
-//await PrepDb.PrepPopulationAsync(app, environment);
+var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
