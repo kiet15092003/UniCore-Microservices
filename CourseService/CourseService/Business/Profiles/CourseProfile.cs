@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CourseService.Business.Dtos.Course;
 using CourseService.Entities;
+using CourseService.Utils.Pagination;
 
 namespace CourseService.Business.Profiles
 {
@@ -26,6 +27,8 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.MaterialId, opt => opt.MapFrom(src => src.MaterialId))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Material.Name))
                 .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.Material.FileUrl));
+
+            CreateMap<PaginationResult<Course>, CourseListResponse>();
         }
     }
 }

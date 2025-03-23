@@ -3,6 +3,8 @@ using CourseService.Business.Dtos.Course;
 using CourseService.CommunicationTypes.Grpc.GrpcClient;
 using CourseService.DataAccess.Repositories;
 using CourseService.Entities;
+using CourseService.Utils.Filter;
+using CourseService.Utils.Pagination;
 
 namespace CourseService.Business.Services
 {
@@ -37,10 +39,10 @@ namespace CourseService.Business.Services
             return _mapper.Map<CourseReadDto>(createdCourse);
         }
 
-        public async Task<List<CourseReadDto>> GetCoursesAsync()
+        public async Task<CourseListResponse> GetProductByPagination(Pagination pagination, CourseListFilterParams courseListFilterParams, Order? order)
         {
-            var courses = await _courseRepository.GetCoursesAsync();
-            return _mapper.Map<List<CourseReadDto>>(courses);
+            var result = await _courseRepository.GetAllCoursesPaginationAsync(pagination, courseListFilterParams, order);
+            return _mapper.Map<CourseListResponse>(result); 
         }
     }
 }

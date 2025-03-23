@@ -19,12 +19,13 @@ namespace CourseService.Controllers
             _courseService = courseService;
         }
 
-        [HttpGet]
-        public async Task<ApiResponse<List<CourseReadDto>>> GetCourses()
+        [HttpGet("page")]
+        public async Task<ApiResponse<CourseListResponse>> GetByPagination([FromQuery] GetCourseByPaginationParam c)
         {
-            var result = await _courseService.GetCoursesAsync();
-            return ApiResponse<List<CourseReadDto>>.SuccessResponse(result);
+            var result = await _courseService.GetProductByPagination(c.Pagination, c.Filter, c.Order);
+            return ApiResponse<CourseListResponse>.SuccessResponse(result);
         }
+
         [HttpPost]
         public async Task<ApiResponse<CourseReadDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
         {
