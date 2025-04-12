@@ -29,6 +29,9 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.Material.FileUrl));
 
             CreateMap<PaginationResult<Course>, CourseListResponse>();
+
+            CreateMap<CourseUpdateDto, Course>();
+
         }
     }
 }
