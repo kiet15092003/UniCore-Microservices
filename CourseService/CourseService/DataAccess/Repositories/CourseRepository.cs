@@ -72,5 +72,33 @@ namespace CourseService.DataAccess.Repositories
                 PageSize = pagination.ItemsPerpage
             };
         }
+
+        public async Task<Course> UpdateCourseAsync(Course course)
+        {
+            _context.Courses.Update(course);
+            await _context.SaveChangesAsync();
+            return course;
+        }
+
+        public async Task<Course> GetCourseByIdAsync(Guid id)
+        {
+            return await _context.Courses
+                .Include(t => t.CourseMaterials)
+                .Include(t => t.CourseCertificates)
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<bool> DeleteCourseAsync(Guid id)
+        {
+            var course = await _context.Courses.FindAsync(id);
+            if (course == null)
+            {
+                return false;
+            }
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

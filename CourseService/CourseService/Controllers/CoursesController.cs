@@ -32,5 +32,19 @@ namespace CourseService.Controllers
             var result = await _courseService.CreateCourseAsync(courseCreateDto);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<CourseReadDto>> UpdateCourse(Guid id, [FromBody] CourseUpdateDto courseUpdateDto)
+        {
+            var result = await _courseService.UpdateCourseAsync(id, courseUpdateDto);
+            return ApiResponse<CourseReadDto>.SuccessResponse(result);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse<bool>> DeleteCourse(Guid id)
+        {
+            var result = await _courseService.DeleteCourseAsync(id);
+            return ApiResponse<bool>.SuccessResponse(result);
+        }
     }
 }

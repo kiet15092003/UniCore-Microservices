@@ -44,5 +44,38 @@ namespace CourseService.Business.Services
             var result = await _courseRepository.GetAllCoursesPaginationAsync(pagination, courseListFilterParams, order);
             return _mapper.Map<CourseListResponse>(result); 
         }
+
+        public async Task<CourseReadDto> UpdateCourseAsync(Guid id, CourseUpdateDto courseUpdateDto)
+        {
+            if (courseUpdateDto.MajorId.HasValue)
+            {
+                
+                var major = await _grpcClient.GetMajorByIdAsync(courseUpdateDto.MajorId.Value.ToString());
+                if (!major.Success)
+                {
+                    throw new KeyNotFoundException("Major not found");
+                }
+            }
+            var course = await _courseRepository.GetCourseByIdAsync(id);
+            if (course == null)
+            {
+                throw new KeyNotFoundException("Course not found");
+            }
+
+            _mapper.Map(courseUpdateDto, course);
+            var updatedCourse = await _courseRepository.UpdateCourseAsync(course);
+            return _mapper.Map<CourseReadDto>(updatedCourse);
+        }
+        
+        public async Task<bool> DeleteCourseAsync(Guid id)
+        {
+            var course = await _courseRepository.GetCourseByIdAsync(id);
+            if (course == null)
+            {
+                throw new KeyNotFoundException("Course not found");
+            }
+
+            return await _courseRepository.DeleteCourseAsync(id);
+        }
     }
 }

@@ -26,6 +26,7 @@ if (environment)
 else
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
+        //options.UseSqlServer(builder.Configuration.GetConnectionString("CourseServiceConn")));
         options.UseInMemoryDatabase("InMemoryDb"));
 }
 
@@ -52,6 +53,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
+
+//Add cors
+var corsPolicy = "AllowSpecificOrigins";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicy, policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 //Add Swagger
 builder.Services.AddSwaggerGen(options =>
@@ -89,6 +103,9 @@ builder.Services.AddSingleton<GrpcMajorClientService>();
 builder.Services.AddRepositories();
 builder.Services.AddServices();
 builder.Services.AddCommunicationTypes();
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
 
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
@@ -124,6 +141,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())
 {
