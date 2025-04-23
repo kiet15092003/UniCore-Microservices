@@ -19,17 +19,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Dynamic mode for testing
 var environment = builder.Environment.IsProduction();
 
-
-if (environment)
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("UserServiceConn")));
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseInMemoryDatabase("InMemoryDb"));
-}
 
 // Add Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -68,6 +59,19 @@ builder.Services.AddSingleton<GrpcBatchClientService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
+
+// Add CORS:
+
+var corsPolicy = "AllowSpecificOrigins";
+
+builder.Services.AddCors(options => {
+    options.AddPolicy(corsPolicy, builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 //Add Swagger
 builder.Services.AddSwaggerGen(options =>
@@ -129,19 +133,6 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
-// Add CORS:
-
-var corsPolicy = "AllowSpecificOrigins";
-
-builder.Services.AddCors(options => {
-    options.AddPolicy(corsPolicy, builder =>
-        {
-        builder.AllowAnyOrigin() 
-               .AllowAnyMethod()
-               .AllowAnyHeader();
-        });
-    });
-
 // Add GRPC:
 builder.Services.AddGrpc();
 
@@ -151,9 +142,9 @@ var app = builder.Build();
 await PrepDb.PrepPopulationAsync(app, environment);
 
 app.UseHttpsRedirection();
-app.UseCors(corsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())
 {

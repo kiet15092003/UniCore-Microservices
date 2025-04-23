@@ -18,18 +18,7 @@ namespace MajorService.DataAccess
 
         private static async Task SeedDataAsync(AppDbContext context, bool isProduction)
         {
-            if (isProduction)
-            {
-                Console.WriteLine("--- Applying migrations ---");
-                try
-                {
-                    await context.Database.MigrateAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"--- Apply migration failed: {ex.Message} ---");
-                }
-            }
+            await context.Database.MigrateAsync();
 
             await SeedMajorsAsync(context);
         }

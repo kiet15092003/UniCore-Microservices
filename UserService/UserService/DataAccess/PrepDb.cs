@@ -11,27 +11,18 @@ namespace UserService.DataAccess
             {
                 var context = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var roleManager = serviceScope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-                await SeedDataAsync(context, roleManager, isProduction);
+                await SeedDataAsync(context, roleManager, userManager, isProduction);
             }
         }
 
-        private static async Task SeedDataAsync(AppDbContext context, RoleManager<IdentityRole> roleManager, bool isProduction)
+        private static async Task SeedDataAsync(AppDbContext context, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager, bool isProduction)
         {
-            if (isProduction)
-            {
-                Console.WriteLine("--- Applying migrations ---");
-                try
-                {
-                    await context.Database.MigrateAsync();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"--- Apply migration failed: {ex.Message} ---");
-                }
-            }
+            await context.Database.MigrateAsync();
 
             await SeedRolesAsync(roleManager);
+            await SeedDefaultUsersAsync(userManager);
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -45,6 +36,71 @@ namespace UserService.DataAccess
                     await roleManager.CreateAsync(new IdentityRole(role));
 
                     Console.WriteLine($"Seeded role: {role}");
+                }
+            }
+        }
+        
+        private static async Task SeedDefaultUsersAsync(UserManager<ApplicationUser> userManager)
+        {
+            // Admin account
+            var adminEmail = "admin@example.com";
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            
+            if (adminUser == null)
+            {
+                var admin = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    EmailConfirmed = true,
+                    FirstName = "Admin",
+                    LastName = "User",
+                    PersonId = "ADMIN001", // Adding required PersonId
+                    Dob = new DateTime(1990, 1, 1), // Default date of birth    
+                    Status = 1 // Active status
+                };
+                
+                var result = await userManager.CreateAsync(admin, "Admin123!");
+                
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(admin, "Admin");
+                    Console.WriteLine("Seeded admin account");
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to create admin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+            
+            // Training Manager account
+            var managerEmail = "manager@example.com";
+            var managerUser = await userManager.FindByEmailAsync(managerEmail);
+            
+            if (managerUser == null)
+            {
+                var manager = new ApplicationUser
+                {
+                    UserName = managerEmail,
+                    Email = managerEmail,
+                    EmailConfirmed = true,
+                    FirstName = "Training",
+                    LastName = "Manager",
+                    PersonId = "TMGR001", // Adding required PersonId
+                    Dob = new DateTime(1985, 1, 1), // Default date of birth
+                    Status = 1 // Active status
+                };
+                
+                var result = await userManager.CreateAsync(manager, "Manager123!");
+                
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(manager, "TrainingManager");
+                    Console.WriteLine("Seeded training manager account");
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to create training manager: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
             }
         }

@@ -21,14 +21,8 @@ var environment = builder.Environment.IsProduction();
 if (environment)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("CourseServiceConn")));
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        //options.UseSqlServer(builder.Configuration.GetConnectionString("CourseServiceConn")));
-        options.UseInMemoryDatabase("InMemoryDb"));
-}
 
 // Configure JWT and authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -106,7 +100,6 @@ builder.Services.AddCommunicationTypes();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
@@ -150,5 +143,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.Run();
