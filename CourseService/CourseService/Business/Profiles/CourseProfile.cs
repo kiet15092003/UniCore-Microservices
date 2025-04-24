@@ -31,7 +31,6 @@ namespace CourseService.Business.Profiles
             CreateMap<PaginationResult<Course>, CourseListResponse>();
 
             CreateMap<CourseUpdateDto, Course>();
-
         }
     }
 }

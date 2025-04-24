@@ -8,15 +8,15 @@ namespace CourseService.Business.Dtos.Course
         public string Code { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public double Price { get; set; }
-        public bool IsOpening { get; set; }
+        public double Cost { get; set; }
+        public bool IsRegistrable { get; set; }
         public int Credit { get; set; }
-        public bool IsHavePracticeClass { get; set; }
-        public bool IsUseForCalculateScore { get; set; }
-        public int? MinCreditCanApply { get; set; }
+        public int PracticePeriod { get; set; }
+        public bool IsRequired { get; set; }
+        public int? MinCreditRequired { get; set; }
         public Guid? MajorId { get; set; }
-        public Guid? CompulsoryCourseId { get; set; }
-        public Guid? ParallelCourseId { get; set; }
+        public Guid[]? PreCourseIds { get; set; }
+        public Guid[]? ParallelCourseIds { get; set; }
 
         public List<CourseCertificateReadDto> CourseCertificates { get; set; }
         public List<CourseMaterialReadDto> CourseMaterials { get; set; }

@@ -25,13 +25,10 @@ namespace CourseService.Business.Services
         }
         public async Task<CourseReadDto> CreateCourseAsync(CourseCreateDto courseCreateDto)
         {
-            if (courseCreateDto.MajorId.HasValue)
+            var major = await _grpcClient.GetMajorByIdAsync(courseCreateDto.MajorId.ToString());
+            if (!major.Success)
             {
-                var major = await _grpcClient.GetMajorByIdAsync(courseCreateDto.MajorId.Value.ToString());
-                if (!major.Success)
-                {
-                    throw new KeyNotFoundException("Major not found");
-                }
+                throw new KeyNotFoundException("Major not found");
             }
 
             var course = _mapper.Map<Course>(courseCreateDto);
