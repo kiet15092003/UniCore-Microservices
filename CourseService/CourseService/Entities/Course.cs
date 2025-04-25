@@ -5,8 +5,8 @@
         public string Code { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public double Cost { get; set; }
         public bool IsRegistrable { get; set; } 
+        public bool IsActive { get; set; } = true;
         public int Credit { get; set; } 
         public int PracticePeriod { get; set; }
         public bool IsRequired { get; set; }

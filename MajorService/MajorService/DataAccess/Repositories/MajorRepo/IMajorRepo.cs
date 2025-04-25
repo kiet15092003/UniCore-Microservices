@@ -7,5 +7,7 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
     {
         Task<Major> GetMajorByIdAsync(Guid Id);
         Task<List<Major>> GetAllMajorAsync();
+        Task<Major> CreateMajorAsync(Major major);
+        Task<bool> DeactivateMajorAsync(Guid id);
     }
 }

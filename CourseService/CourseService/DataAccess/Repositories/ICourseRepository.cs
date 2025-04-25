@@ -13,6 +13,5 @@ namespace CourseService.DataAccess.Repositories
                 Order? order);
         Task<Course> GetCourseByIdAsync(Guid id);
         Task<Course> UpdateCourseAsync(Course course);
-        Task<bool> DeleteCourseAsync(Guid id);
     }
 }

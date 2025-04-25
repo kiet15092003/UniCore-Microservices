@@ -28,6 +28,11 @@ namespace CourseService.DataAccess.Repositories
                 queryable = queryable.Where(c => c.Name.Contains(courseListFilterParams.SearchQuery));
             }
 
+            if (courseListFilterParams.IsActive.HasValue)
+            {
+                queryable = queryable.Where(c => c.IsActive == courseListFilterParams.IsActive.Value);
+            }
+
             return queryable;
         }
         private IQueryable<Course> ApplySorting(IQueryable<Course> queryable, Order? order)
@@ -86,19 +91,6 @@ namespace CourseService.DataAccess.Repositories
                 .Include(t => t.CourseMaterials)
                 .Include(t => t.CourseCertificates)
                 .FirstOrDefaultAsync(c => c.Id == id);
-        }
-
-        public async Task<bool> DeleteCourseAsync(Guid id)
-        {
-            var course = await _context.Courses.FindAsync(id);
-            if (course == null)
-            {
-                return false;
-            }
-
-            _context.Courses.Remove(course);
-            await _context.SaveChangesAsync();
-            return true;
         }
     }
 }

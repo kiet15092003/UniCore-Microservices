@@ -52,7 +52,8 @@ public class GrpcMajorService : GrpcMajor.GrpcMajorBase
             {
                 Id = major!.Id.ToString(),
                 Name = major.Name,
-                Code = major.Code
+                Code = major.Code,
+                CostPerCredit = major.CostPerCredit
             }
         };
     }

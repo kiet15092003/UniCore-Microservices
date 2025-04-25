@@ -14,6 +14,7 @@ message MajorData {
     string id = 1;
     string name = 2;
     string code = 3;
+    double costPerCredit = 4;
 }
 
 message MajorResponse {

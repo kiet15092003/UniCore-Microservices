@@ -9,9 +9,9 @@ namespace CourseService.Business.Dtos.Course
         
         public string Description { get; set; }
         
-        public double Cost { get; set; }
-        
         public bool IsRegistrable { get; set; }
+        
+        public bool IsActive { get; set; }
         
         public int Credit { get; set; }
         
