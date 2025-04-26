@@ -36,9 +36,10 @@ namespace CourseService.Business.Services
             var createdCourse = await _courseRepository.CreateCourseAsync(course);
             var courseReadDto = _mapper.Map<CourseReadDto>(createdCourse);
             
-            // Calculate cost based on course credits and major's costPerCredit
+            // Set major data to the courseReadDto
             if (major.Data != null)
             {
+                courseReadDto.Major = major.Data;
                 double costPerCredit = major.Data.CostPerCredit > 0 ? major.Data.CostPerCredit : DEFAULT_COST_PER_CREDIT;
                 courseReadDto.Cost = courseReadDto.Credit * costPerCredit;
             }
@@ -55,7 +56,7 @@ namespace CourseService.Business.Services
             var result = await _courseRepository.GetAllCoursesPaginationAsync(pagination, courseListFilterParams, order);
             var response = _mapper.Map<CourseListResponse>(result);
             
-            // Calculate cost for each course based on major's costPerCredit
+            // Populate major data for each course in the list
             foreach (var course in response.Data)
             {
                 if (course.MajorId.HasValue)
@@ -63,6 +64,7 @@ namespace CourseService.Business.Services
                     var major = await _grpcClient.GetMajorByIdAsync(course.MajorId.Value.ToString());
                     if (major.Success && major.Data != null)
                     {
+                        course.Major = major.Data;
                         double costPerCredit = major.Data.CostPerCredit > 0 ? major.Data.CostPerCredit : DEFAULT_COST_PER_CREDIT;
                         course.Cost = course.Credit * costPerCredit;
                     }
@@ -101,12 +103,13 @@ namespace CourseService.Business.Services
             var updatedCourse = await _courseRepository.UpdateCourseAsync(course);
             var courseReadDto = _mapper.Map<CourseReadDto>(updatedCourse);
             
-            // Calculate cost
+            // Set major data and calculate cost
             if (courseReadDto.MajorId.HasValue)
             {
                 var major = await _grpcClient.GetMajorByIdAsync(courseReadDto.MajorId.Value.ToString());
                 if (major.Success && major.Data != null)
                 {
+                    courseReadDto.Major = major.Data;
                     double costPerCredit = major.Data.CostPerCredit > 0 ? major.Data.CostPerCredit : DEFAULT_COST_PER_CREDIT;
                     courseReadDto.Cost = courseReadDto.Credit * costPerCredit;
                 }
@@ -135,12 +138,13 @@ namespace CourseService.Business.Services
             var updatedCourse = await _courseRepository.UpdateCourseAsync(course);
             var courseReadDto = _mapper.Map<CourseReadDto>(updatedCourse);
             
-            // Calculate cost
+            // Set major data and calculate cost
             if (courseReadDto.MajorId.HasValue)
             {
                 var major = await _grpcClient.GetMajorByIdAsync(courseReadDto.MajorId.Value.ToString());
                 if (major.Success && major.Data != null)
                 {
+                    courseReadDto.Major = major.Data;
                     double costPerCredit = major.Data.CostPerCredit > 0 ? major.Data.CostPerCredit : DEFAULT_COST_PER_CREDIT;
                     courseReadDto.Cost = courseReadDto.Credit * costPerCredit;
                 }
