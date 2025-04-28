@@ -9,13 +9,15 @@
         public bool IsActive { get; set; } = true;
         public int Credit { get; set; } 
         public int PracticePeriod { get; set; }
+        public int TheoryPeriod { get; set; }
         public bool IsRequired { get; set; }
         public int? MinCreditRequired { get; set; }
         public Guid MajorId { get; set; }
-        public Guid[]? PreCourseIds { get; set; }
-        public Guid[]? ParallelCourseIds { get; set; }
+        public Guid[] PreCourseIds { get; set; }
+        public Guid[] ParallelCourseIds { get; set; }
 
         public List<CourseCertificate> CourseCertificates { get; set; }
         public List<CourseMaterial> CourseMaterials { get; set; }
+        public List<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
     }
 }

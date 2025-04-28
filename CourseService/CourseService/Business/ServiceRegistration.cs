@@ -7,6 +7,7 @@ namespace CourseService.Business
         public static void AddServices(this IServiceCollection services)
         {
             services.AddScoped<ICourseService, CourseSvc>();
+            services.AddScoped<ITrainingRoadmapService, TrainingRoadmapSvc>();
         }
     }
 }

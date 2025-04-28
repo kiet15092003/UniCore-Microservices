@@ -101,6 +101,7 @@ builder.Logging.AddConsole();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<CourseProfile>();
+    cfg.AddProfile<TrainingRoadmapProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
