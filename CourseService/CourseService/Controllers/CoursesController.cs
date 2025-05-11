@@ -40,11 +40,11 @@ namespace CourseService.Controllers
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ApiResponse<bool>> DeleteCourse(Guid id)
+        [HttpPut("{id}/deactivate")]
+        public async Task<ApiResponse<CourseReadDto>> DeactivateCourse(Guid id)
         {
-            var result = await _courseService.DeleteCourseAsync(id);
-            return ApiResponse<bool>.SuccessResponse(result);
+            var result = await _courseService.DeactivateCourseAsync(id);
+            return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
     }
 }

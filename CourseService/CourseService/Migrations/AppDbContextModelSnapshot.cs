@@ -62,9 +62,6 @@ namespace CourseService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("CompulsoryCourseId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -78,30 +75,33 @@ namespace CourseService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsHavePracticeClass")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsOpening")
+                    b.Property<bool>("IsRegistrable")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsUseForCalculateScore")
+                    b.Property<bool>("IsRequired")
                         .HasColumnType("bit");
 
-                    b.Property<Guid?>("MajorId")
+                    b.Property<Guid>("MajorId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("MinCreditCanApply")
+                    b.Property<int?>("MinCreditRequired")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("ParallelCourseId")
-                        .HasColumnType("uniqueidentifier");
+                    b.PrimitiveCollection<string>("ParallelCourseIds")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<double>("Price")
-                        .HasColumnType("float");
+                    b.Property<int>("PracticePeriod")
+                        .HasColumnType("int");
+
+                    b.PrimitiveCollection<string>("PreCourseIds")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");

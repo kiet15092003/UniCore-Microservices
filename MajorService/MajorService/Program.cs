@@ -17,16 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Dynamic mode for testing
 var environment = builder.Environment.IsProduction();
 
-if (environment)
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("MajorServiceConn")));
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseInMemoryDatabase("InMemoryDb"));
-}
 
 // Configure JWT and authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
