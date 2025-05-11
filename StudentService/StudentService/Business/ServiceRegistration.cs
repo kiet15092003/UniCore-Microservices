@@ -8,7 +8,7 @@ namespace StudentService.Business
         public static void AddServices(this IServiceCollection services)
         {
             services.AddScoped<IStudentSvc, StudentSvc>();
-            services.AddScoped<IBatchSvc, BatchSvc>();
+            services.AddScoped<IBatchService, BatchService>();
         }
     }
 }

@@ -137,6 +137,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGrpcService<GrpcBatchService>();
+app.MapGrpcService<GrpcStudentService>();
 app.MapControllers();
 
 // use the exception middleware

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 
-namespace StudentService.Entities
+namespace UserService.Entities
 {
     public class Student : BaseEntity
     {
@@ -30,6 +30,5 @@ namespace StudentService.Entities
         [Required]
         public Guid ApplicationUserId { get; set; }
         public ApplicationUser ApplicationUser { get; set; }
-
     }
 }

@@ -3,22 +3,37 @@ syntax = "proto3";
 option csharp_namespace = "StudentService.CommunicationTypes.Grpc.GrpcClient.Protos";
 
 service GrpcUser {
-    rpc RegisterStudent (RegisterStudentRequest) returns (RegisterStudentResponse);
+    rpc GetUserById (GetUserByIdRequest) returns (GetUserByIdResponse);
+    rpc GetUsersByIds (GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
 }
 
-message RegisterStudentRequest {
-    string firstName = 1;
-    string lastName = 2;
-    string personId = 3;
-    string dob = 4;
-    string email = 5;
-    string phoneNumber = 6;
-    string password = 7;
-    string imageUrl = 8;
+message GetUserByIdRequest {
+    string userId = 1;
 }
 
-message RegisterStudentResponse {
+message GetUserByIdResponse {
     bool success = 1;
-    string userId = 2;
+    UserData data = 2;
     repeated string errors = 3;
+}
+
+message GetUsersByIdsRequest {
+    repeated string userIds = 1;
+}
+
+message GetUsersByIdsResponse {
+    bool success = 1;
+    repeated UserData data = 2;
+    repeated string errors = 3;
+}
+
+message UserData {
+    string id = 1;
+    string firstName = 2;
+    string lastName = 3;
+    string email = 4;
+    string phoneNumber = 5;
+    string personId = 6;
+    string dob = 7;
+    string imageUrl = 8;
 } 

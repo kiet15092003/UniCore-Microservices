@@ -17,6 +17,9 @@ namespace UserService.DataAccess
 
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<TrainingManager> TrainingManagers { get; set; }
+        public DbSet<Student> Students { get; set; }
+        public DbSet<Batch> Batches { get; set; }
+        public DbSet<Guardian> Guardians { get; set; }
         public DbSet<Address> Addresses { get; set; }   
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
