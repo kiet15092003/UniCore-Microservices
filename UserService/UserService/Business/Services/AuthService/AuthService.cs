@@ -11,7 +11,15 @@ using UserService.CommunicationTypes.Grpc.GrpcClient;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 using UserService.DataAccess.Repositories.TrainingManagerRepo;
+using UserService.DataAccess.Repositories.AuthRepo;
+using UserService.DataAccess.Repositories.UserRepo;
 using UserService.Entities;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using ClosedXML.Excel;
+using UserService.CommunicationTypes.Http.HttpClient;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
 
 namespace UserService.Business.Services.AuthService
 {
@@ -24,6 +32,8 @@ namespace UserService.Business.Services.AuthService
         private readonly ITrainingManagerRepo _trainingManagerRepo;
         private readonly GrpcMajorClientService _grpcClient;
         private readonly GrpcBatchClientService _grpcBatchClient;    
+        private readonly ILogger<AuthService> _logger;
+        private readonly SmtpClientService _smtpClient;
         public AuthService(
             UserManager<ApplicationUser> userManager,
             IConfiguration configuration,
@@ -31,7 +41,10 @@ namespace UserService.Business.Services.AuthService
             IKafkaProducerService kafkaProducerService,
             ITrainingManagerRepo trainingManagerRepo,
             GrpcMajorClientService grpcClient,
-            GrpcBatchClientService grpcBatchClient)
+            GrpcBatchClientService grpcBatchClient,
+            ILogger<AuthService> logger,
+            SmtpClientService smtpClient)
+
         {
             _userManager = userManager;
             _configuration = configuration;
@@ -40,14 +53,18 @@ namespace UserService.Business.Services.AuthService
             _trainingManagerRepo = trainingManagerRepo;
             _grpcClient = grpcClient;
             _grpcBatchClient = grpcBatchClient;
+            _logger = logger;
+            _smtpClient = smtpClient;
         }
 
         public async Task<IActionResult> RegisterStudentAsync(RegisterStudentDto registerStudentDto)
         {
+            
             var userExists = await _userManager.FindByEmailAsync(registerStudentDto.Email);
             
             if (userExists != null)
                 throw new KeyNotFoundException("User already exists.");
+            _logger.LogInformation("------------------63");
 
             var newUser = new ApplicationUser
             {
@@ -80,6 +97,24 @@ namespace UserService.Business.Services.AuthService
                 throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
 
             await _userManager.AddToRoleAsync(newUser, "Student");
+
+            // Create email account
+            try
+            {
+                var success = await _smtpClient.CreateEmailAccountAsync(
+                    registerStudentDto.Email,
+                    registerStudentDto.Password
+                );
+
+                if (!success)
+                {
+                    _logger.LogError($"Failed to create email account for {registerStudentDto.Email}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating email account");
+            }
 
             // Kafka send message
             var studentSendData = new StudentCreatedEventDTO
@@ -192,5 +227,109 @@ namespace UserService.Business.Services.AuthService
             var users = await _userManager.Users.ToListAsync();
             return _mapper.Map<List<UserReadDto>>(users);
         }
+        public async Task<IActionResult> RegisterStudentsFromExcelAsync(RegisterStudentByExcelDto registerStudentByExcelDto)
+        {
+            var file = registerStudentByExcelDto.ExcelFile;
+            var batchId = registerStudentByExcelDto.BatchId;
+            var majorId = registerStudentByExcelDto.MajorId;
+
+            if (file == null || file.Length == 0)
+            {
+                return new BadRequestObjectResult("File is empty");
+            }
+
+            if (!file.FileName.EndsWith(".xlsx"))
+            {
+                return new BadRequestObjectResult("Only Excel files (.xlsx) are allowed");
+            }
+            var results = new List<string>();
+
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                using (var workbook = new XLWorkbook(stream))
+                {
+                    var worksheet = workbook.Worksheet(1);
+                    var rowCount = worksheet.LastRowUsed().RowNumber();
+
+                    // Validate headers
+                    var headers = new Dictionary<string, int>
+                    {
+                        { "FirstName", 0 },
+                        { "LastName", 0 },
+                        { "Dob", 0 },
+                        { "PersonId", 0 },
+                        { "PhoneNumber", 0 },
+                        { "StudentCode", 0 }
+                    };
+
+                    // Get header positions
+                    var headerRow = worksheet.Row(1);
+                    for (int col = 1; col <= worksheet.LastColumnUsed().ColumnNumber(); col++)
+                    {
+                        var header = headerRow.Cell(col).Value.ToString();
+                        if (headers.ContainsKey(header))
+                        {
+                            headers[header] = col;
+                        }
+                    }
+
+                    // Validate all headers are present
+                    if (headers.Any(h => h.Value == 0))
+                    {
+                        return new BadRequestObjectResult($"Missing required columns: {string.Join(", ", headers.Where(h => h.Value == 0).Select(h => h.Key))}");
+                    }
+
+                    // Process each row
+                    for (int row = 2; row <= rowCount; row++)
+                    {
+                        try
+                        {
+                            var studentCode = worksheet.Cell(row, headers["StudentCode"]).Value.ToString();
+                            var email = $"{studentCode.ToLower()}@unicore.edu";
+                            var password = $"Student@{studentCode}";
+                            var registerDto = new RegisterStudentDto
+                            {
+                                Email = email,
+                                Password = password,
+                                FirstName = worksheet.Cell(row, headers["FirstName"]).Value.ToString(),
+                                LastName = worksheet.Cell(row, headers["LastName"]).Value.ToString(),
+                                Dob = DateTime.Parse(worksheet.Cell(row, headers["Dob"]).Value.ToString()),
+                                PersonId = worksheet.Cell(row, headers["PersonId"]).Value.ToString(),
+                                PhoneNumber = worksheet.Cell(row, headers["PhoneNumber"]).Value.ToString(),
+                                StudentCode = studentCode,
+                                MajorId = majorId,
+                                BatchId = batchId,
+                            };
+
+
+                            var result = await RegisterStudentAsync(registerDto);
+                            if (result is OkObjectResult)
+                            {
+                                results.Add($"Successfully created student {studentCode} with email: {email}");
+                            }
+                            else if (result is BadRequestObjectResult badRequest)
+                            {
+                                results.Add($"Failed to create student {studentCode}: {badRequest.Value}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            results.Add($"Error creating student at row {row}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            if (!results.Any())
+            {
+                return new BadRequestObjectResult("No valid students found in the file");
+            }
+
+            return new OkObjectResult(new { Results = results });
+        }
+
     }
 }
+
+

@@ -13,6 +13,7 @@ using UserService.Business.Profiles;
 using UserService.CommunicationTypes;
 using System.Security.Claims;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
+using UserService.CommunicationTypes.Http.HttpClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +65,7 @@ builder.Services
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
 builder.Services.AddSingleton<GrpcBatchClientService>();
+builder.Services.AddSingleton<SmtpClientService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();

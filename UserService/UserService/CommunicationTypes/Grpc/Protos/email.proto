@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option csharp_namespace = "UserService.CommunicationTypes.Grpc.Protos";
+
+package email;
+
+service EmailService {
+  rpc CreateEmailAccount (CreateEmailAccountRequest) returns (CreateEmailAccountResponse);
+}
+
+message CreateEmailAccountRequest {
+  string address = 1;
+  string password = 2;
+}
+
+message CreateEmailAccountResponse {
+  bool success = 1;
+  string message = 2;
+} 

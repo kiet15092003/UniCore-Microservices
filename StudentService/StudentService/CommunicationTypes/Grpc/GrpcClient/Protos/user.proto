@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option csharp_namespace = "StudentService.CommunicationTypes.Grpc.GrpcClient.Protos";
+
+service GrpcUser {
+    rpc RegisterStudent (RegisterStudentRequest) returns (RegisterStudentResponse);
+}
+
+message RegisterStudentRequest {
+    string firstName = 1;
+    string lastName = 2;
+    string personId = 3;
+    string dob = 4;
+    string email = 5;
+    string phoneNumber = 6;
+    string password = 7;
+    string imageUrl = 8;
+}
+
+message RegisterStudentResponse {
+    bool success = 1;
+    string userId = 2;
+    repeated string errors = 3;
+} 

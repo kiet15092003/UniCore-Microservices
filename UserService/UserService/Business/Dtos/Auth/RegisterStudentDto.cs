@@ -37,5 +37,6 @@ namespace UserService.Business.Dtos.Auth
 
         [Required]
         public Guid BatchId { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
     }
 }
