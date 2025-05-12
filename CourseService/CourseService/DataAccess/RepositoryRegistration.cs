@@ -8,6 +8,7 @@ namespace CourseService.DataAccess
         {
             services.AddScoped<ICourseRepository, CourseRepository>();
             services.AddScoped<ITrainingRoadmapRepository, TrainingRoadmapRepository>();
+            services.AddScoped<ICoursesGroupRepository, CoursesGroupRepository>();
         }
     }
 }

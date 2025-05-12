@@ -13,5 +13,6 @@ namespace CourseService.DataAccess.Repositories
                 Order? order);
         Task<TrainingRoadmap> GetTrainingRoadmapByIdAsync(Guid id);
         Task<TrainingRoadmap> UpdateTrainingRoadmapAsync(TrainingRoadmap trainingRoadmap);
+        Task<TrainingRoadmap> AddTrainingRoadmapComponentsAsync(Guid trainingRoadmapId, List<CoursesGroupSemester> coursesGroupSemesters, List<TrainingRoadmapCourse> trainingRoadmapCourses);
     }
 }

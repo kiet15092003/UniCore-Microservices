@@ -126,5 +126,75 @@ namespace CourseService.Business.Services
             
             return roadmapDto;
         }
+
+        public async Task<TrainingRoadmapReadDto> GetTrainingRoadmapByIdAsync(Guid id)
+        {
+            var trainingRoadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(id);
+            if (trainingRoadmap == null)
+            {
+                return null;
+            }
+
+            var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(trainingRoadmap);
+            
+            // Get major information from gRPC service
+            if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
+            {
+                var major = await _grpcClient.GetMajorByIdAsync(roadmapDto.MajorId.Value.ToString());
+                if (major.Success && major.Data != null)
+                {
+                    roadmapDto.MajorData = major.Data;
+                }
+            }
+            
+            return roadmapDto;
+        }        public async Task<TrainingRoadmapReadDto> AddTrainingRoadmapComponentsAsync(TrainingRoadmapAddComponentsDto componentsDto)
+        {            // Verify that the training roadmap exists
+            var existingRoadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(componentsDto.TrainingRoadmapId);
+            if (existingRoadmap == null)
+            {
+                throw new Exception($"Training roadmap with ID {componentsDto.TrainingRoadmapId} not found");
+            }
+            
+            // Map the DTOs to entities
+            var coursesGroupSemesters = componentsDto.CoursesGroupSemesters != null 
+                ? componentsDto.CoursesGroupSemesters.Select(cgs => new CoursesGroupSemester
+                {
+                    SemesterNumber = cgs.SemesterNumber,
+                    CoursesGroupId = cgs.CoursesGroupId,
+                    TrainingRoadmapId = componentsDto.TrainingRoadmapId
+                }).ToList()
+                : new List<CoursesGroupSemester>();
+                
+            var trainingRoadmapCourses = componentsDto.TrainingRoadmapCourses != null
+                ? componentsDto.TrainingRoadmapCourses.Select(trc => new TrainingRoadmapCourse
+                {
+                    CourseId = trc.CourseId,
+                    SemesterNumber = trc.SemesterNumber,
+                    TrainingRoadmapId = componentsDto.TrainingRoadmapId
+                }).ToList()
+                : new List<TrainingRoadmapCourse>();
+            
+            // Replace all components (this will clear existing and add new ones)
+            var updatedRoadmap = await _trainingRoadmapRepository.AddTrainingRoadmapComponentsAsync(
+                componentsDto.TrainingRoadmapId, 
+                coursesGroupSemesters, 
+                trainingRoadmapCourses);
+            
+            // Map the result back to DTO
+            var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(updatedRoadmap);
+            
+            // Get major information from gRPC service
+            if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
+            {
+                var major = await _grpcClient.GetMajorByIdAsync(roadmapDto.MajorId.Value.ToString());
+                if (major.Success && major.Data != null)
+                {
+                    roadmapDto.MajorData = major.Data;
+                }
+            }
+            
+            return roadmapDto;
+        }
     }
 }

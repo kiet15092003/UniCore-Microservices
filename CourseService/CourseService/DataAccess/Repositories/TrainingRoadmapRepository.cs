@@ -29,12 +29,13 @@ namespace CourseService.DataAccess.Repositories
             
             return trainingRoadmap;
         }
-        
-        public async Task<TrainingRoadmap> GetTrainingRoadmapByIdAsync(Guid id)
+          public async Task<TrainingRoadmap> GetTrainingRoadmapByIdAsync(Guid id)
         {
             return await _context.TrainingRoadmaps
                 .Include(t => t.TrainingRoadmapCourses)
-                .Include(t => t.CoursesGroups)
+                    .ThenInclude(trc => trc.Course)
+                .Include(t => t.CoursesGroupSemesters)
+                    .ThenInclude(cgs => cgs.CoursesGroup)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
         
@@ -62,10 +63,11 @@ namespace CourseService.DataAccess.Repositories
             Pagination pagination, 
             TrainingRoadmapFilterParams filterParams, 
             Order? order)
-        {
-            var queryable = _context.TrainingRoadmaps
+        {            var queryable = _context.TrainingRoadmaps
                 .Include(t => t.TrainingRoadmapCourses)
-                .Include(t => t.CoursesGroups)
+                    .ThenInclude(trc => trc.Course)
+                .Include(t => t.CoursesGroupSemesters)
+                    .ThenInclude(cgs => cgs.CoursesGroup)
                 .AsQueryable();
                 
             queryable = ApplyFilters(queryable, filterParams);
@@ -108,14 +110,74 @@ namespace CourseService.DataAccess.Repositories
                     PageSize = pagination.ItemsPerpage
                 };
             }
+        }        public async Task<TrainingRoadmap> AddTrainingRoadmapComponentsAsync(Guid trainingRoadmapId, List<CoursesGroupSemester> coursesGroupSemesters, List<TrainingRoadmapCourse> trainingRoadmapCourses)
+        {
+            var trainingRoadmap = await _context.TrainingRoadmaps
+                .Include(t => t.TrainingRoadmapCourses)
+                .Include(t => t.CoursesGroupSemesters)
+                .FirstOrDefaultAsync(t => t.Id == trainingRoadmapId);
+                
+            if (trainingRoadmap == null)
+            {
+                throw new Exception($"Training roadmap with ID {trainingRoadmapId} not found");
+            }
+            
+            // Remove existing CoursesGroupSemesters
+            var existingCoursesGroupSemesters = await _context.Set<CoursesGroupSemester>()
+                .Where(cgs => cgs.TrainingRoadmapId == trainingRoadmapId)
+                .ToListAsync();
+            if (existingCoursesGroupSemesters.Any())
+            {
+                _context.Set<CoursesGroupSemester>().RemoveRange(existingCoursesGroupSemesters);
+            }
+            
+            // Remove existing TrainingRoadmapCourses
+            var existingTrainingRoadmapCourses = await _context.TrainingRoadmapCourses
+                .Where(trc => trc.TrainingRoadmapId == trainingRoadmapId)
+                .ToListAsync();
+            if (existingTrainingRoadmapCourses.Any())
+            {
+                _context.TrainingRoadmapCourses.RemoveRange(existingTrainingRoadmapCourses);
+            }
+            
+            // Save changes to remove existing components
+            await _context.SaveChangesAsync();
+            
+            // Add CoursesGroupSemesters if provided
+            if (coursesGroupSemesters != null && coursesGroupSemesters.Any())
+            {
+                foreach (var cgs in coursesGroupSemesters)
+                {
+                    cgs.TrainingRoadmapId = trainingRoadmapId;
+                    cgs.CreatedAt = DateTime.Now;
+                }
+                
+                await _context.Set<CoursesGroupSemester>().AddRangeAsync(coursesGroupSemesters);
+            }
+            
+            // Add TrainingRoadmapCourses if provided
+            if (trainingRoadmapCourses != null && trainingRoadmapCourses.Any())
+            {
+                foreach (var trc in trainingRoadmapCourses)
+                {
+                    trc.TrainingRoadmapId = trainingRoadmapId;
+                    trc.CreatedAt = DateTime.Now;
+                }
+                
+                await _context.TrainingRoadmapCourses.AddRangeAsync(trainingRoadmapCourses);
+            }
+            
+            await _context.SaveChangesAsync();
+            
+            // Reload the entity to get the updated data
+            return await GetTrainingRoadmapByIdAsync(trainingRoadmapId);
         }
 
         private IQueryable<TrainingRoadmap> ApplyFilters(IQueryable<TrainingRoadmap> queryable, TrainingRoadmapFilterParams filterParams)
         {
             if (!string.IsNullOrWhiteSpace(filterParams.SearchQuery))
             {
-                queryable = queryable.Where(t => t.Name.Contains(filterParams.SearchQuery) || 
-                                               t.Description.Contains(filterParams.SearchQuery));
+                queryable = queryable.Where(t => t.Name.Contains(filterParams.SearchQuery));
             }
 
             if (filterParams.StartYear.HasValue)

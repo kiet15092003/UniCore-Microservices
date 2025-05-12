@@ -1,4 +1,3 @@
-using CourseService.Business.Dtos.Course;
 using CourseService.Entities;
 
 namespace CourseService.Business.Dtos.TrainingRoadmap
@@ -13,10 +12,8 @@ namespace CourseService.Business.Dtos.TrainingRoadmap
         public int StartYear { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        
-        // Navigation properties
         public dynamic? MajorData { get; set; }
-        public List<CoursesGroup> CoursesGroups { get; set; }
-        public List<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
+        public List<CoursesGroupSemesterReadDto>? CoursesGroupSemesters { get; set; }
+        public List<TrainingRoadmapCourseReadDto>? TrainingRoadmapCourses { get; set; }
     }
 }

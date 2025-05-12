@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CourseService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250509081253_update-course-group-courses")]
+    partial class updatecoursegroupcourses
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,6 +64,9 @@ namespace CourseService.Migrations
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CoursesGroupId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -115,6 +121,8 @@ namespace CourseService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CoursesGroupId");
 
                     b.ToTable("Courses");
                 });
@@ -203,10 +211,7 @@ namespace CourseService.Migrations
 
                     b.Property<string>("GroupName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<Guid>("MajorId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -215,9 +220,6 @@ namespace CourseService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GroupName")
-                        .IsUnique();
 
                     b.ToTable("CoursesGroups");
                 });
@@ -228,7 +230,10 @@ namespace CourseService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CoursesGroupId")
+                    b.Property<int>("CoursesGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("CoursesGroupId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -240,7 +245,10 @@ namespace CourseService.Migrations
                     b.Property<int>("SemesterNumber")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("TrainingRoadmapId")
+                    b.Property<int>("TrainingRoadmapId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TrainingRoadmapId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -251,9 +259,9 @@ namespace CourseService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CoursesGroupId");
+                    b.HasIndex("CoursesGroupId1");
 
-                    b.HasIndex("TrainingRoadmapId");
+                    b.HasIndex("TrainingRoadmapId1");
 
                     b.ToTable("CoursesGroupSemester");
                 });
@@ -366,6 +374,13 @@ namespace CourseService.Migrations
                     b.ToTable("TrainingRoadmapCourses");
                 });
 
+            modelBuilder.Entity("CourseService.Entities.Course", b =>
+                {
+                    b.HasOne("CourseService.Entities.CoursesGroup", null)
+                        .WithMany("Courses")
+                        .HasForeignKey("CoursesGroupId");
+                });
+
             modelBuilder.Entity("CourseService.Entities.CourseCertificate", b =>
                 {
                     b.HasOne("CourseService.Entities.Certificate", "Certificate")
@@ -408,13 +423,13 @@ namespace CourseService.Migrations
                 {
                     b.HasOne("CourseService.Entities.CoursesGroup", "CoursesGroup")
                         .WithMany("CoursesGroupSemesters")
-                        .HasForeignKey("CoursesGroupId")
+                        .HasForeignKey("CoursesGroupId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CourseService.Entities.TrainingRoadmap", "TrainingRoadmap")
                         .WithMany("CoursesGroupSemesters")
-                        .HasForeignKey("TrainingRoadmapId")
+                        .HasForeignKey("TrainingRoadmapId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -458,6 +473,8 @@ namespace CourseService.Migrations
 
             modelBuilder.Entity("CourseService.Entities.CoursesGroup", b =>
                 {
+                    b.Navigation("Courses");
+
                     b.Navigation("CoursesGroupSemesters");
                 });
 

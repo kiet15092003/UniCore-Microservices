@@ -21,6 +21,16 @@ namespace CourseService.DataAccess
         public DbSet<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
         public DbSet<CoursesGroup> CoursesGroups { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Create a unique constraint for GroupName within each MajorId
+            modelBuilder.Entity<CoursesGroup>()
+                .HasIndex(g => new { g.GroupName })
+                .IsUnique();
+                
+            base.OnModelCreating(modelBuilder);
+        }
+
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var userIdString = _httpContextAccessor.HttpContext?.User?.Identity?.Name;

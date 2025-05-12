@@ -102,6 +102,7 @@ builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfi
 {
     cfg.AddProfile<CourseProfile>();
     cfg.AddProfile<TrainingRoadmapProfile>();
+    cfg.AddProfile<CoursesGroupProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 

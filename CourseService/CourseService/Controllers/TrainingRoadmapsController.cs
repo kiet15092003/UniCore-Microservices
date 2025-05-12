@@ -17,6 +17,17 @@ namespace CourseService.Controllers
             _trainingRoadmapService = trainingRoadmapService;
         }
 
+        [HttpGet("{id}")]
+        public async Task<ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
+        {
+            var result = await _trainingRoadmapService.GetTrainingRoadmapByIdAsync(id);
+            if (result == null)
+            {
+                return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { "Training roadmap not found" });
+            }
+            return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
+        }
+
         [HttpGet("page")]
         public async Task<ApiResponse<TrainingRoadmapListResponse>> GetByPagination([FromQuery] GetTrainingRoadmapByPaginationParam param)
         {
@@ -38,6 +49,20 @@ namespace CourseService.Controllers
         {
             var result = await _trainingRoadmapService.UpdateTrainingRoadmapAsync(id, updateDto);
             return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
+        }        
+        
+        [HttpPost("components")]
+        public async Task<ApiResponse<TrainingRoadmapReadDto>> UpdateTrainingRoadmapComponents([FromBody] TrainingRoadmapAddComponentsDto componentsDto)
+        {
+            try
+            {
+                var result = await _trainingRoadmapService.AddTrainingRoadmapComponentsAsync(componentsDto);
+                return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
         }
     }
 }

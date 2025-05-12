@@ -8,6 +8,7 @@ namespace CourseService.Business
         {
             services.AddScoped<ICourseService, CourseSvc>();
             services.AddScoped<ITrainingRoadmapService, TrainingRoadmapSvc>();
+            services.AddScoped<ICoursesGroupService, CoursesGroupSvc>();
         }
     }
 }

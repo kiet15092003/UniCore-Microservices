@@ -2,7 +2,9 @@
 {
     public class CoursesGroup : BaseEntity
     {
-        public int SemesterNumber { get; set; }
-        public List<Course> Courses { get; set; }
+        public string GroupName { get; set; }
+        public List<CoursesGroupSemester> CoursesGroupSemesters { get; set; }
+        public List<Guid> CourseIds { get; set; }
+        public Guid MajorId { get; set; }
     }
 }
