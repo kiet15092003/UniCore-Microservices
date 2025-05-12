@@ -11,7 +11,8 @@ namespace CourseService.DataAccess.Repositories
                 Pagination pagination,
                 CourseListFilterParams courseListFilterParams,
                 Order? order);
-        Task<Course> GetCourseByIdAsync(Guid id);
+        Task<Course?> GetCourseByIdAsync(Guid id);
+        Task<List<Course>> GetCoursesByIdsAsync(IEnumerable<Guid> ids);
         Task<Course> UpdateCourseAsync(Course course);
     }
 }

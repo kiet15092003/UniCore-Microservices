@@ -209,12 +209,21 @@ namespace CourseService.DataAccess.Repositories
             return course;
         }
 
-        public async Task<Course> GetCourseByIdAsync(Guid id)
+        public async Task<Course?> GetCourseByIdAsync(Guid id)
         {
             return await _context.Courses
                 .Include(t => t.CourseMaterials)
                 .Include(t => t.CourseCertificates)
                 .FirstOrDefaultAsync(c => c.Id == id);
+        }
+        
+        public async Task<List<Course>> GetCoursesByIdsAsync(IEnumerable<Guid> ids)
+        {
+            return await _context.Courses
+                .Include(t => t.CourseMaterials)
+                .Include(t => t.CourseCertificates)
+                .Where(c => ids.Contains(c.Id))
+                .ToListAsync();
         }
     }
 }
