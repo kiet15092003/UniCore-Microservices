@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserService.Entities;
 using UserService.CommunicationTypes.Http.HttpClient;
-
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using AutoMapper;
+using UserService.Business.Dtos.Student;
 namespace UserService.DataAccess.Repositories.StudentRepo
 {
     public class StudentRepo : IStudentRepo
@@ -10,15 +13,21 @@ namespace UserService.DataAccess.Repositories.StudentRepo
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SmtpClientService _smtpClient;
+        private readonly ILogger<StudentRepo> _logger;
+        private readonly IMapper _mapper;
 
         public StudentRepo(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
-            SmtpClientService smtpClient)
+            ILogger<StudentRepo> logger,
+            SmtpClientService smtpClient,
+            IMapper mapper)
         {
             _context = context;
             _userManager = userManager;
+            _logger = logger;
             _smtpClient = smtpClient;
+            _mapper = mapper;
         }
 
         public async Task<Student> GetStudentByIdAsync(Guid id)
@@ -42,8 +51,10 @@ namespace UserService.DataAccess.Repositories.StudentRepo
 
                 foreach (var (user, student) in userStudentPairs)
                 {
+                    _logger.LogInformation("-----------------------------------48 {user}", JsonSerializer.Serialize(user));
                     // Create user
                     var result = await _userManager.CreateAsync(user, $"Student@{user.Email.Split('@')[0]}");
+                    _logger.LogInformation("-----------------------------------49 {result}", JsonSerializer.Serialize(result));
                     if (!result.Succeeded)
                     {
                         throw new Exception($"Failed to create user {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
@@ -71,7 +82,7 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                     }
 
                     // Set ApplicationUserId for student
-                    student.ApplicationUserId = Guid.Parse(user.Id);
+                    student.ApplicationUserId = user.Id;
 
                     // Add to lists
                     createdUsers.Add(user);
@@ -100,12 +111,11 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             return student;
         }
 
-        public async Task<List<Student>> GetAllAsync()
+        public async Task<List<StudentDto>> GetAllAsync()
         {
-            return await _context.Students
+            return _mapper.Map<List<StudentDto>>(await _context.Students
                 .Include(s => s.ApplicationUser)
-                .Include(s => s.Batch)
-                .ToListAsync();
+                .ToListAsync());
         }
 
         public async Task<Student> UpdateAsync(Student student)

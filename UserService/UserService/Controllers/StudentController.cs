@@ -3,7 +3,7 @@ using UserService.Middleware;
 using UserService.Business.Dtos.Student;
 using Microsoft.AspNetCore.Authorization;
 using UserService.Business.Services.StudentService;
-
+using System.Text.Json;
 namespace UserService.Controllers
 {
     [Route("api/u/[controller]")]
@@ -11,10 +11,13 @@ namespace UserService.Controllers
     public class StudentController : ControllerBase
     {
         private readonly IStudentService _studentService;
+        private readonly ILogger<StudentController> _logger;
 
-        public StudentController(IStudentService studentService)
+        public StudentController(IStudentService studentService, ILogger<StudentController> logger)
         {
             _studentService = studentService;
+            _logger = logger;
+
         }
 
         [HttpPost("register/excel")]
@@ -42,6 +45,14 @@ namespace UserService.Controllers
             {
                 return ApiResponse<object>.ErrorResponse([$"Error processing file: {ex.Message}"]);
             }
+        }
+
+        [HttpGet("all")]
+        public async Task<ApiResponse<List<StudentDto>>> GetAllStudents()
+        {
+            var students = await _studentService.GetAllStudentsAsync();
+            _logger.LogInformation("-----------------------------------51", JsonSerializer.Serialize(students));
+            return ApiResponse<List<StudentDto>>.SuccessResponse(students);
         }
     }
 }

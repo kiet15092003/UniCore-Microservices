@@ -15,6 +15,7 @@ namespace UserService.DataAccess
             _httpContextAccessor = httpContextAccessor;
         }
 
+
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<TrainingManager> TrainingManagers { get; set; }
         public DbSet<Student> Students { get; set; }
@@ -57,6 +58,17 @@ namespace UserService.DataAccess
             modelBuilder.Entity<ApplicationUser>()
                 .HasIndex(p => p.PersonId)
                 .IsUnique();
+            
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.ApplicationUser)
+                .WithOne(u => u.Student)
+                .HasForeignKey<Student>(s => s.ApplicationUserId)
+                .IsRequired(); // vì bạn đã [Required] trong entity
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(a => a.Student)
+                .WithOne(s => s.ApplicationUser)
+                .HasForeignKey<Student>(s => s.ApplicationUserId);
         }
     }
 }

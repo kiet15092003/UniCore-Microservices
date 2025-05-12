@@ -4,11 +4,11 @@ using UserService.Entities;
 using ClosedXML.Excel;
 using UserService.Business.Services.StudentService;
 using UserService.Business.Dtos.Student;
-
 using UserService.CommunicationTypes.Http.HttpClient;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
 using UserService.DataAccess.Repositories.StudentRepo;
-
+using AutoMapper;
+using System.Text.Json;
 namespace UserService.Business.Services.StudentService
 {
     public class StudentService : IStudentService
@@ -17,17 +17,102 @@ namespace UserService.Business.Services.StudentService
         private readonly ILogger<StudentService> _logger;
         private readonly SmtpClientService _smtpClient;
         private readonly GrpcMajorClientService _grpcMajorClient;
+        private readonly IMapper _mapper;
+
 
         public StudentService(
             IStudentRepo studentRepository,
             ILogger<StudentService> logger,
             SmtpClientService smtpClient,
-            GrpcMajorClientService grpcMajorClient)
+            GrpcMajorClientService grpcMajorClient,
+            IMapper mapper)
         {
             _studentRepository = studentRepository;
             _logger = logger;
             _smtpClient = smtpClient;
             _grpcMajorClient = grpcMajorClient;
+            _mapper = mapper;
+        }
+
+        public async Task<List<StudentDto>> GetAllStudentsAsync()
+        {
+            try
+            {
+                var students = await _studentRepository.GetAllAsync();
+                _logger.LogInformation("-----------------------------------42 {students}", JsonSerializer.Serialize(students));
+                return _mapper.Map<List<StudentDto>>(students);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all students");
+                throw;
+            }
+        }
+
+        public async Task<StudentDto> GetStudentByIdAsync(Guid id)
+        {
+            try
+            {
+                var student = await _studentRepository.GetStudentByIdAsync(id);
+                if (student == null)
+                {
+                    return null;
+                }
+                return _mapper.Map<StudentDto>(student);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting student with id {Id}", id);
+                throw;
+            }
+        }
+
+        //public async Task<StudentDto> UpdateStudentAsync(Guid id, UpdateStudentDto updateStudentDto)
+        //{
+        //    try
+        //    {
+        //        var existingStudent = await _studentRepository.GetStudentByIdAsync(id);
+        //        if (existingStudent == null)
+        //        {
+        //            return null;
+        //        }
+
+        //        // Update student properties
+        //        existingStudent.FirstName = updateStudentDto.FirstName;
+        //        existingStudent.LastName = updateStudentDto.LastName;
+        //        existingStudent.Dob = updateStudentDto.Dob;
+        //        existingStudent.PersonId = updateStudentDto.PersonId;
+        //        existingStudent.PhoneNumber = updateStudentDto.PhoneNumber;
+        //        existingStudent.Email = updateStudentDto.Email;
+        //        existingStudent.Status = updateStudentDto.Status;
+        //        existingStudent.AccumulateCredits = updateStudentDto.AccumulateCredits;
+        //        existingStudent.AccumulateScore = updateStudentDto.AccumulateScore;
+        //        existingStudent.AccumulateActivityScore = updateStudentDto.AccumulateActivityScore;
+        //        existingStudent.MajorId = updateStudentDto.MajorId;
+        //        existingStudent.BatchId = updateStudentDto.BatchId;
+
+        //        var updatedStudent = await _studentRepository.UpdateAsync(existingStudent);
+        //        return _mapper.Map<StudentDto>(updatedStudent);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error updating student with id {Id}", id);
+        //        throw;
+        //    }
+        //}
+
+        public async Task<bool> DeleteStudentAsync(Guid id)
+        {
+            try
+            {
+                var result = await _studentRepository.DeleteAsync(id);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting student with id {Id}", id);
+                throw;
+            }
         }
 
         public async Task<IActionResult> CreateStudentByExcelAsync(CreateStudentByExcelDto createStudentByExcelDto)
@@ -46,12 +131,6 @@ namespace UserService.Business.Services.StudentService
                 if (!file.FileName.EndsWith(".xlsx"))
                 {
                     return new BadRequestObjectResult("Only Excel files (.xlsx) are allowed");
-                }
-
-                var major = await _grpcMajorClient.GetMajorByIdAsync(majorId.ToString());
-                if (!major.Success)
-                {
-                    return new BadRequestObjectResult("Major not found");
                 }
 
                 var results = new List<string>();
@@ -120,7 +199,7 @@ namespace UserService.Business.Services.StudentService
                                     Status = 1
                                 };
 
-                                // Create Student
+                                // Create Student (ApplicationUserId sẽ được gán sau khi tạo user)
                                 var student = new Entities.Student
                                 {
                                     StudentCode = studentCode,
@@ -168,5 +247,5 @@ namespace UserService.Business.Services.StudentService
             }
         }
     }
-}
-
+}            
+       

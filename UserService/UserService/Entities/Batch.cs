@@ -1,4 +1,5 @@
-﻿namespace UserService.Entities
+﻿using System.Text.Json.Serialization;
+namespace UserService.Entities
 {
     public class Batch : BaseEntity
     {
