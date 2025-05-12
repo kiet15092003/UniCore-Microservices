@@ -3,6 +3,8 @@ using MajorService.Business.Dtos;
 using MajorService.Business.Dtos.Major;
 using MajorService.DataAccess.Repositories.MajorRepo;
 using MajorService.Entities;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 
 namespace MajorService.Business.Services.MajorServices
 {
@@ -39,6 +41,20 @@ namespace MajorService.Business.Services.MajorServices
         public async Task<bool> DeactivateMajorAsync(DeactivateDto deactivateDto)
         {
             return await _majorRepo.DeactivateMajorAsync(deactivateDto.Id);
+        }
+          public async Task<MajorListResponse> GetMajorsByPaginationAsync(Pagination pagination, MajorListFilterParams majorListFilterParams, Order? order)
+        {
+            var result = await _majorRepo.GetMajorsByPaginationAsync(pagination, majorListFilterParams, order);
+            
+            var response = new MajorListResponse
+            {
+                Data = _mapper.Map<List<MajorReadDto>>(result.Data),
+                Total = result.Total,
+                PageSize = result.PageSize,
+                PageIndex = result.PageIndex
+            };
+            
+            return response;
         }
     }
 }

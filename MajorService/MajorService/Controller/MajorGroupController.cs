@@ -3,6 +3,8 @@ using MajorService.Business.Dtos.MajorGroup;
 using MajorService.Business.Services.MajorGroupServices;
 using MajorService.Entities;
 using MajorService.Middleware;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MajorService.Controller
@@ -49,6 +51,14 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate major group"]);
+        }
+        
+        [HttpGet("page")]
+        public async Task<ApiResponse<MajorGroupListResponse>> GetByPagination([FromQuery] GetMajorGroupByPaginationParam param)
+        {
+            var result = await _majorGroupSvc.GetMajorGroupsByPaginationAsync(
+                param.Pagination, param.Filter, param.Order);
+            return ApiResponse<MajorGroupListResponse>.SuccessResponse(result);
         }
     }
 }

@@ -3,6 +3,8 @@ using MajorService.Business.Dtos.Department;
 using MajorService.Business.Services.DepartmentServices;
 using MajorService.Entities;
 using MajorService.Middleware;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MajorService.Controller
@@ -49,6 +51,14 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate department"]);
+        }
+        
+        [HttpGet("page")]
+        public async Task<ApiResponse<DepartmentListResponse>> GetByPagination([FromQuery] GetDepartmentByPaginationParam param)
+        {
+            var result = await _departmentSvc.GetDepartmentsByPaginationAsync(
+                param.Pagination, param.Filter, param.Order);
+            return ApiResponse<DepartmentListResponse>.SuccessResponse(result);
         }
     }
 }

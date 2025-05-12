@@ -1,5 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MajorService.Entities;
+using MajorService.Business.Dtos.Major;
+using MajorService.Utils.Pagination;
+using MajorService.Utils.Filter;
 
 namespace MajorService.DataAccess.Repositories.MajorRepo
 {
@@ -49,6 +52,77 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             
             await _context.SaveChangesAsync();
             return true;
+        }
+          private IQueryable<Major> ApplyFilters(IQueryable<Major> queryable, MajorListFilterParams majorListFilterParams)
+        {
+            // Apply filters
+            if (!string.IsNullOrEmpty(majorListFilterParams.Name))
+            {
+                queryable = queryable.Where(m => m.Name.Contains(majorListFilterParams.Name));
+            }
+            
+            if (!string.IsNullOrEmpty(majorListFilterParams.Code))
+            {
+                queryable = queryable.Where(m => m.Code.Contains(majorListFilterParams.Code));
+            }
+            
+            if (majorListFilterParams.IsActive.HasValue)
+            {
+                queryable = queryable.Where(m => m.IsActive == majorListFilterParams.IsActive.Value);
+            }
+            
+            if (majorListFilterParams.MajorGroupId.HasValue)
+            {
+                queryable = queryable.Where(m => m.MajorGroupId == majorListFilterParams.MajorGroupId.Value);
+            }
+            
+            return queryable;
+        }
+        
+        private async Task<IQueryable<Major>> ApplySortingAsync(IQueryable<Major> queryable, Order? order)
+        {
+            if (order != null && !string.IsNullOrEmpty(order.By))
+            {
+                if (order.IsDesc)
+                {
+                    queryable = queryable.OrderByDescending(e => EF.Property<object>(e, order.By));
+                }
+                else
+                {
+                    queryable = queryable.OrderBy(e => EF.Property<object>(e, order.By));
+                }
+            }
+            return queryable;
+        }
+        
+        public async Task<PaginationResult<Major>> GetMajorsByPaginationAsync(
+            Pagination pagination,
+            MajorListFilterParams majorListFilterParams,
+            Order? order)
+        {
+            var query = _context.Majors.AsQueryable();
+            
+            // Apply filters
+            query = ApplyFilters(query, majorListFilterParams);
+            
+            // Get total count before paging
+            var totalCount = await query.CountAsync();
+            
+            // Apply sorting
+            query = await ApplySortingAsync(query, order);
+            
+            // Apply pagination
+            var items = await query
+                .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
+                .Take(pagination.ItemsPerpage)
+                .ToListAsync();
+              return new PaginationResult<Major>
+            {
+                Data = items,
+                Total = totalCount,
+                PageSize = pagination.ItemsPerpage,
+                PageIndex = pagination.PageNumber
+            };
         }
     }
 }

@@ -1,6 +1,8 @@
 using MajorService.Business.Dtos;
 using MajorService.Business.Dtos.MajorGroup;
 using MajorService.Entities;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 
 namespace MajorService.Business.Services.MajorGroupServices
 {
@@ -10,5 +12,9 @@ namespace MajorService.Business.Services.MajorGroupServices
         Task<MajorGroup> GetMajorGroupByIdAsync(Guid id);
         Task<MajorGroup> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto);
         Task<bool> DeactivateMajorGroupAsync(DeactivateDto deactivateDto);
+        Task<MajorGroupListResponse> GetMajorGroupsByPaginationAsync(
+            Pagination pagination, 
+            MajorGroupListFilterParams majorGroupListFilterParams, 
+            Order? order);
     }
 }

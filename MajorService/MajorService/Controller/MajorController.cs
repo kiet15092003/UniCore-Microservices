@@ -2,6 +2,8 @@
 using MajorService.Business.Dtos.Major;
 using MajorService.Business.Services.MajorServices;
 using MajorService.Middleware;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,6 +44,13 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate major"]);
+        }
+        
+        [HttpGet("page")]
+        public async Task<ApiResponse<MajorListResponse>> GetByPagination([FromQuery] GetMajorByPaginationParam param)
+        {
+            var result = await _majorSvc.GetMajorsByPaginationAsync(param.Pagination, param.Filter, param.Order);
+            return ApiResponse<MajorListResponse>.SuccessResponse(result);
         }
     }
 }
