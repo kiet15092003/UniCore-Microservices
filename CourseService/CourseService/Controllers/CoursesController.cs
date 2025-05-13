@@ -24,11 +24,10 @@ namespace CourseService.Controllers
         {
             var result = await _courseService.GetProductByPagination(c.Pagination, c.Filter, c.Order);
             return ApiResponse<CourseListResponse>.SuccessResponse(result);
-        }
-
-        [HttpPost]
+        }        [HttpPost]
         public async Task<ApiResponse<CourseReadDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
         {
+            // The Code field will be auto-generated as a 6-digit number in the repository
             var result = await _courseService.CreateCourseAsync(courseCreateDto);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }

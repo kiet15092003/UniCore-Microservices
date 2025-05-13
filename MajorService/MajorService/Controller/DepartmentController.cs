@@ -3,6 +3,8 @@ using MajorService.Business.Dtos.Department;
 using MajorService.Business.Services.DepartmentServices;
 using MajorService.Entities;
 using MajorService.Middleware;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MajorService.Controller
@@ -31,13 +33,18 @@ namespace MajorService.Controller
         {
             var department = await _departmentSvc.GetDepartmentByIdAsync(id);
             return ApiResponse<Department>.SuccessResponse(department);
-        }
-        
-        [HttpPost]
-        public async Task<ApiResponse<Department>> CreateDepartmentAsync(DepartmentCreateDto departmentCreateDto)
+        }        [HttpPost]
+        public async Task<ApiResponse<Department>> CreateNewDepartmentAsync([FromBody] CreateNewDepartmentDto request)
         {
-            var department = await _departmentSvc.CreateDepartmentAsync(departmentCreateDto);
-            return ApiResponse<Department>.SuccessResponse(department);
+            try
+            {
+                var department = await _departmentSvc.CreateNewDepartmentAsync(request.Name);
+                return ApiResponse<Department>.SuccessResponse(department);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<Department>.ErrorResponse([ex.Message]);
+            }
         }
         
         [HttpPost("deactivate")]
@@ -49,6 +56,14 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate department"]);
+        }
+        
+        [HttpGet("page")]
+        public async Task<ApiResponse<DepartmentListResponse>> GetByPagination([FromQuery] GetDepartmentByPaginationParam param)
+        {
+            var result = await _departmentSvc.GetDepartmentsByPaginationAsync(
+                param.Pagination, param.Filter, param.Order);
+            return ApiResponse<DepartmentListResponse>.SuccessResponse(result);
         }
     }
 }

@@ -11,18 +11,32 @@ namespace CourseService.DataAccess.Repositories
     {
         private readonly AppDbContext _context;
         private readonly GrpcMajorClientService _majorClient;
+        private static readonly Random _random = new Random();
 
         public CourseRepository(AppDbContext context, GrpcMajorClientService majorClient)
         {
             _context = context;
             _majorClient = majorClient;
-        }
-
-        public async Task<Course> CreateCourseAsync(Course course)
+        }        public async Task<Course> CreateCourseAsync(Course course)
         {
+            // Always generate a 6-digit code, overriding any provided value
+            course.Code = GenerateSixDigitCode();
+            
             var newCourse = await _context.Courses.AddAsync(course);
             await _context.SaveChangesAsync();
             return newCourse.Entity;
+        }
+          private string GenerateSixDigitCode()
+        {
+            // Generate a random 6-digit code
+            int code = _random.Next(100000, 1000000); // 100000 to 999999
+            return code.ToString();
+        }
+        
+        // Fix for the null handling error in other methods
+        private string GetOrderByPropertyName(string? orderBy)
+        {
+            return string.IsNullOrEmpty(orderBy) ? "CreatedAt" : orderBy;
         }
 
         private IQueryable<Course> ApplyFilters(IQueryable<Course> queryable, CourseListFilterParams courseListFilterParams)
