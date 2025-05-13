@@ -39,7 +39,8 @@ namespace CourseService.Controllers
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
 
-        [HttpPut("{id}/deactivate")]
+        
+        [HttpPost("{id}/deactivate")]
         public async Task<ApiResponse<CourseReadDto>> DeactivateCourse(Guid id)
         {
             var result = await _courseService.DeactivateCourseAsync(id);

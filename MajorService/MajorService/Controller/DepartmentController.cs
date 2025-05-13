@@ -33,7 +33,8 @@ namespace MajorService.Controller
         {
             var department = await _departmentSvc.GetDepartmentByIdAsync(id);
             return ApiResponse<Department>.SuccessResponse(department);
-        }        [HttpPost]
+        }        
+        [HttpPost]
         public async Task<ApiResponse<Department>> CreateNewDepartmentAsync([FromBody] CreateNewDepartmentDto request)
         {
             try
@@ -45,17 +46,29 @@ namespace MajorService.Controller
             {
                 return ApiResponse<Department>.ErrorResponse([ex.Message]);
             }
-        }
-        
-        [HttpPost("deactivate")]
-        public async Task<ApiResponse<bool>> DeactivateDepartmentAsync(DeactivateDto deactivateDto)
+        }          
+        [HttpPost("{id}/deactivate")]
+        public async Task<ApiResponse<bool>> DeactivateDepartmentAsync(Guid id)
         {
+            var deactivateDto = new DeactivateDto { Id = id };
             var result = await _departmentSvc.DeactivateDepartmentAsync(deactivateDto);
             if (result)
             {
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate department"]);
+        }
+          
+        [HttpPost("{id}/activate")]
+        public async Task<ApiResponse<bool>> ActivateDepartmentAsync(Guid id)
+        {
+            var activateDto = new ActivateDto { Id = id };
+            var result = await _departmentSvc.ActivateDepartmentAsync(activateDto);
+            if (result)
+            {
+                return ApiResponse<bool>.SuccessResponse(true);
+            }
+            return ApiResponse<bool>.ErrorResponse(["Failed to activate department"]);
         }
         
         [HttpGet("page")]

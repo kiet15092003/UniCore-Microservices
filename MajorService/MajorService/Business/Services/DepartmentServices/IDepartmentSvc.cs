@@ -6,11 +6,11 @@ using MajorService.Utils.Pagination;
 
 namespace MajorService.Business.Services.DepartmentServices
 {    public interface IDepartmentSvc
-    {
-        Task<List<Department>> GetAllDepartmentsAsync();
+    {        Task<List<Department>> GetAllDepartmentsAsync();
         Task<Department> GetDepartmentByIdAsync(Guid id);
         Task<Department> CreateNewDepartmentAsync(string departmentName);
         Task<bool> DeactivateDepartmentAsync(DeactivateDto deactivateDto);
+        Task<bool> ActivateDepartmentAsync(ActivateDto activateDto);
         Task<DepartmentListResponse> GetDepartmentsByPaginationAsync(
             Pagination pagination, 
             DepartmentListFilterParams departmentListFilterParams, 

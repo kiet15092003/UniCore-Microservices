@@ -13,6 +13,7 @@ namespace CourseService.Business.Dtos.TrainingRoadmap
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public dynamic? MajorData { get; set; }
+        public bool IsActive { get; set; }
         public List<CoursesGroupSemesterReadDto>? CoursesGroupSemesters { get; set; }
         public List<TrainingRoadmapCourseReadDto>? TrainingRoadmapCourses { get; set; }
     }

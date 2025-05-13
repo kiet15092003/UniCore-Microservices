@@ -9,5 +9,6 @@
         public int StartYear { get; set; }
         public List<CoursesGroupSemester> CoursesGroupSemesters { get; set; }
         public List<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 }

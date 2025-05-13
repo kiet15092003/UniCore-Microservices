@@ -26,7 +26,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
         
         public async Task<List<Department>> GetAllDepartmentsAsync()
         {
-            return await _context.Departments.ToListAsync();
+            return await _context.Departments.Where(d => d.IsActive).ToListAsync();
         }
         
         public async Task<Department> CreateDepartmentAsync(Department department)
@@ -40,8 +40,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             
             return department;
         }
-        
-        public async Task<bool> DeactivateDepartmentAsync(Guid id)
+          public async Task<bool> DeactivateDepartmentAsync(Guid id)
         {
             var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == id);
             if (department == null)
@@ -50,6 +49,21 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             }
             
             department.IsActive = false;
+            department.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        
+        public async Task<bool> ActivateDepartmentAsync(Guid id)
+        {
+            var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == id);
+            if (department == null)
+            {
+                return false;
+            }
+            
+            department.IsActive = true;
             department.UpdatedAt = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();

@@ -34,7 +34,7 @@ namespace MajorService.Controller
             var majorGroup = await _majorGroupSvc.GetMajorGroupByIdAsync(id);
             return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
         }
-          [HttpPost]
+        [HttpPost]
         public async Task<ApiResponse<MajorGroup>> CreateNewMajorGroupAsync(CreateNewMajorGroupDto request)
         {
             try
@@ -46,17 +46,29 @@ namespace MajorService.Controller
             {
                 return ApiResponse<MajorGroup>.ErrorResponse([ex.Message]);
             }
-        }
-        
-        [HttpPost("deactivate")]
-        public async Task<ApiResponse<bool>> DeactivateMajorGroupAsync(DeactivateDto deactivateDto)
+        }          
+        [HttpPost("{id}/deactivate")]
+        public async Task<ApiResponse<bool>> DeactivateMajorGroupAsync(Guid id)
         {
+            var deactivateDto = new DeactivateDto { Id = id };
             var result = await _majorGroupSvc.DeactivateMajorGroupAsync(deactivateDto);
             if (result)
             {
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate major group"]);
+        }
+          
+        [HttpPost("{id}/activate")]
+        public async Task<ApiResponse<bool>> ActivateMajorGroupAsync(Guid id)
+        {
+            var activateDto = new ActivateDto { Id = id };
+            var result = await _majorGroupSvc.ActivateMajorGroupAsync(activateDto);
+            if (result)
+            {
+                return ApiResponse<bool>.SuccessResponse(true);
+            }
+            return ApiResponse<bool>.ErrorResponse(["Failed to activate major group"]);
         }
         
         [HttpGet("page")]
