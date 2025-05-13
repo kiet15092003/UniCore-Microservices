@@ -17,6 +17,19 @@ namespace CourseService.DataAccess
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<CourseCertificate> CourseCertificates { get; set; }
         public DbSet<CourseMaterial> CourseMaterials { get; set; }
+        public DbSet<TrainingRoadmap> TrainingRoadmaps { get; set; }
+        public DbSet<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
+        public DbSet<CoursesGroup> CoursesGroups { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Create a unique constraint for GroupName within each MajorId
+            modelBuilder.Entity<CoursesGroup>()
+                .HasIndex(g => new { g.GroupName })
+                .IsUnique();
+                
+            base.OnModelCreating(modelBuilder);
+        }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

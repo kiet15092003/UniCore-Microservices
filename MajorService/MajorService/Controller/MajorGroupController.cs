@@ -3,6 +3,8 @@ using MajorService.Business.Dtos.MajorGroup;
 using MajorService.Business.Services.MajorGroupServices;
 using MajorService.Entities;
 using MajorService.Middleware;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MajorService.Controller
@@ -32,12 +34,18 @@ namespace MajorService.Controller
             var majorGroup = await _majorGroupSvc.GetMajorGroupByIdAsync(id);
             return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
         }
-        
-        [HttpPost]
-        public async Task<ApiResponse<MajorGroup>> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto)
+          [HttpPost]
+        public async Task<ApiResponse<MajorGroup>> CreateNewMajorGroupAsync(CreateNewMajorGroupDto request)
         {
-            var majorGroup = await _majorGroupSvc.CreateMajorGroupAsync(majorGroupCreateDto);
-            return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
+            try
+            {
+                var majorGroup = await _majorGroupSvc.CreateNewMajorGroupAsync(request);
+                return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<MajorGroup>.ErrorResponse([ex.Message]);
+            }
         }
         
         [HttpPost("deactivate")]
@@ -49,6 +57,14 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate major group"]);
+        }
+        
+        [HttpGet("page")]
+        public async Task<ApiResponse<MajorGroupListResponse>> GetByPagination([FromQuery] GetMajorGroupByPaginationParam param)
+        {
+            var result = await _majorGroupSvc.GetMajorGroupsByPaginationAsync(
+                param.Pagination, param.Filter, param.Order);
+            return ApiResponse<MajorGroupListResponse>.SuccessResponse(result);
         }
     }
 }

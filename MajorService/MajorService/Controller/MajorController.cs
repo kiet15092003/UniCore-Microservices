@@ -2,6 +2,8 @@
 using MajorService.Business.Dtos.Major;
 using MajorService.Business.Services.MajorServices;
 using MajorService.Middleware;
+using MajorService.Utils.Filter;
+using MajorService.Utils.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,12 +27,18 @@ namespace MajorService.Controller
             var majors = await _majorSvc.GetAllMajorAsync();
             return ApiResponse<List<MajorReadDto>>.SuccessResponse(majors);
         }
-        
-        [HttpPost]
-        public async Task<ApiResponse<MajorReadDto>> CreateMajorAsync(MajorCreateDto majorCreateDto)
+          [HttpPost]
+        public async Task<ApiResponse<MajorReadDto>> CreateNewMajorAsync(CreateNewMajorDto request)
         {
-            var major = await _majorSvc.CreateMajorAsync(majorCreateDto);
-            return ApiResponse<MajorReadDto>.SuccessResponse(major);
+            try
+            {
+                var major = await _majorSvc.CreateNewMajorAsync(request);
+                return ApiResponse<MajorReadDto>.SuccessResponse(major);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<MajorReadDto>.ErrorResponse([ex.Message]);
+            }
         }
         
         [HttpPost("deactivate")]
@@ -42,6 +50,13 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate major"]);
+        }
+        
+        [HttpGet("page")]
+        public async Task<ApiResponse<MajorListResponse>> GetByPagination([FromQuery] GetMajorByPaginationParam param)
+        {
+            var result = await _majorSvc.GetMajorsByPaginationAsync(param.Pagination, param.Filter, param.Order);
+            return ApiResponse<MajorListResponse>.SuccessResponse(result);
         }
     }
 }

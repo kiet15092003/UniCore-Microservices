@@ -2,9 +2,9 @@
 {
     public class CourseCreateDto
     {
-        public string Code { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        // Code is completely removed as it will be auto-generated in the repository
+        public required string Name { get; set; }
+        public required string Description { get; set; }
         public bool IsRegistrable { get; set; } = false;
         public bool IsActive { get; set; } = true;
         public int Credit { get; set; }

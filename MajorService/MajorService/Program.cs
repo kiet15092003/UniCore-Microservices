@@ -87,6 +87,7 @@ builder.Services.AddCommunicationTypes();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<MajorProfile>();
+    cfg.AddProfile<MajorService.Business.Mapper.MappingProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 

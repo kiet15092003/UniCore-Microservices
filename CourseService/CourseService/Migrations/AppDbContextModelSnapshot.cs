@@ -95,13 +95,18 @@ namespace CourseService.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.PrimitiveCollection<string>("ParallelCourseIds")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PracticePeriod")
                         .HasColumnType("int");
 
                     b.PrimitiveCollection<string>("PreCourseIds")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TheoryPeriod")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -180,6 +185,79 @@ namespace CourseService.Migrations
                     b.ToTable("CourseMaterials");
                 });
 
+            modelBuilder.Entity("CourseService.Entities.CoursesGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.PrimitiveCollection<string>("CourseIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("GroupName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("MajorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupName")
+                        .IsUnique();
+
+                    b.ToTable("CoursesGroups");
+                });
+
+            modelBuilder.Entity("CourseService.Entities.CoursesGroupSemester", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CoursesGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SemesterNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TrainingRoadmapId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoursesGroupId");
+
+                    b.HasIndex("TrainingRoadmapId");
+
+                    b.ToTable("CoursesGroupSemester");
+                });
+
             modelBuilder.Entity("CourseService.Entities.Material", b =>
                 {
                     b.Property<Guid>("Id")
@@ -209,6 +287,83 @@ namespace CourseService.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Materials");
+                });
+
+            modelBuilder.Entity("CourseService.Entities.TrainingRoadmap", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("MajorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("StartYear")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TrainingRoadmaps");
+                });
+
+            modelBuilder.Entity("CourseService.Entities.TrainingRoadmapCourse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SemesterNumber")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TrainingRoadmapId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("TrainingRoadmapId");
+
+                    b.ToTable("TrainingRoadmapCourses");
                 });
 
             modelBuilder.Entity("CourseService.Entities.CourseCertificate", b =>
@@ -249,6 +404,44 @@ namespace CourseService.Migrations
                     b.Navigation("Material");
                 });
 
+            modelBuilder.Entity("CourseService.Entities.CoursesGroupSemester", b =>
+                {
+                    b.HasOne("CourseService.Entities.CoursesGroup", "CoursesGroup")
+                        .WithMany("CoursesGroupSemesters")
+                        .HasForeignKey("CoursesGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourseService.Entities.TrainingRoadmap", "TrainingRoadmap")
+                        .WithMany("CoursesGroupSemesters")
+                        .HasForeignKey("TrainingRoadmapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CoursesGroup");
+
+                    b.Navigation("TrainingRoadmap");
+                });
+
+            modelBuilder.Entity("CourseService.Entities.TrainingRoadmapCourse", b =>
+                {
+                    b.HasOne("CourseService.Entities.Course", "Course")
+                        .WithMany("TrainingRoadmapCourses")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CourseService.Entities.TrainingRoadmap", "TrainingRoadmap")
+                        .WithMany("TrainingRoadmapCourses")
+                        .HasForeignKey("TrainingRoadmapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("TrainingRoadmap");
+                });
+
             modelBuilder.Entity("CourseService.Entities.Certificate", b =>
                 {
                     b.Navigation("CourseCertificates");
@@ -259,11 +452,25 @@ namespace CourseService.Migrations
                     b.Navigation("CourseCertificates");
 
                     b.Navigation("CourseMaterials");
+
+                    b.Navigation("TrainingRoadmapCourses");
+                });
+
+            modelBuilder.Entity("CourseService.Entities.CoursesGroup", b =>
+                {
+                    b.Navigation("CoursesGroupSemesters");
                 });
 
             modelBuilder.Entity("CourseService.Entities.Material", b =>
                 {
                     b.Navigation("CourseMaterials");
+                });
+
+            modelBuilder.Entity("CourseService.Entities.TrainingRoadmap", b =>
+                {
+                    b.Navigation("CoursesGroupSemesters");
+
+                    b.Navigation("TrainingRoadmapCourses");
                 });
 #pragma warning restore 612, 618
         }
