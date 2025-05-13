@@ -9,6 +9,7 @@ namespace MajorService.Business.Services.MajorServices
     {
         Task<List<MajorReadDto>> GetAllMajorAsync();   
         Task<MajorReadDto> CreateMajorAsync(MajorCreateDto majorCreateDto);
+        Task<MajorReadDto> CreateNewMajorAsync(CreateNewMajorDto dto);
         Task<bool> DeactivateMajorAsync(DeactivateDto deactivateDto);
         Task<MajorListResponse> GetMajorsByPaginationAsync(Pagination pagination, MajorListFilterParams majorListFilterParams, Order? order);
     }

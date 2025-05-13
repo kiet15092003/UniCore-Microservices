@@ -27,14 +27,23 @@ namespace MajorService.Business.Services.DepartmentServices
         public async Task<Department> GetDepartmentByIdAsync(Guid id)
         {
             return await _departmentRepo.GetDepartmentByIdAsync(id);
-        }
-        
-        public async Task<Department> CreateDepartmentAsync(DepartmentCreateDto departmentCreateDto)
+        }        public async Task<Department> CreateNewDepartmentAsync(string departmentName)
         {
+            // Check if department name already exists
+            bool nameExists = await _departmentRepo.IsDepartmentNameExistsAsync(departmentName);
+            if (nameExists)
+            {
+                throw new InvalidOperationException($"Department with name '{departmentName}' already exists.");
+            }
+            
+            // Generate a unique code with the format UNIDEPART-[6 digits]
+            string uniqueCode = await _departmentRepo.GenerateUniqueCodeAsync();
+            
+            // Create the department
             var department = new Department
             {
-                Name = departmentCreateDto.Name,
-                Code = departmentCreateDto.Code,
+                Name = departmentName,
+                Code = uniqueCode,
                 IsActive = true
             };
             

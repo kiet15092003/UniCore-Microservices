@@ -27,12 +27,18 @@ namespace MajorService.Controller
             var majors = await _majorSvc.GetAllMajorAsync();
             return ApiResponse<List<MajorReadDto>>.SuccessResponse(majors);
         }
-        
-        [HttpPost]
-        public async Task<ApiResponse<MajorReadDto>> CreateMajorAsync(MajorCreateDto majorCreateDto)
+          [HttpPost]
+        public async Task<ApiResponse<MajorReadDto>> CreateNewMajorAsync(CreateNewMajorDto request)
         {
-            var major = await _majorSvc.CreateMajorAsync(majorCreateDto);
-            return ApiResponse<MajorReadDto>.SuccessResponse(major);
+            try
+            {
+                var major = await _majorSvc.CreateNewMajorAsync(request);
+                return ApiResponse<MajorReadDto>.SuccessResponse(major);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<MajorReadDto>.ErrorResponse([ex.Message]);
+            }
         }
         
         [HttpPost("deactivate")]

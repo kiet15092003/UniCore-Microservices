@@ -11,6 +11,7 @@ namespace MajorService.Business.Services.MajorGroupServices
         Task<List<MajorGroup>> GetAllMajorGroupsAsync();
         Task<MajorGroup> GetMajorGroupByIdAsync(Guid id);
         Task<MajorGroup> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto);
+        Task<MajorGroup> CreateNewMajorGroupAsync(CreateNewMajorGroupDto dto);
         Task<bool> DeactivateMajorGroupAsync(DeactivateDto deactivateDto);
         Task<MajorGroupListResponse> GetMajorGroupsByPaginationAsync(
             Pagination pagination, 

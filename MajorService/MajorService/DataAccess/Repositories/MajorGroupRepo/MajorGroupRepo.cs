@@ -109,8 +109,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             
             return queryable;
         }
-        
-        private async Task<IQueryable<MajorGroup>> ApplySortingAsync(IQueryable<MajorGroup> queryable, Order? order)
+          private async Task<IQueryable<MajorGroup>> ApplySortingAsync(IQueryable<MajorGroup> queryable, Order? order)
         {
             if (order != null && !string.IsNullOrEmpty(order.By))
             {
@@ -124,6 +123,32 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
                 }
             }
             return queryable;
+        }
+        
+        public async Task<bool> IsMajorGroupNameExistsAsync(string name)
+        {
+            return await _context.MajorGroups
+                .AnyAsync(mg => mg.Name.ToLower() == name.ToLower());
+        }
+        
+        public async Task<string> GenerateUniqueCodeAsync()
+        {
+            string code;
+            bool codeExists;
+            
+            do
+            {
+                // Generate code with 6 random digits
+                Random random = new Random();
+                string digits = random.Next(100000, 1000000).ToString();
+                code = digits;
+                
+                // Check if code exists
+                codeExists = await _context.MajorGroups.AnyAsync(mg => mg.Code == code);
+            } 
+            while (codeExists);
+            
+            return code;
         }
     }
 }

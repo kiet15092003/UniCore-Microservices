@@ -14,5 +14,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             Pagination pagination,
             DepartmentListFilterParams departmentListFilterParams,
             Order? order);
+        Task<bool> IsDepartmentNameExistsAsync(string name);
+        Task<string> GenerateUniqueCodeAsync();
     }
 }

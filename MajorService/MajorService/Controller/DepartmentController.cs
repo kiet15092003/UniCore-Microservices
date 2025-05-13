@@ -33,13 +33,18 @@ namespace MajorService.Controller
         {
             var department = await _departmentSvc.GetDepartmentByIdAsync(id);
             return ApiResponse<Department>.SuccessResponse(department);
-        }
-        
-        [HttpPost]
-        public async Task<ApiResponse<Department>> CreateDepartmentAsync(DepartmentCreateDto departmentCreateDto)
+        }        [HttpPost]
+        public async Task<ApiResponse<Department>> CreateNewDepartmentAsync([FromBody] CreateNewDepartmentDto request)
         {
-            var department = await _departmentSvc.CreateDepartmentAsync(departmentCreateDto);
-            return ApiResponse<Department>.SuccessResponse(department);
+            try
+            {
+                var department = await _departmentSvc.CreateNewDepartmentAsync(request.Name);
+                return ApiResponse<Department>.SuccessResponse(department);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<Department>.ErrorResponse([ex.Message]);
+            }
         }
         
         [HttpPost("deactivate")]

@@ -34,12 +34,18 @@ namespace MajorService.Controller
             var majorGroup = await _majorGroupSvc.GetMajorGroupByIdAsync(id);
             return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
         }
-        
-        [HttpPost]
-        public async Task<ApiResponse<MajorGroup>> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto)
+          [HttpPost]
+        public async Task<ApiResponse<MajorGroup>> CreateNewMajorGroupAsync(CreateNewMajorGroupDto request)
         {
-            var majorGroup = await _majorGroupSvc.CreateMajorGroupAsync(majorGroupCreateDto);
-            return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
+            try
+            {
+                var majorGroup = await _majorGroupSvc.CreateNewMajorGroupAsync(request);
+                return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<MajorGroup>.ErrorResponse([ex.Message]);
+            }
         }
         
         [HttpPost("deactivate")]

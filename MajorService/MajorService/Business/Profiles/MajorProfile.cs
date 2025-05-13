@@ -8,7 +8,9 @@ namespace MajorService.Business.Profiles
     {
         public MajorProfile()
         {
-            CreateMap<Major, MajorReadDto>();
+            CreateMap<Major, MajorReadDto>()
+                .ForMember(dest => dest.MajorGroup, opt => opt.MapFrom(src => src.MajorGroup))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
         }
     }
 }

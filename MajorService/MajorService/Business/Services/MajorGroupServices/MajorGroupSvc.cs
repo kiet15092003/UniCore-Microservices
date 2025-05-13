@@ -28,13 +28,36 @@ namespace MajorService.Business.Services.MajorGroupServices
         {
             return await _majorGroupRepo.GetMajorGroupByIdAsync(id);
         }
-        
-        public async Task<MajorGroup> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto)
+          public async Task<MajorGroup> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto)
         {
             var majorGroup = new MajorGroup
             {
                 Name = majorGroupCreateDto.Name,
                 DepartmentId = majorGroupCreateDto.DepartmentId,
+                IsActive = true
+            };
+            
+            return await _majorGroupRepo.CreateMajorGroupAsync(majorGroup);
+        }
+        
+        public async Task<MajorGroup> CreateNewMajorGroupAsync(CreateNewMajorGroupDto dto)
+        {
+            // Check if name already exists
+            bool nameExists = await _majorGroupRepo.IsMajorGroupNameExistsAsync(dto.Name);
+            if (nameExists)
+            {
+                throw new InvalidOperationException($"Major group with name '{dto.Name}' already exists.");
+            }
+            
+            // Generate a unique 6-digit code
+            string uniqueCode = await _majorGroupRepo.GenerateUniqueCodeAsync();
+            
+            // Create the major group
+            var majorGroup = new MajorGroup
+            {
+                Name = dto.Name,
+                Code = uniqueCode,
+                DepartmentId = dto.DepartmentId,
                 IsActive = true
             };
             

@@ -14,5 +14,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             Pagination pagination,
             MajorGroupListFilterParams majorGroupListFilterParams,
             Order? order);
+        Task<bool> IsMajorGroupNameExistsAsync(string name);
+        Task<string> GenerateUniqueCodeAsync();
     }
 }

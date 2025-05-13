@@ -107,8 +107,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             
             return queryable;
         }
-        
-        private async Task<IQueryable<Department>> ApplySortingAsync(IQueryable<Department> queryable, Order? order)
+          private async Task<IQueryable<Department>> ApplySortingAsync(IQueryable<Department> queryable, Order? order)
         {
             if (order != null && !string.IsNullOrEmpty(order.By))
             {
@@ -122,6 +121,32 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
                 }
             }
             return queryable;
+        }
+        
+        public async Task<bool> IsDepartmentNameExistsAsync(string name)
+        {
+            return await _context.Departments
+                .AnyAsync(d => d.Name.ToLower() == name.ToLower());
+        }
+        
+        public async Task<string> GenerateUniqueCodeAsync()
+        {
+            string code;
+            bool codeExists;
+            
+            do
+            {
+                // Generate code with format UNIDEPART-[6 digits]
+                Random random = new Random();
+                string digits = random.Next(100000, 1000000).ToString();
+                code = $"{digits}";
+                
+                // Check if code exists
+                codeExists = await _context.Departments.AnyAsync(d => d.Code == code);
+            } 
+            while (codeExists);
+            
+            return code;
         }
     }
 }
