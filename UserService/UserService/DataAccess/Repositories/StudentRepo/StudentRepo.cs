@@ -6,6 +6,10 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using AutoMapper;
 using UserService.Business.Dtos.Student;
+using System.Collections.Concurrent;
+using UserService.Utils.Pagination;
+using UserService.Utils.Filter;
+
 namespace UserService.DataAccess.Repositories.StudentRepo
 {
     public class StudentRepo : IStudentRepo
@@ -29,6 +33,7 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             _smtpClient = smtpClient;
             _mapper = mapper;
         }
+
 
         public async Task<Student> GetStudentByIdAsync(Guid id)
         {
@@ -111,11 +116,82 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             return student;
         }
 
-        public async Task<List<StudentDto>> GetAllAsync()
+        private IQueryable<Student> ApplyFilter(IQueryable<Student> query, StudentListFilterParams filter)
         {
-            return _mapper.Map<List<StudentDto>>(await _context.Students
+            if (!string.IsNullOrEmpty(filter.SearchQuery))
+            {
+                query = query.Where(s => s.StudentCode.Contains(filter.SearchQuery) || s.ApplicationUser.Email.Contains(filter.SearchQuery) || s.ApplicationUser.FirstName.Contains(filter.SearchQuery) || s.ApplicationUser.LastName.Contains(filter.SearchQuery));
+            }
+            if (filter.BatchId != null)
+            {
+                query = query.Where(s => s.BatchId == filter.BatchId);
+            }
+            if (filter.MajorId != null)
+            {
+                query = query.Where(s => s.MajorId == filter.MajorId);
+            }
+            return query;
+        }
+
+        private IQueryable<Student> ApplyOrder(IQueryable<Student> query, Order order)
+        {
+            if (order.By == "StudentCode")
+            {
+                query = order.IsDesc ? query.OrderByDescending(s => s.StudentCode) : query.OrderBy(s => s.StudentCode);
+            }
+            else if (order.By == "Email")
+            {
+                query = order.IsDesc ? query.OrderByDescending(s => s.ApplicationUser.Email) : query.OrderBy(s => s.ApplicationUser.Email);
+            }
+            else if (order.By == "FirstName")
+            {
+                query = order.IsDesc ? query.OrderByDescending(s => s.ApplicationUser.FirstName) : query.OrderBy(s => s.ApplicationUser.FirstName);
+            }
+            else if (order.By == "LastName")
+            {
+                query = order.IsDesc ? query.OrderByDescending(s => s.ApplicationUser.LastName) : query.OrderBy(s => s.ApplicationUser.LastName);
+            }
+            else {
+                query = query = order.IsDesc ? query.OrderByDescending(s => s.StudentCode) : query.OrderBy(s => s.StudentCode);
+            }
+            return query;
+        }
+
+        public async Task<PaginationResult<StudentDto>> GetAllPaginationAsync(Pagination pagination, StudentListFilterParams filter, Order order)
+        {
+            var query = _context.Students
                 .Include(s => s.ApplicationUser)
-                .ToListAsync());
+                .AsQueryable();
+
+            // Apply filter if needed
+            if (filter != null)
+            {
+                query = ApplyFilter(query, filter);
+            }
+
+            // Apply ordering if needed
+            if (order != null)
+            {
+               query = ApplyOrder(query, order);
+            }
+
+            var result = await query
+                .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
+                .Take(pagination.ItemsPerpage)
+                .ToListAsync();
+
+            // Get total count before applying pagination
+            int total = await query.CountAsync();
+
+            var mappedResult = _mapper.Map<List<StudentDto>>(result);
+
+            return new PaginationResult<StudentDto>
+            {
+                Data = mappedResult,
+                Total = total,
+                PageIndex = pagination.PageNumber,
+                PageSize = pagination.ItemsPerpage
+            };
         }
 
         public async Task<Student> UpdateAsync(Student student)

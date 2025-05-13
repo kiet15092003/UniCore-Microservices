@@ -3,6 +3,8 @@ using UserService.Middleware;
 using UserService.Business.Dtos.Student;
 using Microsoft.AspNetCore.Authorization;
 using UserService.Business.Services.StudentService;
+using UserService.Utils.Pagination;
+using UserService.Utils.Filter;
 using System.Text.Json;
 namespace UserService.Controllers
 {
@@ -48,11 +50,14 @@ namespace UserService.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<ApiResponse<List<StudentDto>>> GetAllStudents()
+        public async Task<ApiResponse<StudentListResponse>> GetAllStudents(
+            [FromQuery] Pagination pagination,
+            [FromQuery] StudentListFilterParams filter,
+            [FromQuery] Order? order)
         {
-            var students = await _studentService.GetAllStudentsAsync();
+            var students = await _studentService.GetAllStudentsAsync(pagination, filter, order);
             _logger.LogInformation("-----------------------------------51", JsonSerializer.Serialize(students));
-            return ApiResponse<List<StudentDto>>.SuccessResponse(students);
+            return ApiResponse<StudentListResponse>.SuccessResponse(students);
         }
     }
 }

@@ -2,11 +2,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using UserService.Entities;
 using ClosedXML.Excel;
-using UserService.Business.Services.StudentService;
 using UserService.Business.Dtos.Student;
 using UserService.CommunicationTypes.Http.HttpClient;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
 using UserService.DataAccess.Repositories.StudentRepo;
+using UserService.Utils.Pagination;
+using UserService.Utils.Filter;
 using AutoMapper;
 using System.Text.Json;
 namespace UserService.Business.Services.StudentService
@@ -34,13 +35,18 @@ namespace UserService.Business.Services.StudentService
             _mapper = mapper;
         }
 
-        public async Task<List<StudentDto>> GetAllStudentsAsync()
+        public async Task<StudentListResponse> GetAllStudentsAsync(Pagination pagination, StudentListFilterParams filter, Order? order)
         {
             try
             {
-                var students = await _studentRepository.GetAllAsync();
-                _logger.LogInformation("-----------------------------------42 {students}", JsonSerializer.Serialize(students));
-                return _mapper.Map<List<StudentDto>>(students);
+                var students = await _studentRepository.GetAllPaginationAsync(pagination, filter, order);
+                return new StudentListResponse
+                {
+                    Data = students.Data,
+                    Total = students.Total,
+                    PageIndex = students.PageIndex,
+                    PageSize = students.PageSize
+                };
             }
             catch (Exception ex)
             {

@@ -11,5 +11,6 @@ public class StudentProfile : Profile
 
         CreateMap<Student, StudentDto>()
             .ForMember(dest => dest.ApplicationUser, opt => opt.MapFrom(src => src.ApplicationUser));
+
     }
 }
