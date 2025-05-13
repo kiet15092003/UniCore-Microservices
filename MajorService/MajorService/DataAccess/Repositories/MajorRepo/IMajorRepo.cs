@@ -11,6 +11,7 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
         Task<List<Major>> GetAllMajorAsync();
         Task<Major> CreateMajorAsync(Major major);
         Task<bool> DeactivateMajorAsync(Guid id);
+        Task<bool> ActivateMajorAsync(Guid id);
         Task<PaginationResult<Major>> GetMajorsByPaginationAsync(
             Pagination pagination,
             MajorListFilterParams majorListFilterParams,

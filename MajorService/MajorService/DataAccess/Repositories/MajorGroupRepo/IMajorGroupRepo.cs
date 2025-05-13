@@ -10,6 +10,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
         Task<List<MajorGroup>> GetAllMajorGroupsAsync();
         Task<MajorGroup> CreateMajorGroupAsync(MajorGroup majorGroup);
         Task<bool> DeactivateMajorGroupAsync(Guid id);
+        Task<bool> ActivateMajorGroupAsync(Guid id);
         Task<PaginationResult<MajorGroup>> GetMajorGroupsByPaginationAsync(
             Pagination pagination,
             MajorGroupListFilterParams majorGroupListFilterParams,

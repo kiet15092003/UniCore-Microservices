@@ -49,10 +49,14 @@ namespace MajorService.Business.Services.DepartmentServices
             
             return await _departmentRepo.CreateDepartmentAsync(department);
         }
-        
-        public async Task<bool> DeactivateDepartmentAsync(DeactivateDto deactivateDto)
+          public async Task<bool> DeactivateDepartmentAsync(DeactivateDto deactivateDto)
         {
             return await _departmentRepo.DeactivateDepartmentAsync(deactivateDto.Id);
+        }
+        
+        public async Task<bool> ActivateDepartmentAsync(ActivateDto activateDto)
+        {
+            return await _departmentRepo.ActivateDepartmentAsync(activateDto.Id);
         }
         
         public async Task<DepartmentListResponse> GetDepartmentsByPaginationAsync(

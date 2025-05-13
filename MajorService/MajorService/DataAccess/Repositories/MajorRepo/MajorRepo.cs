@@ -15,7 +15,7 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
         {
             _context = context;
         }
-    public async Task<Major> GetMajorByIdAsync(Guid Id)
+        public async Task<Major> GetMajorByIdAsync(Guid Id)
         {
             var result = await _context.Majors
                 .Include(m => m.MajorGroup)
@@ -26,11 +26,13 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
                 throw new KeyNotFoundException("Major not found");
             }
             return result;
-        }        public async Task<List<Major>> GetAllMajorAsync()
+        }        
+        public async Task<List<Major>> GetAllMajorAsync()
         {
             return await _context.Majors
                 .Include(m => m.MajorGroup)
                 .ThenInclude(mg => mg.Department)
+                .Where(d => d.IsActive)
                 .ToListAsync();
         }
         
@@ -45,8 +47,7 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             
             return major;
         }
-        
-        public async Task<bool> DeactivateMajorAsync(Guid id)
+          public async Task<bool> DeactivateMajorAsync(Guid id)
         {
             var major = await _context.Majors.FirstOrDefaultAsync(m => m.Id == id);
             if (major == null)
@@ -55,6 +56,21 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             }
             
             major.IsActive = false;
+            major.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        
+        public async Task<bool> ActivateMajorAsync(Guid id)
+        {
+            var major = await _context.Majors.FirstOrDefaultAsync(m => m.Id == id);
+            if (major == null)
+            {
+                return false;
+            }
+            
+            major.IsActive = true;
             major.UpdatedAt = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();

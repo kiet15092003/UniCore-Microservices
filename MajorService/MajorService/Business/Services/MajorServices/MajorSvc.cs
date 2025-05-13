@@ -62,10 +62,14 @@ namespace MajorService.Business.Services.MajorServices
             var createdMajor = await _majorRepo.CreateMajorAsync(major);
             return _mapper.Map<MajorReadDto>(createdMajor);
         }
-        
-        public async Task<bool> DeactivateMajorAsync(DeactivateDto deactivateDto)
+          public async Task<bool> DeactivateMajorAsync(DeactivateDto deactivateDto)
         {
             return await _majorRepo.DeactivateMajorAsync(deactivateDto.Id);
+        }
+        
+        public async Task<bool> ActivateMajorAsync(ActivateDto activateDto)
+        {
+            return await _majorRepo.ActivateMajorAsync(activateDto.Id);
         }
           public async Task<MajorListResponse> GetMajorsByPaginationAsync(Pagination pagination, MajorListFilterParams majorListFilterParams, Order? order)
         {
