@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.DataAccess;
 
@@ -11,9 +12,11 @@ using UserService.DataAccess;
 namespace UserService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250511170355_dbdev")]
+    partial class dbdev
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -373,8 +376,10 @@ namespace UserService.Migrations
                     b.Property<double>("AccumulateScore")
                         .HasColumnType("float");
 
-                    b.Property<string>("ApplicationUserId")
-                        .IsRequired()
+                    b.Property<Guid>("ApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ApplicationUserId1")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("BatchId")
@@ -404,8 +409,7 @@ namespace UserService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApplicationUserId")
-                        .IsUnique();
+                    b.HasIndex("ApplicationUserId1");
 
                     b.HasIndex("BatchId");
 
@@ -510,10 +514,8 @@ namespace UserService.Migrations
             modelBuilder.Entity("UserService.Entities.Student", b =>
                 {
                     b.HasOne("ApplicationUser", "ApplicationUser")
-                        .WithOne("Student")
-                        .HasForeignKey("UserService.Entities.Student", "ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId1");
 
                     b.HasOne("UserService.Entities.Batch", "Batch")
                         .WithMany("Students")
@@ -541,11 +543,6 @@ namespace UserService.Migrations
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
-                });
-
-            modelBuilder.Entity("ApplicationUser", b =>
-                {
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("UserService.Entities.Batch", b =>
