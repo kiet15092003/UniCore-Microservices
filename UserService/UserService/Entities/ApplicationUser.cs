@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using UserService.Entities;
-
+using System.Text.Json.Serialization;
 public class ApplicationUser : IdentityUser
 {
     [Required]
@@ -17,4 +17,5 @@ public class ApplicationUser : IdentityUser
     public string ImageUrl { get; set; } = "";
     public Guid? AddressId { get; set; }
     public Address? Address { get; set; }
+    public Student? Student { get; set; }
 }

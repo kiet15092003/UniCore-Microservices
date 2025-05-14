@@ -20,5 +20,40 @@ namespace StudentService.DataAccess.Repositories.BatchRepo
             }
             return result;
         }
+
+        public async Task<List<Batch>> GetAllAsync()
+        {
+            return await _context.Batches.ToListAsync();
+        }
+
+        public async Task<Batch?> GetByIdAsync(Guid id)
+        {
+            return await _context.Batches.FindAsync(id);
+        }
+
+        public async Task<Batch> CreateAsync(Batch batch)
+        {
+            await _context.Batches.AddAsync(batch);
+            await _context.SaveChangesAsync();
+            return batch;
+        }
+
+        public async Task<Batch> UpdateAsync(Batch batch)
+        {
+            _context.Batches.Update(batch);
+            await _context.SaveChangesAsync();
+            return batch;
+        }
+
+        public async Task<bool> DeleteAsync(Guid id)
+        {
+            var batch = await _context.Batches.FindAsync(id);
+            if (batch == null)
+                return false;
+
+            _context.Batches.Remove(batch);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

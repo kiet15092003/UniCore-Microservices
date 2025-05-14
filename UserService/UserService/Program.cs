@@ -13,6 +13,7 @@ using UserService.Business.Profiles;
 using UserService.CommunicationTypes;
 using System.Security.Claims;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
+using UserService.CommunicationTypes.Http.HttpClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,7 @@ builder.Services
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
 builder.Services.AddSingleton<GrpcBatchClientService>();
+builder.Services.AddSingleton<SmtpClientService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
@@ -72,6 +74,12 @@ builder.Services.AddCors(options => {
                .AllowAnyHeader();
     });
 });
+
+builder.Services.AddControllers()
+      .AddJsonOptions(options =>
+      {
+          options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+      });
 
 //Add Swagger
 builder.Services.AddSwaggerGen(options =>
@@ -111,6 +119,8 @@ builder.Services.AddCommunicationTypes();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<UserProfile>();
+    cfg.AddProfile<BatchProfile>();
+    cfg.AddProfile<StudentProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -142,9 +152,9 @@ var app = builder.Build();
 await PrepDb.PrepPopulationAsync(app, environment);
 
 app.UseHttpsRedirection();
+app.UseCors(corsPolicy);  
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())
 {

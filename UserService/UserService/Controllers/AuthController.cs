@@ -29,6 +29,25 @@ namespace UserService.Controllers
             return ApiResponse<IActionResult>.SuccessResponse(result);
         }
 
+        [HttpPost("students/register/excel")]
+        public async Task<ApiResponse<IActionResult>> RegisterStudentsFromExcel([FromForm] RegisterStudentByExcelDto model)
+        {
+            if (model.ExcelFile == null || model.ExcelFile.Length == 0)
+            {
+                return ApiResponse<IActionResult>.ErrorResponse(["File is empty or not provided."]);
+            }
+
+            try
+            {
+                var result = await _authService.RegisterStudentsFromExcelAsync(model);
+                return ApiResponse<IActionResult>.SuccessResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<IActionResult>.ErrorResponse([$"Error processing file: {ex.Message}"]);
+            }
+        }
+
         [HttpPost("trainingManagers/register")]
         public async Task<ApiResponse<IActionResult>> RegisterTrainingManager([FromBody] RegisterTrainingManagerDto model)
         {

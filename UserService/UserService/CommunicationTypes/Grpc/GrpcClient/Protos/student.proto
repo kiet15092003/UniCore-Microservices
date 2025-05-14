@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "UserService.CommunicationTypes.Grpc.GrpcClient";
+
+service Student {
+    rpc CreateStudent (CreateStudentRequest) returns (CreateStudentResponse);
+}
+
+message CreateStudentRequest {
+    string studentCode = 1;
+    int32 accumulateCredits = 2;
+    double accumulateScore = 3;
+    int32 accumulateActivityScore = 4;
+    string majorId = 5;
+    string batchId = 6;
+    string guardianId = 7;
+    string applicationUserId = 8;
+}
+
+message CreateStudentResponse {
+    bool success = 1;
+    repeated string errors = 2;
+} 

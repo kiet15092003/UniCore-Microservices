@@ -22,4 +22,9 @@ namespace UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates
         [Required]
         public Guid BatchId { get; set; }
     }
+
+    public class BatchStudentCreatedEventDTO
+    {
+        public List<StudentCreatedEventData> Data { get; set; }
+    }
 }

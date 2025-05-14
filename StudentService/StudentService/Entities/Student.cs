@@ -29,7 +29,7 @@ namespace StudentService.Entities
 
         [Required]
         public Guid ApplicationUserId { get; set; }
-
+        public ApplicationUser ApplicationUser { get; set; }
 
     }
 }

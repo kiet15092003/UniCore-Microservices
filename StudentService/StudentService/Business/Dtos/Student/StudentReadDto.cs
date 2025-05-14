@@ -1,5 +1,6 @@
 ﻿using StudentService.Entities;
 using System.ComponentModel.DataAnnotations;
+using StudentService.Business.Dtos.Batch;
 
 namespace StudentService.Business.Dtos.Student
 {
@@ -10,7 +11,7 @@ namespace StudentService.Business.Dtos.Student
         public int TotalCredits { get; set; }
         public Guid MajorId { get; set; }
         public Guid BatchId { get; set; }
-        public Batch Batch { get; set; }
+        public BatchReadDto Batch { get; set; }
         public Guid ApplicationUserId { get; set; }
     }
 }

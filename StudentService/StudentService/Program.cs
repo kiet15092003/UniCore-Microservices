@@ -98,6 +98,7 @@ builder.Services.AddCommunicationTypes();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<StudentProfile>();
+    cfg.AddProfile<BatchProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -136,6 +137,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGrpcService<GrpcBatchService>();
+app.MapGrpcService<GrpcStudentService>();
 app.MapControllers();
 
 // use the exception middleware
