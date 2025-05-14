@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.DataAccess;
 
@@ -11,9 +12,11 @@ using UserService.DataAccess;
 namespace UserService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250512055328_dbdev3")]
+    partial class dbdev3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -92,6 +95,9 @@ namespace UserService.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
@@ -113,6 +119,10 @@ namespace UserService.Migrations
 
                     b.HasIndex("PersonId")
                         .IsUnique();
+
+                    b.HasIndex("StudentId")
+                        .IsUnique()
+                        .HasFilter("[StudentId] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -373,9 +383,8 @@ namespace UserService.Migrations
                     b.Property<double>("AccumulateScore")
                         .HasColumnType("float");
 
-                    b.Property<string>("ApplicationUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("ApplicationUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BatchId")
                         .HasColumnType("uniqueidentifier");
@@ -403,9 +412,6 @@ namespace UserService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId")
-                        .IsUnique();
 
                     b.HasIndex("BatchId");
 
@@ -453,7 +459,13 @@ namespace UserService.Migrations
                         .WithMany()
                         .HasForeignKey("AddressId");
 
+                    b.HasOne("UserService.Entities.Student", "Student")
+                        .WithOne("ApplicationUser")
+                        .HasForeignKey("ApplicationUser", "StudentId");
+
                     b.Navigation("Address");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -509,12 +521,6 @@ namespace UserService.Migrations
 
             modelBuilder.Entity("UserService.Entities.Student", b =>
                 {
-                    b.HasOne("ApplicationUser", "ApplicationUser")
-                        .WithOne("Student")
-                        .HasForeignKey("UserService.Entities.Student", "ApplicationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("UserService.Entities.Batch", "Batch")
                         .WithMany("Students")
                         .HasForeignKey("BatchId")
@@ -524,8 +530,6 @@ namespace UserService.Migrations
                     b.HasOne("UserService.Entities.Guardian", "Guardian")
                         .WithMany("Students")
                         .HasForeignKey("GuardianId");
-
-                    b.Navigation("ApplicationUser");
 
                     b.Navigation("Batch");
 
@@ -543,11 +547,6 @@ namespace UserService.Migrations
                     b.Navigation("ApplicationUser");
                 });
 
-            modelBuilder.Entity("ApplicationUser", b =>
-                {
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("UserService.Entities.Batch", b =>
                 {
                     b.Navigation("Students");
@@ -556,6 +555,12 @@ namespace UserService.Migrations
             modelBuilder.Entity("UserService.Entities.Guardian", b =>
                 {
                     b.Navigation("Students");
+                });
+
+            modelBuilder.Entity("UserService.Entities.Student", b =>
+                {
+                    b.Navigation("ApplicationUser")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
