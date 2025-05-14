@@ -75,6 +75,12 @@ builder.Services.AddCors(options => {
     });
 });
 
+builder.Services.AddControllers()
+      .AddJsonOptions(options =>
+      {
+          options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+      });
+
 //Add Swagger
 builder.Services.AddSwaggerGen(options =>
 {
@@ -114,6 +120,7 @@ builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfi
 {
     cfg.AddProfile<UserProfile>();
     cfg.AddProfile<BatchProfile>();
+    cfg.AddProfile<StudentProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -145,9 +152,9 @@ var app = builder.Build();
 await PrepDb.PrepPopulationAsync(app, environment);
 
 app.UseHttpsRedirection();
+app.UseCors(corsPolicy);  
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())
 {

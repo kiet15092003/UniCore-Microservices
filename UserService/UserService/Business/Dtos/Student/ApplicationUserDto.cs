@@ -12,6 +12,5 @@ namespace UserService.Business.Dtos.Student
         public string Dob { get; set; }
         public string PhoneNumber { get; set; }
         public int Status { get; set; }
-        // Thêm các trường khác nếu cần
     }
 } 

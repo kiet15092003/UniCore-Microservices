@@ -59,6 +59,44 @@ namespace UserService.Controllers
             _logger.LogInformation("-----------------------------------51", JsonSerializer.Serialize(students));
             return ApiResponse<StudentListResponse>.SuccessResponse(students);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse<bool>> DeleteStudent(Guid id)
+        {
+            try
+            {
+                var result = await _studentService.DeleteStudentAsync(id);
+                if (result)
+                {
+                    return ApiResponse<bool>.SuccessResponse(true);
+                }
+                return ApiResponse<bool>.ErrorResponse(["Student not found"]);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting student with id {Id}", id);
+                return ApiResponse<bool>.ErrorResponse([$"Error deleting student: {ex.Message}"]);
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<StudentDto>> UpdateStudent(Guid id, UpdateStudentDto updateStudentDto)
+        {
+            try
+            {
+                var result = await _studentService.UpdateStudentAsync(id, updateStudentDto);
+                if (result != null)
+                {
+                    return ApiResponse<StudentDto>.SuccessResponse(result);
+                }
+                return ApiResponse<StudentDto>.ErrorResponse(["Student not found"]);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating student with id {Id}", id);
+                return ApiResponse<StudentDto>.ErrorResponse([$"Error updating student: {ex.Message}"]);
+            }
+        }
     }
 }
 

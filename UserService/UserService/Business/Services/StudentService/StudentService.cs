@@ -73,40 +73,6 @@ namespace UserService.Business.Services.StudentService
             }
         }
 
-        //public async Task<StudentDto> UpdateStudentAsync(Guid id, UpdateStudentDto updateStudentDto)
-        //{
-        //    try
-        //    {
-        //        var existingStudent = await _studentRepository.GetStudentByIdAsync(id);
-        //        if (existingStudent == null)
-        //        {
-        //            return null;
-        //        }
-
-        //        // Update student properties
-        //        existingStudent.FirstName = updateStudentDto.FirstName;
-        //        existingStudent.LastName = updateStudentDto.LastName;
-        //        existingStudent.Dob = updateStudentDto.Dob;
-        //        existingStudent.PersonId = updateStudentDto.PersonId;
-        //        existingStudent.PhoneNumber = updateStudentDto.PhoneNumber;
-        //        existingStudent.Email = updateStudentDto.Email;
-        //        existingStudent.Status = updateStudentDto.Status;
-        //        existingStudent.AccumulateCredits = updateStudentDto.AccumulateCredits;
-        //        existingStudent.AccumulateScore = updateStudentDto.AccumulateScore;
-        //        existingStudent.AccumulateActivityScore = updateStudentDto.AccumulateActivityScore;
-        //        existingStudent.MajorId = updateStudentDto.MajorId;
-        //        existingStudent.BatchId = updateStudentDto.BatchId;
-
-        //        var updatedStudent = await _studentRepository.UpdateAsync(existingStudent);
-        //        return _mapper.Map<StudentDto>(updatedStudent);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error updating student with id {Id}", id);
-        //        throw;
-        //    }
-        //}
-
         public async Task<bool> DeleteStudentAsync(Guid id)
         {
             try
@@ -117,6 +83,44 @@ namespace UserService.Business.Services.StudentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting student with id {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<StudentDto> UpdateStudentAsync(Guid id, UpdateStudentDto updateStudentDto)
+        {
+            try
+            {
+                var existingStudent = await _studentRepository.GetStudentByIdAsync(id);
+                if (existingStudent == null)
+                {
+                    return null;
+                }
+
+                // Update student properties
+                existingStudent.AccumulateCredits = updateStudentDto.AccumulateCredits;
+                existingStudent.AccumulateScore = updateStudentDto.AccumulateScore;
+                existingStudent.AccumulateActivityScore = updateStudentDto.AccumulateActivityScore;
+                existingStudent.MajorId = updateStudentDto.MajorId;
+                existingStudent.BatchId = updateStudentDto.BatchId;
+
+                // Update ApplicationUser properties if ApplicationUser exists
+                if (existingStudent.ApplicationUser != null)
+                {
+                    existingStudent.ApplicationUser.FirstName = updateStudentDto.FirstName;
+                    existingStudent.ApplicationUser.LastName = updateStudentDto.LastName;
+                    existingStudent.ApplicationUser.PersonId = updateStudentDto.PersonId;
+                    existingStudent.ApplicationUser.Dob = updateStudentDto.Dob;
+                    existingStudent.ApplicationUser.PhoneNumber = updateStudentDto.PhoneNumber;
+                    existingStudent.ApplicationUser.Status = updateStudentDto.Status;
+                }
+
+                var updatedStudent = await _studentRepository.UpdateAsync(existingStudent);
+                return _mapper.Map<StudentDto>(updatedStudent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating student with id {Id}", id);
                 throw;
             }
         }

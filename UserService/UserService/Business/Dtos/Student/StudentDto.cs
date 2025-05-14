@@ -4,6 +4,7 @@ namespace UserService.Business.Dtos.Student
 {
     public class StudentDto
     {
+        public Guid Id { get; set; }
         [Required]
         public string StudentCode { get; set; }
         [Required]
@@ -11,9 +12,6 @@ namespace UserService.Business.Dtos.Student
 
         [Required]
         public Guid BatchId { get; set; }
-
-        [Required]
-        public Guid ApplicationUserId { get; set; }
 
         public ApplicationUserDto ApplicationUser { get; set; }
     }

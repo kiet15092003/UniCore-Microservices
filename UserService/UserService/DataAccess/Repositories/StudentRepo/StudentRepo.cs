@@ -37,7 +37,9 @@ namespace UserService.DataAccess.Repositories.StudentRepo
 
         public async Task<Student> GetStudentByIdAsync(Guid id)
         {
-            var result = await _context.Students.FirstOrDefaultAsync(d => d.Id == id);
+            var result = await _context.Students
+                .Include(s => s.ApplicationUser)
+                .FirstOrDefaultAsync(d => d.Id == id);
             if (result == null)
             {
                 throw new KeyNotFoundException("Student not found");
@@ -194,22 +196,81 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             };
         }
 
-        public async Task<Student> UpdateAsync(Student student)
-        {
-            _context.Students.Update(student);
-            await _context.SaveChangesAsync();
-            return student;
-        }
-
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var student = await _context.Students.FindAsync(id);
-            if (student == null)
-                return false;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var student = await _context.Students
+                    .Include(s => s.ApplicationUser)
+                    .FirstOrDefaultAsync(s => s.Id == id);
+                
+                if (student == null)
+                    return false;
 
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
-            return true;
+                // Delete student first
+                _context.Students.Remove(student);
+                await _context.SaveChangesAsync();
+
+                // Delete associated user
+                if (student.ApplicationUser != null)
+                {
+                    await _userManager.DeleteAsync(student.ApplicationUser);
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error deleting student with id {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<Student> UpdateAsync(Student student)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var existingStudent = await _context.Students
+                    .Include(s => s.ApplicationUser)
+                    .FirstOrDefaultAsync(s => s.Id == student.Id);
+
+                if (existingStudent == null)
+                    throw new KeyNotFoundException("Student not found");
+
+                // Update student properties
+                existingStudent.StudentCode = student.StudentCode;
+                existingStudent.AccumulateCredits = student.AccumulateCredits;
+                existingStudent.AccumulateScore = student.AccumulateScore;
+                existingStudent.AccumulateActivityScore = student.AccumulateActivityScore;
+                existingStudent.MajorId = student.MajorId;
+                existingStudent.BatchId = student.BatchId;
+                existingStudent.GuardianId = student.GuardianId;
+
+                // Update associated user if needed
+                if (existingStudent.ApplicationUser != null && student.ApplicationUser != null)
+                {
+                    existingStudent.ApplicationUser.FirstName = student.ApplicationUser.FirstName;
+                    existingStudent.ApplicationUser.LastName = student.ApplicationUser.LastName;
+                    existingStudent.ApplicationUser.PhoneNumber = student.ApplicationUser.PhoneNumber;
+                    existingStudent.ApplicationUser.Status = student.ApplicationUser.Status;
+                }
+
+                _context.Students.Update(existingStudent);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return existingStudent;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error updating student with id {Id}", student.Id);
+                throw;
+            }
         }
 
         public async Task SaveChangesAsync()
