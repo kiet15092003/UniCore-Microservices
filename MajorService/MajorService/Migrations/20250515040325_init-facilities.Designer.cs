@@ -4,6 +4,7 @@ using MajorService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MajorService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250515040325_init-facilities")]
+    partial class initfacilities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -155,6 +158,7 @@ namespace MajorService.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageURL")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
@@ -309,7 +313,7 @@ namespace MajorService.Migrations
             modelBuilder.Entity("MajorService.Entities.Floor", b =>
                 {
                     b.HasOne("MajorService.Entities.Building", "Building")
-                        .WithMany("Floors")
+                        .WithMany()
                         .HasForeignKey("BuildingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -342,7 +346,7 @@ namespace MajorService.Migrations
             modelBuilder.Entity("MajorService.Entities.Room", b =>
                 {
                     b.HasOne("MajorService.Entities.Floor", "Floor")
-                        .WithMany("Rooms")
+                        .WithMany()
                         .HasForeignKey("FloorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -350,19 +354,9 @@ namespace MajorService.Migrations
                     b.Navigation("Floor");
                 });
 
-            modelBuilder.Entity("MajorService.Entities.Building", b =>
-                {
-                    b.Navigation("Floors");
-                });
-
             modelBuilder.Entity("MajorService.Entities.Department", b =>
                 {
                     b.Navigation("MajorGroups");
-                });
-
-            modelBuilder.Entity("MajorService.Entities.Floor", b =>
-                {
-                    b.Navigation("Rooms");
                 });
 
             modelBuilder.Entity("MajorService.Entities.MajorGroup", b =>
