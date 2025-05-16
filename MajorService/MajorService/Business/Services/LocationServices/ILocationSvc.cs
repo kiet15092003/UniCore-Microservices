@@ -10,6 +10,7 @@ namespace MajorService.Business.Services.LocationServices
         Task<List<LocationReadDto>> GetAllLocationsAsync();
         Task<LocationReadDto> GetLocationByIdAsync(Guid id);
         Task<LocationReadDto> CreateNewLocationAsync(CreateNewLocationDto request);
+        Task<LocationReadDto> UpdateLocationAsync(Guid id, UpdateLocationDto request);
         Task<bool> DeactivateLocationAsync(DeactivateDto deactivateDto);
         Task<bool> ActivateLocationAsync(ActivateDto activateDto);
         Task<LocationListResponse> GetLocationsByPaginationAsync(

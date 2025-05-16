@@ -61,6 +61,11 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
                 query = query.Where(r => r.FloorId == filterParams.FloorId.Value);
             }
             
+            if (filterParams.LocationId.HasValue)
+            {
+                query = query.Where(r => r.Floor!.Building!.LocationId == filterParams.LocationId.Value);
+            }
+            
             if (filterParams.IsActive.HasValue)
             {
                 query = query.Where(r => r.IsActive == filterParams.IsActive.Value);
@@ -83,14 +88,14 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
             }
 
             return query;
-        }
-
-        public async Task<(List<Room> Data, int Count)> GetRoomsByPaginationAsync(
+        }        public async Task<(List<Room> Data, int Count)> GetRoomsByPaginationAsync(
             Pagination pagination, 
             RoomListFilterParams filter, 
             Order? order)
         {
-            var query = _context.Rooms.Include(b => b.Floor).AsQueryable();
+            var query = _context.Rooms
+                .Include(r => r.Floor!).ThenInclude(f => f.Building)
+                .AsQueryable();
 
             query = ApplyFilters(query, filter);
             query = ApplySorting(query, order);

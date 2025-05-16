@@ -14,6 +14,7 @@ namespace MajorService.Business.Services.FloorServices
         Task<List<FloorReadDto>> GetAllFloorsAsync();
         Task<FloorReadDto> GetFloorByIdAsync(Guid id);
         Task<FloorReadDto> CreateNewFloorAsync(CreateNewFloorDto request);
+        Task<FloorReadDto> UpdateFloorAsync(Guid id, UpdateFloorDto request);
         Task<bool> DeactivateFloorAsync(DeactivateDto request);
         Task<bool> ActivateFloorAsync(ActivateDto request);
         Task<FloorListResponse> GetFloorsByPaginationAsync(Pagination pagination, FloorListFilterParams filter, Order? order);

@@ -69,15 +69,28 @@ namespace MajorService.Business.Services.FloorServices
         {
             var floors = await _floorRepo.GetAllFloorsAsync();
             return _mapper.Map<List<FloorReadDto>>(floors);
-        }
-
-        public async Task<FloorReadDto> GetFloorByIdAsync(Guid id)
+        }        public async Task<FloorReadDto> GetFloorByIdAsync(Guid id)
         {
             var floor = await _floorRepo.GetFloorByIdAsync(id);
             if (floor == null)
             {
                 throw new KeyNotFoundException($"Floor with ID {id} not found");
             }
+            
+            return _mapper.Map<FloorReadDto>(floor);
+        }
+        
+        public async Task<FloorReadDto> UpdateFloorAsync(Guid id, UpdateFloorDto request)
+        {
+            var floor = await _floorRepo.GetFloorByIdAsync(id);
+            if (floor == null)
+            {
+                throw new KeyNotFoundException($"Floor with ID {id} not found");
+            }
+            
+            floor.Name = request.Name;
+            
+            await _floorRepo.UpdateFloorAsync(floor);
             
             return _mapper.Map<FloorReadDto>(floor);
         }

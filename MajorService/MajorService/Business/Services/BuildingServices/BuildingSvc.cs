@@ -63,9 +63,7 @@ namespace MajorService.Business.Services.BuildingServices
         public async Task<bool> ActivateBuildingAsync(ActivateDto request)
         {
             return await _buildingRepo.ActivateBuildingAsync(request.Id);
-        }
-
-        public async Task<BuildingListResponse> GetBuildingsByPaginationAsync(Pagination pagination, BuildingListFilterParams filter, Order? order)
+        }        public async Task<BuildingListResponse> GetBuildingsByPaginationAsync(Pagination pagination, BuildingListFilterParams filter, Order? order)
         {
             var result = await _buildingRepo.GetBuildingsByPaginationAsync(pagination, filter, order);
             var buildingDtos = _mapper.Map<List<BuildingReadDto>>(result.Data);
@@ -77,6 +75,26 @@ namespace MajorService.Business.Services.BuildingServices
                 PageSize = result.PageSize,
                 PageIndex = result.PageIndex
             };
+        }
+        
+        public async Task<BuildingReadDto> UpdateBuildingAsync(Guid id, UpdateBuildingDto request)
+        {
+            // Check if building exists
+            var existingBuilding = await _buildingRepo.GetBuildingByIdAsync(id);
+            if (existingBuilding == null)
+            {
+                throw new KeyNotFoundException($"Building with ID {id} not found");
+            }
+
+            existingBuilding.Name = request.Name;
+            
+            var success = await _buildingRepo.UpdateBuildingAsync(existingBuilding);
+            if (!success)
+            {
+                throw new InvalidOperationException("Failed to update building");
+            }
+            
+            return _mapper.Map<BuildingReadDto>(existingBuilding);
         }
     }
 }

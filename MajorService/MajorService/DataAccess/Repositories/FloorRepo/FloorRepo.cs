@@ -26,7 +26,7 @@ namespace MajorService.DataAccess.Repositories.FloorRepo
 
         public async Task<Floor?> GetFloorByIdAsync(Guid id)
         {
-            return await _context.Floors
+            return await _context.Floors                .Include(f => f.Building)
                 .Include(f => f.Rooms)
                 .FirstOrDefaultAsync(f => f.Id == id);
         }
@@ -43,14 +43,19 @@ namespace MajorService.DataAccess.Repositories.FloorRepo
             floor.IsActive = false;
             _context.Floors.Update(floor);
             return await _context.SaveChangesAsync() > 0;
-        }
-
-        public async Task<bool> ActivateFloorAsync(Floor floor)
+        }        public async Task<bool> ActivateFloorAsync(Floor floor)
         {
             floor.IsActive = true;
             _context.Floors.Update(floor);
             return await _context.SaveChangesAsync() > 0;
-        }        private IQueryable<Floor> ApplyFilters(IQueryable<Floor> query, FloorListFilterParams filterParams)
+        }
+        
+        public async Task<Floor> UpdateFloorAsync(Floor floor)
+        {
+            _context.Floors.Update(floor);
+            await _context.SaveChangesAsync();
+            return floor;
+        }private IQueryable<Floor> ApplyFilters(IQueryable<Floor> query, FloorListFilterParams filterParams)
         {
             if (!string.IsNullOrEmpty(filterParams.Name))
             {
@@ -60,6 +65,11 @@ namespace MajorService.DataAccess.Repositories.FloorRepo
             if (filterParams.BuildingId.HasValue)
             {
                 query = query.Where(f => f.BuildingId == filterParams.BuildingId.Value);
+            }
+            
+            if (filterParams.LocationId.HasValue)
+            {
+                query = query.Where(f => f.Building != null && f.Building.LocationId == filterParams.LocationId.Value);
             }
             
             if (filterParams.IsActive.HasValue)
@@ -84,14 +94,15 @@ namespace MajorService.DataAccess.Repositories.FloorRepo
             }
 
             return query;
-        }
-
-        public async Task<(List<Floor> Data, int Count)> GetFloorsByPaginationAsync(
+        }        public async Task<(List<Floor> Data, int Count)> GetFloorsByPaginationAsync(
             Pagination pagination, 
             FloorListFilterParams filter, 
             Order? order)
         {
-            var query = _context.Floors.Include(b => b.Building).AsQueryable();
+            var query = _context.Floors
+                .Include(b => b.Building)
+                .Include(f => f.Rooms)
+                .AsQueryable();
 
             query = ApplyFilters(query, filter);
             query = ApplySorting(query, order);

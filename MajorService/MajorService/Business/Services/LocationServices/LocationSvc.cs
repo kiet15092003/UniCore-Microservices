@@ -65,8 +65,7 @@ namespace MajorService.Business.Services.LocationServices
         public async Task<bool> ActivateLocationAsync(ActivateDto activateDto)
         {
             return await _locationRepo.ActivateLocationAsync(activateDto.Id);
-        }        
-        public async Task<LocationListResponse> GetLocationsByPaginationAsync(
+        }          public async Task<LocationListResponse> GetLocationsByPaginationAsync(
             Pagination pagination,
             LocationListFilterParams filterParams,
             Order? order)
@@ -88,6 +87,30 @@ namespace MajorService.Business.Services.LocationServices
                 PageSize = result.PageSize,
                 PageIndex = result.PageIndex
             };
+        }
+
+        public async Task<LocationReadDto> UpdateLocationAsync(Guid id, UpdateLocationDto request)
+        {
+            // Verify location exists before attempting to update
+            var existingLocation = await _locationRepo.GetLocationByIdAsync(id);
+            
+            // Create a new Location object and map properties from the request
+            var location = _mapper.Map<Location>(request);
+            
+            // Ensure the ID is set to the one from the URL path
+            location.Id = id;
+            
+            // Keep the IsActive status from the existing record
+            location.IsActive = existingLocation.IsActive;
+            
+            var updatedLocation = await _locationRepo.UpdateLocationAsync(location);
+            var locationDto = _mapper.Map<LocationReadDto>(updatedLocation);
+            
+            locationDto.TotalBuilding = await _locationRepo.GetTotalBuildingsForLocationAsync(locationDto.Id);
+            locationDto.TotalFloor = await _locationRepo.GetTotalFloorsForLocationAsync(locationDto.Id);
+            locationDto.TotalRoom = await _locationRepo.GetTotalRoomForLocationAsync(locationDto.Id);
+            
+            return locationDto;
         }
     }
 }

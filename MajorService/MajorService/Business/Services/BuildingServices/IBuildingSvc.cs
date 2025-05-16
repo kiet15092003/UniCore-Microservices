@@ -13,6 +13,7 @@ namespace MajorService.Business.Services.BuildingServices
         Task<List<BuildingReadDto>> GetAllBuildingsAsync();
         Task<BuildingReadDto> GetBuildingByIdAsync(Guid id);
         Task<BuildingReadDto> CreateNewBuildingAsync(CreateNewBuildingDto request);
+        Task<BuildingReadDto> UpdateBuildingAsync(Guid id, UpdateBuildingDto request);
         Task<bool> DeactivateBuildingAsync(DeactivateDto request);
         Task<bool> ActivateBuildingAsync(ActivateDto request);
         Task<BuildingListResponse> GetBuildingsByPaginationAsync(Pagination pagination, BuildingListFilterParams filter, Order? order);

@@ -11,5 +11,7 @@ namespace MajorService.Business.Dtos.Building
         public string Name { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public LocationReadDto Location { get; set; }
+        public int TotalFloor { get; set; }
+        public int TotalRoom { get; set; }
     }
 }

@@ -77,13 +77,25 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(new List<string> { "Failed to activate floor" });
-        }
-
-        [HttpGet("page")]
+        }        [HttpGet("page")]
         public async Task<ApiResponse<FloorListResponse>> GetByPagination([FromQuery] GetFloorByPaginationParam param)
         {
             var result = await _floorSvc.GetFloorsByPaginationAsync(param.Pagination, param.Filter, param.Order);
             return ApiResponse<FloorListResponse>.SuccessResponse(result);
+        }
+        
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<FloorReadDto>> UpdateFloorAsync(Guid id, [FromBody] UpdateFloorDto request)
+        {
+            try
+            {
+                var floor = await _floorSvc.UpdateFloorAsync(id, request);
+                return ApiResponse<FloorReadDto>.SuccessResponse(floor);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<FloorReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
         }
     }
 }

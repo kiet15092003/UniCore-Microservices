@@ -1,4 +1,4 @@
-using MajorService.Business.Dtos;
+﻿using MajorService.Business.Dtos;
 using MajorService.Business.Dtos.Location;
 using MajorService.Business.Services.LocationServices;
 using MajorService.Entities;
@@ -18,14 +18,16 @@ namespace MajorService.Controller
         public LocationController(ILocationSvc locationSvc)
         {
             _locationSvc = locationSvc;
-        }        [HttpGet]
+        }
+        [HttpGet]
         public async Task<ApiResponse<List<LocationReadDto>>> GetAllLocationsAsync()
         {
             var locations = await _locationSvc.GetAllLocationsAsync();
             return ApiResponse<List<LocationReadDto>>.SuccessResponse(locations);
         }
 
-        [HttpGet("{id}")]        public async Task<ApiResponse<LocationReadDto>> GetLocationByIdAsync(Guid id)
+        [HttpGet("{id}")]
+        public async Task<ApiResponse<LocationReadDto>> GetLocationByIdAsync(Guid id)
         {
             var location = await _locationSvc.GetLocationByIdAsync(id);
             return ApiResponse<LocationReadDto>.SuccessResponse(location);
@@ -66,14 +68,31 @@ namespace MajorService.Controller
             {
                 return ApiResponse<bool>.SuccessResponse(true);
             }
-            return ApiResponse<bool>.ErrorResponse(new List<string>{ "Failed to activate location" });
+            return ApiResponse<bool>.ErrorResponse(new List<string> { "Failed to activate location" });
         }
-
         [HttpGet("page")]
         public async Task<ApiResponse<LocationListResponse>> GetByPagination([FromQuery] GetLocationByPaginationParam param)
         {
             var result = await _locationSvc.GetLocationsByPaginationAsync(param.Pagination, param.Filter, param.Order);
             return ApiResponse<LocationListResponse>.SuccessResponse(result);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<LocationReadDto>> UpdateLocationAsync(Guid id, [FromBody] UpdateLocationDto request)
+        {
+            try
+            {
+                var location = await _locationSvc.UpdateLocationAsync(id, request);
+                return ApiResponse<LocationReadDto>.SuccessResponse(location);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<LocationReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return ApiResponse<LocationReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
         }
     }
 }

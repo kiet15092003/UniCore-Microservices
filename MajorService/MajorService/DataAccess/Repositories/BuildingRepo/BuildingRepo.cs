@@ -19,19 +19,21 @@ namespace MajorService.DataAccess.Repositories.BuildingRepo
             _context = context;
         }
 
-        public async Task<List<Building>> GetAllBuildingsAsync()
-        {
-            return await _context.Buildings
-                .Include(b => b.Floors)
-                .ToListAsync();
-        }    
-        
-        public async Task<Building> GetBuildingByIdAsync(Guid id)
-        {
-            return await _context.Buildings
-                .Include(b => b.Floors)
-                .FirstOrDefaultAsync(b => b.Id == id) ?? new Building();
-        }
+    public async Task<List<Building>> GetAllBuildingsAsync()
+    {
+        return await _context.Buildings
+            .Include(b => b.Floors)
+                .ThenInclude(f => f.Rooms)
+            .ToListAsync();
+    }    
+    
+    public async Task<Building> GetBuildingByIdAsync(Guid id)
+    {
+        return await _context.Buildings
+            .Include(b => b.Floors)
+                .ThenInclude(f => f.Rooms)
+            .FirstOrDefaultAsync(b => b.Id == id) ?? new Building();
+    }
 
         public async Task<Building> CreateBuildingAsync(Building building)
         {
@@ -93,13 +95,15 @@ namespace MajorService.DataAccess.Repositories.BuildingRepo
             }
 
             return query;
-        }        public async Task<PaginationResult<Building>> GetBuildingsByPaginationAsync(
+        }    public async Task<PaginationResult<Building>> GetBuildingsByPaginationAsync(
             Pagination pagination,
             BuildingListFilterParams filterParams,
             Order? order)
         {
             var query = _context.Buildings
-                .Include(b=>b.Location)
+                .Include(b => b.Location)
+                .Include(b => b.Floors)
+                    .ThenInclude(f => f.Rooms)
                 .AsQueryable();
 
             query = ApplyFilters(query, filterParams);

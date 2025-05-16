@@ -36,7 +36,8 @@ namespace MajorService.Controller
             return ApiResponse<BuildingReadDto>.SuccessResponse(building);
         }
 
-        [HttpPost]        public async Task<ApiResponse<BuildingReadDto>> CreateNewBuildingAsync([FromBody] CreateNewBuildingDto request)
+        [HttpPost]
+        public async Task<ApiResponse<BuildingReadDto>> CreateNewBuildingAsync([FromBody] CreateNewBuildingDto request)
         {
             try
             {
@@ -75,13 +76,29 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(new List<string> { "Failed to activate building" });
-        }
-
-        [HttpGet("page")]
+        }        [HttpGet("page")]
         public async Task<ApiResponse<BuildingListResponse>> GetByPagination([FromQuery] GetBuildingByPaginationParam param)
         {
             var result = await _buildingSvc.GetBuildingsByPaginationAsync(param.Pagination, param.Filter, param.Order);
             return ApiResponse<BuildingListResponse>.SuccessResponse(result);
+        }
+        
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<BuildingReadDto>> UpdateBuildingAsync(Guid id, [FromBody] UpdateBuildingDto request)
+        {
+            try
+            {
+                var building = await _buildingSvc.UpdateBuildingAsync(id, request);
+                return ApiResponse<BuildingReadDto>.SuccessResponse(building);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<BuildingReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<BuildingReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
         }
     }
 }

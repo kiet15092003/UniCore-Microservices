@@ -11,6 +11,7 @@ namespace MajorService.DataAccess.Repositories.LocationRepo
         Task<Location> CreateLocationAsync(Location location);
         Task<bool> DeactivateLocationAsync(Guid id);
         Task<bool> ActivateLocationAsync(Guid id);
+        Task<Location> UpdateLocationAsync(Location location);
         Task<PaginationResult<Location>> GetLocationsByPaginationAsync(
             Pagination pagination,
             LocationListFilterParams filterParams,

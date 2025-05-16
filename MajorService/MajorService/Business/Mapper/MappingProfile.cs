@@ -24,10 +24,9 @@ namespace MajorService.Business.Mapper
             // Major mappings
             CreateMap<Major, MajorReadDto>()
                 .ForMember(dest => dest.MajorGroup, opt => opt.MapFrom(src => src.MajorGroup))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
-
-            // Location mappings
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));            // Location mappings
             CreateMap<CreateNewLocationDto, Location>();
+            CreateMap<UpdateLocationDto, Location>();
             CreateMap<Location, LocationReadDto>()
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
 
@@ -35,13 +34,17 @@ namespace MajorService.Business.Mapper
             CreateMap<CreateNewBuildingDto, Building>();
             CreateMap<Building, BuildingReadDto>()
                 .ForMember(dest => dest.Location, opt => opt.MapFrom(src => src.Location))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.TotalFloor, opt => opt.MapFrom(src => src.Floors.Count))
+                .ForMember(dest => dest.TotalRoom, opt => opt.MapFrom(src => 
+                    src.Floors.SelectMany(f => f.Rooms).Count()));
 
             // Floor mappings
             CreateMap<CreateNewFloorDto, Floor>();
             CreateMap<Floor, FloorReadDto>()
                 .ForMember(dest => dest.Building, opt => opt.MapFrom(src => src.Building))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.TotalRoom, opt => opt.MapFrom(src => src.Rooms.Count));
 
             // Room mappings
             CreateMap<CreateNewRoomDto, Room>();

@@ -6,6 +6,7 @@ namespace MajorService.Utils.Filter
     {
         public string? Name { get; set; }
         public Guid? FloorId { get; set; }
+        public Guid? LocationId { get; set; }
         public bool? IsActive { get; set; }
     }
 }

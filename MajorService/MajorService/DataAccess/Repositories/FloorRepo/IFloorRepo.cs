@@ -12,6 +12,7 @@ namespace MajorService.DataAccess.Repositories.FloorRepo
         Task<List<Floor>> GetAllFloorsAsync();
         Task<Floor?> GetFloorByIdAsync(Guid id);
         Task<Floor> CreateFloorAsync(Floor floor);
+        Task<Floor> UpdateFloorAsync(Floor floor);
         Task<bool> DeactivateFloorAsync(Floor floor);
         Task<bool> ActivateFloorAsync(Floor floor);
         Task<(List<Floor> Data, int Count)> GetFloorsByPaginationAsync(

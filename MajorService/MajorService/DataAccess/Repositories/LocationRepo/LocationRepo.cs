@@ -100,13 +100,11 @@ namespace MajorService.DataAccess.Repositories.LocationRepo
             return await _context.Buildings
                 .Where(b => b.LocationId == locationId && b.IsActive)
                 .CountAsync();
-        }
-
-        public async Task<int> GetTotalFloorsForLocationAsync(Guid locationId)
+        }        public async Task<int> GetTotalFloorsForLocationAsync(Guid locationId)
         {
             return await _context.Floors
                 .Include(f => f.Building)
-                .Where(f => f.Building.LocationId == locationId && f.IsActive)
+                .Where(f => f.Building != null && f.Building.LocationId == locationId && f.IsActive)
                 .CountAsync();
         }
 
@@ -114,9 +112,26 @@ namespace MajorService.DataAccess.Repositories.LocationRepo
         {
             return await _context.Rooms
                 .Include(r => r.Floor)
-                .ThenInclude(f => f.Building)
-                .Where(r => r.Floor.Building.LocationId == locationId && r.IsActive)
+                .ThenInclude(f => f!.Building)
+                .Where(r => r.Floor != null && r.Floor.Building != null && r.Floor.Building.LocationId == locationId && r.IsActive)
                 .CountAsync();
+        }
+
+        public async Task<Location> UpdateLocationAsync(Location location)
+        {
+            var existingLocation = await _context.Locations.FindAsync(location.Id) ?? 
+                throw new ArgumentException($"Location with ID {location.Id} not found");
+
+            existingLocation.Name = location.Name;
+            existingLocation.Country = location.Country;
+            existingLocation.City = location.City;
+            existingLocation.District = location.District;
+            existingLocation.Ward = location.Ward;
+            existingLocation.AddressDetail = location.AddressDetail;
+            existingLocation.ImageURL = location.ImageURL;
+
+            await _context.SaveChangesAsync();
+            return existingLocation;
         }
     }
 }
