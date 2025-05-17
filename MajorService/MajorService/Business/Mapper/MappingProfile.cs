@@ -48,6 +48,7 @@ namespace MajorService.Business.Mapper
 
             // Room mappings
             CreateMap<CreateNewRoomDto, Room>();
+            CreateMap<UpdateRoomDto, Room>();
             CreateMap<Room, RoomReadDto>()
                 .ForMember(dest => dest.Floor, opt => opt.MapFrom(src => src.Floor))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));

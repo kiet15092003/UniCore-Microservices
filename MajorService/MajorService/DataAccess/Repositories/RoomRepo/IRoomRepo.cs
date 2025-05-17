@@ -14,6 +14,7 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
         Task<Room> CreateRoomAsync(Room room);
         Task<bool> DeactivateRoomAsync(Room room);
         Task<bool> ActivateRoomAsync(Room room);
+        Task<Room> UpdateRoomAsync(Room room);
         Task<(List<Room> Data, int Count)> GetRoomsByPaginationAsync(
             Pagination pagination, 
             RoomListFilterParams filter, 

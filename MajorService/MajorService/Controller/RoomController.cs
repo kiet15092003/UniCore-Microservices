@@ -30,6 +30,13 @@ namespace MajorService.Controller
             return ApiResponse<List<RoomReadDto>>.SuccessResponse(rooms);
         }
 
+        [HttpGet("all")]
+        public async Task<ApiResponse<List<RoomReadDto>>> GetAllRoomsWithoutPaginationAsync()
+        {
+            var rooms = await _roomSvc.GetAllRoomsAsync();
+            return ApiResponse<List<RoomReadDto>>.SuccessResponse(rooms);
+        }
+
         [HttpGet("{id}")]
         public async Task<ApiResponse<RoomReadDto>> GetRoomByIdAsync(Guid id)
         {
@@ -77,7 +84,30 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(new List<string> { "Failed to activate room" });
-        }        [HttpGet("page")]
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<RoomReadDto>> UpdateRoomAsync(Guid id, [FromBody] UpdateRoomDto request)
+        {
+            try
+            {
+                // Ensure the ID in the route matches the ID in the request
+                request.Id = id;
+                
+                var updatedRoom = await _roomSvc.UpdateRoomAsync(request);
+                return ApiResponse<RoomReadDto>.SuccessResponse(updatedRoom);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<RoomReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<RoomReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+        }        
+        
+        [HttpGet("page")]
         public async Task<ApiResponse<RoomListResponse>> GetByPagination([FromQuery] GetRoomByPaginationDto param)
         {
             var result = await _roomSvc.GetRoomsByPaginationAsync(param.Pagination, param.Filter, param.Order);

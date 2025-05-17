@@ -18,5 +18,6 @@ namespace MajorService.Business.Services.FloorServices
         Task<bool> DeactivateFloorAsync(DeactivateDto request);
         Task<bool> ActivateFloorAsync(ActivateDto request);
         Task<FloorListResponse> GetFloorsByPaginationAsync(Pagination pagination, FloorListFilterParams filter, Order? order);
+        Task<List<FloorReadDto>> GetFloorsByLocationIdAsync(Guid locationId);
     }
 }

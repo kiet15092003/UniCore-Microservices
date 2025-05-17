@@ -29,6 +29,13 @@ namespace MajorService.Controller
             return ApiResponse<List<BuildingReadDto>>.SuccessResponse(buildings);
         }
 
+        [HttpGet("all")]
+        public async Task<ApiResponse<List<BuildingReadDto>>> GetAllBuildingsWithoutPaginationAsync()
+        {
+            var buildings = await _buildingSvc.GetAllBuildingsAsync();
+            return ApiResponse<List<BuildingReadDto>>.SuccessResponse(buildings);
+        }
+
         [HttpGet("{id}")]
         public async Task<ApiResponse<BuildingReadDto>> GetBuildingByIdAsync(Guid id)
         {
@@ -76,7 +83,8 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(new List<string> { "Failed to activate building" });
-        }        [HttpGet("page")]
+        }        
+        [HttpGet("page")]
         public async Task<ApiResponse<BuildingListResponse>> GetByPagination([FromQuery] GetBuildingByPaginationParam param)
         {
             var result = await _buildingSvc.GetBuildingsByPaginationAsync(param.Pagination, param.Filter, param.Order);
@@ -99,6 +107,13 @@ namespace MajorService.Controller
             {
                 return ApiResponse<BuildingReadDto>.ErrorResponse(new List<string> { ex.Message });
             }
+        }
+
+        [HttpGet("byLocation/{locationId}")]
+        public async Task<ApiResponse<List<BuildingReadDto>>> GetBuildingsByLocationIdAsync(Guid locationId)
+        {
+            var buildings = await _buildingSvc.GetBuildingsByLocationIdAsync(locationId);
+            return ApiResponse<List<BuildingReadDto>>.SuccessResponse(buildings);
         }
     }
 }

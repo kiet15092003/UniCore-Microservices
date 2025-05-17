@@ -47,9 +47,7 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
             room.IsActive = true;
             _context.Rooms.Update(room);
             return await _context.SaveChangesAsync() > 0;
-        }
-
-        private IQueryable<Room> ApplyFilters(IQueryable<Room> query, RoomListFilterParams filterParams)
+        }        private IQueryable<Room> ApplyFilters(IQueryable<Room> query, RoomListFilterParams filterParams)
         {
             if (!string.IsNullOrEmpty(filterParams.Name))
             {
@@ -61,6 +59,11 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
                 query = query.Where(r => r.FloorId == filterParams.FloorId.Value);
             }
             
+            if (filterParams.BuildingId.HasValue)
+            {
+                query = query.Where(r => r.Floor!.BuildingId == filterParams.BuildingId.Value);
+            }
+            
             if (filterParams.LocationId.HasValue)
             {
                 query = query.Where(r => r.Floor!.Building!.LocationId == filterParams.LocationId.Value);
@@ -69,6 +72,11 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
             if (filterParams.IsActive.HasValue)
             {
                 query = query.Where(r => r.IsActive == filterParams.IsActive.Value);
+            }
+            
+            if (filterParams.AvailableSeats.HasValue)
+            {
+                query = query.Where(r => r.AvailableSeats >= filterParams.AvailableSeats.Value);
             }
 
             return query;
@@ -88,7 +96,8 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
             }
 
             return query;
-        }        public async Task<(List<Room> Data, int Count)> GetRoomsByPaginationAsync(
+        }        
+        public async Task<(List<Room> Data, int Count)> GetRoomsByPaginationAsync(
             Pagination pagination, 
             RoomListFilterParams filter, 
             Order? order)
@@ -110,6 +119,13 @@ namespace MajorService.DataAccess.Repositories.RoomRepo
                 .ToListAsync();
 
             return (data, count);
+        }
+
+        public async Task<Room> UpdateRoomAsync(Room room)
+        {
+            _context.Rooms.Update(room);
+            await _context.SaveChangesAsync();
+            return room;
         }
     }
 }

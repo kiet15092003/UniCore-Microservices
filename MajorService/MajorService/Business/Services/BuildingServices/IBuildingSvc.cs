@@ -17,5 +17,6 @@ namespace MajorService.Business.Services.BuildingServices
         Task<bool> DeactivateBuildingAsync(DeactivateDto request);
         Task<bool> ActivateBuildingAsync(ActivateDto request);
         Task<BuildingListResponse> GetBuildingsByPaginationAsync(Pagination pagination, BuildingListFilterParams filter, Order? order);
+        Task<List<BuildingReadDto>> GetBuildingsByLocationIdAsync(Guid locationId);
     }
 }

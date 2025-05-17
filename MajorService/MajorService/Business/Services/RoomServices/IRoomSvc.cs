@@ -16,6 +16,7 @@ namespace MajorService.Business.Services.RoomServices
         Task<RoomReadDto> CreateNewRoomAsync(CreateNewRoomDto request);
         Task<bool> DeactivateRoomAsync(DeactivateDto request);
         Task<bool> ActivateRoomAsync(ActivateDto request);
+        Task<RoomReadDto> UpdateRoomAsync(UpdateRoomDto request);
         Task<RoomListResponse> GetRoomsByPaginationAsync(
             Pagination pagination, 
             RoomListFilterParams filter, 

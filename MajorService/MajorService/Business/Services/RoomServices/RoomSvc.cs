@@ -97,5 +97,29 @@ namespace MajorService.Business.Services.RoomServices
                 PageSize = pagination.ItemsPerpage
             };
         }
+
+        public async Task<RoomReadDto> UpdateRoomAsync(UpdateRoomDto request)
+        {
+            var room = await _roomRepo.GetRoomByIdAsync(request.Id);
+            if (room == null)
+            {
+                throw new KeyNotFoundException($"Room with ID {request.Id} not found");
+            }
+
+            // Update room properties
+            if (!string.IsNullOrEmpty(request.Name))
+            {
+                room.Name = request.Name;
+            }
+
+            if (request.AvailableSeats.HasValue)
+            {
+                room.AvailableSeats = request.AvailableSeats.Value;
+            }
+
+            await _roomRepo.UpdateRoomAsync(room);
+            
+            return _mapper.Map<RoomReadDto>(room);
+        }
     }
 }

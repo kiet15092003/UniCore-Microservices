@@ -8,6 +8,7 @@ using MajorService.Utils.Filter;
 using MajorService.Utils.Pagination;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MajorService.Business.Services.BuildingServices
@@ -95,6 +96,13 @@ namespace MajorService.Business.Services.BuildingServices
             }
             
             return _mapper.Map<BuildingReadDto>(existingBuilding);
+        }
+
+        public async Task<List<BuildingReadDto>> GetBuildingsByLocationIdAsync(Guid locationId)
+        {
+            var buildings = await _buildingRepo.GetAllBuildingsAsync();
+            var filteredBuildings = buildings.Where(b => b.LocationId == locationId).ToList();
+            return _mapper.Map<List<BuildingReadDto>>(filteredBuildings);
         }
     }
 }

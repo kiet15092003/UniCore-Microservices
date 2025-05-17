@@ -69,7 +69,8 @@ namespace MajorService.Business.Services.FloorServices
         {
             var floors = await _floorRepo.GetAllFloorsAsync();
             return _mapper.Map<List<FloorReadDto>>(floors);
-        }        public async Task<FloorReadDto> GetFloorByIdAsync(Guid id)
+        }        
+        public async Task<FloorReadDto> GetFloorByIdAsync(Guid id)
         {
             var floor = await _floorRepo.GetFloorByIdAsync(id);
             if (floor == null)
@@ -108,6 +109,23 @@ namespace MajorService.Business.Services.FloorServices
                 PageIndex = pagination.PageNumber,
                 PageSize = pagination.ItemsPerpage
             };
+        }
+
+        public async Task<List<FloorReadDto>> GetFloorsByLocationIdAsync(Guid locationId)
+        {
+            var floors = await _floorRepo.GetAllFloorsAsync();
+            var filteredFloors = new List<Floor>();
+            
+            foreach (var floor in floors)
+            {
+                var building = await _buildingRepo.GetBuildingByIdAsync(floor.BuildingId);
+                if (building.LocationId == locationId)
+                {
+                    filteredFloors.Add(floor);
+                }
+            }
+            
+            return _mapper.Map<List<FloorReadDto>>(filteredFloors);
         }
     }
 }

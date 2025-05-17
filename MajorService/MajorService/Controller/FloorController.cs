@@ -30,6 +30,13 @@ namespace MajorService.Controller
             return ApiResponse<List<FloorReadDto>>.SuccessResponse(floors);
         }
 
+        [HttpGet("all")]
+        public async Task<ApiResponse<List<FloorReadDto>>> GetAllFloorsWithoutPaginationAsync()
+        {
+            var floors = await _floorSvc.GetAllFloorsAsync();
+            return ApiResponse<List<FloorReadDto>>.SuccessResponse(floors);
+        }
+
         [HttpGet("{id}")]
         public async Task<ApiResponse<FloorReadDto>> GetFloorByIdAsync(Guid id)
         {
@@ -77,7 +84,8 @@ namespace MajorService.Controller
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(new List<string> { "Failed to activate floor" });
-        }        [HttpGet("page")]
+        }        
+        [HttpGet("page")]
         public async Task<ApiResponse<FloorListResponse>> GetByPagination([FromQuery] GetFloorByPaginationParam param)
         {
             var result = await _floorSvc.GetFloorsByPaginationAsync(param.Pagination, param.Filter, param.Order);
@@ -96,6 +104,13 @@ namespace MajorService.Controller
             {
                 return ApiResponse<FloorReadDto>.ErrorResponse(new List<string> { ex.Message });
             }
+        }
+
+        [HttpGet("byLocation/{locationId}")]
+        public async Task<ApiResponse<List<FloorReadDto>>> GetFloorsByLocationIdAsync(Guid locationId)
+        {
+            var floors = await _floorSvc.GetFloorsByLocationIdAsync(locationId);
+            return ApiResponse<List<FloorReadDto>>.SuccessResponse(floors);
         }
     }
 }
