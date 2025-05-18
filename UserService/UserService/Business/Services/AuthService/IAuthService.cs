@@ -9,6 +9,5 @@ namespace UserService.Business.Services.AuthService
         Task<IActionResult> RegisterTrainingManagerAsync(RegisterTrainingManagerDto registerTrainingManagerDto);
         Task<string> LoginAsync(LoginDto model);
         Task<List<UserReadDto>> GetAllUsersAsync();
-        Task<IActionResult> RegisterStudentsFromExcelAsync(RegisterStudentByExcelDto registerStudentByExcelDto);
     }
 }

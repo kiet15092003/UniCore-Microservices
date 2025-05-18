@@ -58,10 +58,8 @@ namespace UserService.DataAccess.Repositories.StudentRepo
 
                 foreach (var (user, student) in userStudentPairs)
                 {
-                    _logger.LogInformation("-----------------------------------48 {user}", JsonSerializer.Serialize(user));
                     // Create user
                     var result = await _userManager.CreateAsync(user, $"Student@{user.Email.Split('@')[0]}");
-                    _logger.LogInformation("-----------------------------------49 {result}", JsonSerializer.Serialize(result));
                     if (!result.Succeeded)
                     {
                         throw new Exception($"Failed to create user {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
@@ -71,22 +69,22 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                     await _userManager.AddToRoleAsync(user, "Student");
 
                     // Create email account
-                    try
-                    {
-                        var success = await _smtpClient.CreateEmailAccountAsync(
-                            user.Email,
-                            $"Student@{user.Email.Split('@')[0]}"
-                        );
+                    //try
+                    //{
+                    //    var success = await _smtpClient.CreateEmailAccountAsync(
+                    //        user.Email,
+                    //        $"Student@{user.Email.Split('@')[0]}"
+                    //    );
 
-                        if (!success)
-                        {
-                            throw new Exception($"Failed to create email account for {user.Email}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"Error creating email account: {ex.Message}");
-                    }
+                    //    if (!success)
+                    //    {
+                    //        throw new Exception($"Failed to create email account for {user.Email}");
+                    //    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    throw new Exception($"Error creating email account: {ex.Message}");
+                    //}
 
                     // Set ApplicationUserId for student
                     student.ApplicationUserId = user.Id;

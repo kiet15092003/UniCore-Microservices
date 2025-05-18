@@ -1,4 +1,4 @@
-﻿using UserService.CommunicationTypes.KafkaService.KafkaProducer;
+﻿using UserService.CommunicationTypes.KafkaService.KafkaConsumer.Services;
 
 namespace UserService.CommunicationTypes
 {
@@ -6,7 +6,7 @@ namespace UserService.CommunicationTypes
     {
         public static void AddCommunicationTypes(this IServiceCollection services)
         {
-            services.AddScoped<IKafkaProducerService, KafkaProducerService>();
+           services.AddScoped<IKafkaConsumerFunction, KafkaConsumerFunction>();
         }
     }
 }

@@ -5,6 +5,8 @@ using ClosedXML.Excel;
 using UserService.Business.Dtos.Student;
 using UserService.CommunicationTypes.Http.HttpClient;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
+using UserService.CommunicationTypes.KafkaService.KafkaProducer;
+using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 using UserService.DataAccess.Repositories.StudentRepo;
 using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
@@ -19,6 +21,7 @@ namespace UserService.Business.Services.StudentService
         private readonly SmtpClientService _smtpClient;
         private readonly GrpcMajorClientService _grpcMajorClient;
         private readonly IMapper _mapper;
+        private readonly IKafkaProducerService _kafkaProducer;
 
 
         public StudentService(
@@ -26,13 +29,15 @@ namespace UserService.Business.Services.StudentService
             ILogger<StudentService> logger,
             SmtpClientService smtpClient,
             GrpcMajorClientService grpcMajorClient,
-            IMapper mapper)
+            IMapper mapper,
+            IKafkaProducerService kafkaProducer)
         {
             _studentRepository = studentRepository;
             _logger = logger;
             _smtpClient = smtpClient;
             _grpcMajorClient = grpcMajorClient;
             _mapper = mapper;
+            _kafkaProducer = kafkaProducer;
         }
 
         public async Task<StudentListResponse> GetAllStudentsAsync(Pagination pagination, StudentListFilterParams filter, Order? order)
@@ -188,7 +193,7 @@ namespace UserService.Business.Services.StudentService
                             try
                             {
                                 var studentCode = worksheet.Cell(row, headers["StudentCode"]).Value.ToString();
-                                var email = $"{studentCode.ToLower()}@unicore.edu";
+                                var email = $"{studentCode.ToLower()}@unicore.edu.vn";
                                 var password = $"Student@{studentCode}";
                                 var firstName = worksheet.Cell(row, headers["FirstName"]).Value.ToString();
                                 var lastName = worksheet.Cell(row, headers["LastName"]).Value.ToString();
@@ -242,6 +247,22 @@ namespace UserService.Business.Services.StudentService
                 {
                     var (createdUsers, createdStudents) = await _studentRepository.AddStudentsWithUsersAsync(userStudentPairs);
                     _logger.LogInformation("Successfully created {Count} students", createdStudents.Count);
+                      // Publish Kafka event for user import
+                    var userImportedEvent = new UserImportedEventDTO
+                    {
+                        Data = new UserImportedEventData
+                        {
+                            Users = createdUsers.Select(user => new UserImportedEventDataSingleData
+                            {
+                                UserEmail = user.Email,
+                                Password = $"Student@{user.UserName.Split('@')[0]}", // Using the username format from earlier logic
+                                PhoneNumber = user.PhoneNumber
+                            }).ToList()
+                        }
+                    };
+                    
+                    await _kafkaProducer.PublishMessageAsync("UserImportedEvent", userImportedEvent);
+                    
                     return new OkObjectResult(new { Results = results });
                 }
                 catch (Exception ex)
@@ -257,5 +278,4 @@ namespace UserService.Business.Services.StudentService
             }
         }
     }
-}            
-       
+}
