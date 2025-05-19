@@ -109,18 +109,18 @@ public class KafkaConsumerService : BackgroundService
             {
                 var kafkaConsumerFunction = scope.ServiceProvider.GetRequiredService<IKafkaConsumerFunction>();
                 switch (eventData.EventType)
-                {
-                    //case "UserCreatedEvent":
-                    //    var UserCreatedData = JsonSerializer.Deserialize<UserImportedEventData>(eventData.Data.ToString());
-                    //    if (UserCreatedData != null)
-                    //        await kafkaConsumerFunction.CreateUser(UserCreatedData);
-                    //    break;
-
+                {                    
                     case "UserImportedEvent":
-                        var UserImportedData = JsonSerializer.Deserialize<UserImportedEventData>(eventData.Data.ToString());
-                        //if (UserCreatedData != null)
-                        //    await kafkaConsumerFunction.CreateUser(UserCreatedData);
-                        _logger.LogInformation("UserImportedEvent received, data:", UserImportedData);
+                        var userImportedDataJson = eventData.Data?.ToString();
+                        if (!string.IsNullOrEmpty(userImportedDataJson))
+                        {
+                            var userImportedData = JsonSerializer.Deserialize<UserImportedEventData>(userImportedDataJson);
+                            if (userImportedData != null)
+                            {
+                                var result = await kafkaConsumerFunction.CreateEmails(userImportedData);
+                                _logger.LogInformation($"UserImportedEvent processing result: {(result ? "Success" : "Failed")}. Event contained {userImportedData.Users?.Count ?? 0} users");
+                            }
+                        }
                         break;
                     default:
                         _logger.LogWarning($"⚠️ Unknown event type \"{eventData.EventType}\", skipping processing.");

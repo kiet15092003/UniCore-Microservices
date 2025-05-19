@@ -8,13 +8,14 @@ using UserService.CommunicationTypes.Grpc.GrpcClient;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 using UserService.DataAccess.Repositories.StudentRepo;
+using UserService.DataAccess.Repositories.BatchRepo;
 using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
 using AutoMapper;
 using System.Text.Json;
+using UserService.Business.Dtos.Auth;
 namespace UserService.Business.Services.StudentService
-{
-    public class StudentService : IStudentService
+{    public class StudentService : IStudentService
     {
         private readonly IStudentRepo _studentRepository;
         private readonly ILogger<StudentService> _logger;
@@ -22,7 +23,7 @@ namespace UserService.Business.Services.StudentService
         private readonly GrpcMajorClientService _grpcMajorClient;
         private readonly IMapper _mapper;
         private readonly IKafkaProducerService _kafkaProducer;
-
+        private readonly IBatchRepo _batchRepository;
 
         public StudentService(
             IStudentRepo studentRepository,
@@ -30,7 +31,8 @@ namespace UserService.Business.Services.StudentService
             SmtpClientService smtpClient,
             GrpcMajorClientService grpcMajorClient,
             IMapper mapper,
-            IKafkaProducerService kafkaProducer)
+            IKafkaProducerService kafkaProducer,
+            IBatchRepo batchRepository)
         {
             _studentRepository = studentRepository;
             _logger = logger;
@@ -38,6 +40,7 @@ namespace UserService.Business.Services.StudentService
             _grpcMajorClient = grpcMajorClient;
             _mapper = mapper;
             _kafkaProducer = kafkaProducer;
+            _batchRepository = batchRepository;
         }
 
         public async Task<StudentListResponse> GetAllStudentsAsync(Pagination pagination, StudentListFilterParams filter, Order? order)
@@ -132,11 +135,38 @@ namespace UserService.Business.Services.StudentService
 
         public async Task<IActionResult> CreateStudentByExcelAsync(CreateStudentByExcelDto createStudentByExcelDto)
         {
-            try
+            MajorResponse major = await _grpcMajorClient.GetMajorByIdAsync(createStudentByExcelDto.MajorId.ToString());
+
+            if (!major.Success)
             {
+                throw new KeyNotFoundException("Major not found");
+            }
+
+            try
+            {                
                 var file = createStudentByExcelDto.ExcelFile;
                 var batchId = createStudentByExcelDto.BatchId;
                 var majorId = createStudentByExcelDto.MajorId;
+
+                // Get batch to extract StartYear
+                var batch = await _batchRepository.GetByIdAsync(batchId);
+                if (batch == null)
+                {
+                    return new BadRequestObjectResult("Batch not found");
+                }
+
+                // Get major code from the response
+                string majorCode = major.Data.Code;
+                if (string.IsNullOrEmpty(majorCode) || majorCode.Length < 3)
+                {
+                    return new BadRequestObjectResult("Invalid major code");
+                }
+
+                // Extract the first 3 digits of the major code
+                string majorPrefix = majorCode.Substring(0, 3);
+
+                // Extract the last 2 digits of the batch year
+                string batchSuffix = (batch.StartYear % 100).ToString("00");
 
                 if (file == null || file.Length == 0)
                 {
@@ -166,8 +196,8 @@ namespace UserService.Business.Services.StudentService
                             { "LastName", 0 },
                             { "Dob", 0 },
                             { "PersonId", 0 },
-                            { "PhoneNumber", 0 },
-                            { "StudentCode", 0 }
+                            { "PhoneNumber", 0 }
+                            // StudentCode is removed as it will be generated
                         };
 
                         // Get header positions
@@ -192,14 +222,17 @@ namespace UserService.Business.Services.StudentService
                         {
                             try
                             {
-                                var studentCode = worksheet.Cell(row, headers["StudentCode"]).Value.ToString();
-                                var email = $"{studentCode.ToLower()}@unicore.edu.vn";
-                                var password = $"Student@{studentCode}";
+                                // Generate student code based on formula:
+                                // 3 first digits of major code + 2 last digits of batch year + 4 digits for row order
+                                string orderNumber = (row - 1).ToString("0000"); // Convert row index to 4-digit format (0001, 0002, etc.)
+                                string studentCode = $"{majorPrefix}{batchSuffix}{orderNumber}";
+                                
                                 var firstName = worksheet.Cell(row, headers["FirstName"]).Value.ToString();
                                 var lastName = worksheet.Cell(row, headers["LastName"]).Value.ToString();
-                                var dob = DateTime.Parse(worksheet.Cell(row, headers["Dob"]).Value.ToString());
-                                var personId = worksheet.Cell(row, headers["PersonId"]).Value.ToString();
-                                var phoneNumber = worksheet.Cell(row, headers["PhoneNumber"]).Value.ToString();
+                                var dob = DateTime.Parse(worksheet.Cell(row, headers["Dob"]).Value.ToString());                                var personId = worksheet.Cell(row, headers["PersonId"]).Value.ToString();
+                                var phoneNumber = worksheet.Cell(row, headers["PhoneNumber"]).Value.ToString();                                var email = $"{studentCode.ToLower()}@unicore.edu.vn";
+
+                                // Create ApplicationUser
 
                                 // Create ApplicationUser
                                 var user = new ApplicationUser
@@ -236,16 +269,22 @@ namespace UserService.Business.Services.StudentService
                             }
                         }
                     }
-                }
-
-                if (!userStudentPairs.Any())
+                }                if (!userStudentPairs.Any())
                 {
                     return new BadRequestObjectResult("No valid students found in the file");
                 }
 
+                // Generate and store passwords for each user
+                var userPasswords = new Dictionary<string, string>();
+                foreach (var (user, _) in userStudentPairs)
+                {
+                    // Store the passwords based on user email for later use
+                    userPasswords[user.Email] = Utils.PasswordGenerator.GenerateSecurePassword();
+                }
+
                 try
                 {
-                    var (createdUsers, createdStudents) = await _studentRepository.AddStudentsWithUsersAsync(userStudentPairs);
+                    var (createdUsers, createdStudents) = await _studentRepository.AddStudentsWithUsersAsync(userStudentPairs, userPasswords);
                     _logger.LogInformation("Successfully created {Count} students", createdStudents.Count);
                       // Publish Kafka event for user import
                     var userImportedEvent = new UserImportedEventDTO
@@ -254,9 +293,11 @@ namespace UserService.Business.Services.StudentService
                         {
                             Users = createdUsers.Select(user => new UserImportedEventDataSingleData
                             {
-                                UserEmail = user.Email,
-                                Password = $"Student@{user.UserName.Split('@')[0]}", // Using the username format from earlier logic
-                                PhoneNumber = user.PhoneNumber
+                                UserEmail = user.Email ?? string.Empty,
+                                Password = user.Email != null && userPasswords.ContainsKey(user.Email)
+                                    ? userPasswords[user.Email]
+                                    : string.Empty,
+                                PhoneNumber = user.PhoneNumber ?? string.Empty
                             }).ToList()
                         }
                     };

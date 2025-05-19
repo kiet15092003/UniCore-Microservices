@@ -57,7 +57,8 @@ namespace UserService.DataAccess
                     LastName = "User",
                     PersonId = "ADMIN001", // Adding required PersonId
                     Dob = new DateTime(1990, 1, 1), // Default date of birth    
-                    Status = 1 // Active status
+                    Status = 1, // Active status,
+                    PhoneNumber = "1234567890" // Default phone number
                 };
                 
                 var result = await userManager.CreateAsync(admin, "Admin123!");
@@ -74,35 +75,35 @@ namespace UserService.DataAccess
             }
             
             // Training Manager account
-            var managerEmail = "manager@example.com";
-            var managerUser = await userManager.FindByEmailAsync(managerEmail);
+            //var managerEmail = "manager@example.com";
+            //var managerUser = await userManager.FindByEmailAsync(managerEmail);
             
-            if (managerUser == null)
-            {
-                var manager = new ApplicationUser
-                {
-                    UserName = managerEmail,
-                    Email = managerEmail,
-                    EmailConfirmed = true,
-                    FirstName = "Training",
-                    LastName = "Manager",
-                    PersonId = "TMGR001", // Adding required PersonId
-                    Dob = new DateTime(1985, 1, 1), // Default date of birth
-                    Status = 1 // Active status
-                };
+            //if (managerUser == null)
+            //{
+            //    var manager = new ApplicationUser
+            //    {
+            //        UserName = managerEmail,
+            //        Email = managerEmail,
+            //        EmailConfirmed = true,
+            //        FirstName = "Training",
+            //        LastName = "Manager",
+            //        PersonId = "TMGR001", // Adding required PersonId
+            //        Dob = new DateTime(1985, 1, 1), // Default date of birth
+            //        Status = 1 // Active status
+            //    };
                 
-                var result = await userManager.CreateAsync(manager, "Manager123!");
+            //    var result = await userManager.CreateAsync(manager, "Manager123!");
                 
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(manager, "TrainingManager");
-                    Console.WriteLine("Seeded training manager account");
-                }
-                else
-                {
-                    Console.WriteLine($"Failed to create training manager: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                }
-            }
+            //    if (result.Succeeded)
+            //    {
+            //        await userManager.AddToRoleAsync(manager, "TrainingManager");
+            //        Console.WriteLine("Seeded training manager account");
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine($"Failed to create training manager: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            //    }
+            //}
         }
     }
 }

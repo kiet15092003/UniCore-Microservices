@@ -45,21 +45,29 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                 throw new KeyNotFoundException("Student not found");
             }
             return result;
-        }
-
-        public async Task<(List<ApplicationUser> Users, List<Student> Students)> AddStudentsWithUsersAsync(
-            List<(ApplicationUser User, Student Student)> userStudentPairs)
+        }        public async Task<(List<ApplicationUser> Users, List<Student> Students)> AddStudentsWithUsersAsync(
+            List<(ApplicationUser User, Student Student)> userStudentPairs, 
+            Dictionary<string, string>? passwords = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var createdUsers = new List<ApplicationUser>();
-                var createdStudents = new List<Student>();
-
-                foreach (var (user, student) in userStudentPairs)
+                var createdStudents = new List<Student>();                foreach (var (user, student) in userStudentPairs)
                 {
+                    // Get password from dictionary or generate a default one
+                    string password;
+                    if (passwords != null && user.Email != null && passwords.ContainsKey(user.Email))
+                    {
+                        password = passwords[user.Email];
+                    }
+                    else
+                    {
+                        password = Utils.PasswordGenerator.GenerateSecurePassword();
+                    }
+
                     // Create user
-                    var result = await _userManager.CreateAsync(user, $"Student@{user.Email.Split('@')[0]}");
+                    var result = await _userManager.CreateAsync(user, password);
                     if (!result.Succeeded)
                     {
                         throw new Exception($"Failed to create user {user.Email}: {string.Join(", ", result.Errors.Select(e => e.Description))}");

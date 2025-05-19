@@ -8,24 +8,14 @@ namespace UserService.Controllers
 {
     [Route("api/u/[controller]")]
     [ApiController]
-    //[Authorize(Roles = "Admin")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IConfiguration _config;
         public AuthController(
-            IAuthService authService,
-            IConfiguration config)
+            IAuthService authService
+            )
         {
             _authService = authService;
-            _config = config;
-        }
-
-        [HttpPost("students/register")]
-        public async Task<ApiResponse<IActionResult>> RegisterStudent([FromBody] RegisterStudentDto model)
-        {
-            var result = await _authService.RegisterStudentAsync(model);
-            return ApiResponse<IActionResult>.SuccessResponse(result);
         }
 
         [HttpPost("login")]

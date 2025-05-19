@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -9,17 +8,8 @@ using System.Text;
 using UserService.Business.Dtos.Auth;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer;
-using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 using UserService.DataAccess.Repositories.TrainingManagerRepo;
-using UserService.DataAccess.Repositories.AuthRepo;
-using UserService.DataAccess.Repositories.UserRepo;
-using UserService.Entities;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
-using ClosedXML.Excel;
 using UserService.CommunicationTypes.Http.HttpClient;
-using System.Net.Http;
-using Microsoft.Extensions.Logging;
 
 namespace UserService.Business.Services.AuthService
 {
@@ -27,149 +17,13 @@ namespace UserService.Business.Services.AuthService
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
-        private readonly IMapper _mapper;
-        private readonly IKafkaProducerService _kafkaProducerService;
-        private readonly ITrainingManagerRepo _trainingManagerRepo;
-        private readonly GrpcMajorClientService _grpcClient;
-        private readonly GrpcBatchClientService _grpcBatchClient;    
-        private readonly ILogger<AuthService> _logger;
-        private readonly SmtpClientService _smtpClient;
         public AuthService(
             UserManager<ApplicationUser> userManager,
-            IConfiguration configuration,
-            IMapper mapper,
-            IKafkaProducerService kafkaProducerService,
-            ITrainingManagerRepo trainingManagerRepo,
-            GrpcMajorClientService grpcClient,
-            GrpcBatchClientService grpcBatchClient,
-            ILogger<AuthService> logger,
-            SmtpClientService smtpClient)
+            IConfiguration configuration)
 
         {
             _userManager = userManager;
             _configuration = configuration;
-            _mapper = mapper;
-            _kafkaProducerService = kafkaProducerService;
-            _trainingManagerRepo = trainingManagerRepo;
-            _grpcClient = grpcClient;
-            _grpcBatchClient = grpcBatchClient;
-            _logger = logger;
-            _smtpClient = smtpClient;
-        }
-
-        public async Task<IActionResult> RegisterStudentAsync(RegisterStudentDto registerStudentDto)
-        {
-            
-            var userExists = await _userManager.FindByEmailAsync(registerStudentDto.Email);
-            
-            if (userExists != null)
-                throw new KeyNotFoundException("User already exists.");
-            _logger.LogInformation("------------------63");
-
-            var newUser = new ApplicationUser
-            {
-                UserName = registerStudentDto.Email,
-                Email = registerStudentDto.Email,
-                FirstName = registerStudentDto.FirstName,
-                LastName = registerStudentDto.LastName,
-                Dob = registerStudentDto.Dob,
-                PersonId = registerStudentDto.PersonId,
-                PhoneNumber = registerStudentDto.PhoneNumber
-            };
-
-            var major = await _grpcClient.GetMajorByIdAsync(registerStudentDto.MajorId.ToString());
-
-            if (!major.Success)
-            {
-                throw new KeyNotFoundException("Major not found");
-            }
-
-            var batch = await _grpcBatchClient.GetBatchByIdAsync(registerStudentDto.BatchId.ToString());
-
-            if (!batch.Success)
-            {
-                throw new KeyNotFoundException("Batch not found");
-            }
-
-            var result = await _userManager.CreateAsync(newUser, registerStudentDto.Password);
-
-            if (!result.Succeeded)
-                throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
-
-            await _userManager.AddToRoleAsync(newUser, "Student");
-
-            // Create email account
-            // try
-            // {
-            //     var success = await _smtpClient.CreateEmailAccountAsync(
-            //         registerStudentDto.Email,
-            //         registerStudentDto.Password
-            //     );
-
-            //     if (!success)
-            //     {
-            //         _logger.LogError($"Failed to create email account for {registerStudentDto.Email}");
-            //     }            }
-            // catch (Exception ex)
-            // {
-            //     _logger.LogError(ex, "Error creating email account");
-            // }
-            
-            // Kafka send message
-            // var studentSendData = new StudentCreatedEventDTO
-            // {
-            //     Data = new StudentCreatedEventData
-            //     {
-            //         StudentCode = registerStudentDto.StudentCode,
-            //         ApplicationUserId = Guid.Parse(newUser.Id),
-            //         MajorId = registerStudentDto.MajorId,
-            //         BatchId = registerStudentDto.BatchId,
-            //     }
-            // };
-
-            // await _kafkaProducerService.PublishMessageAsync("StudentCreatedEvent", studentSendData);
-
-            Console.WriteLine($"--------Student Created");           
-
-            return new OkObjectResult("Student registered successfully.");
-        }
-
-        public async Task<IActionResult> RegisterTrainingManagerAsync(RegisterTrainingManagerDto registerTrainingManagerDto)
-        {
-            var userExists = await _userManager.FindByEmailAsync(registerTrainingManagerDto.Email);
-
-            if (userExists != null)
-                throw new KeyNotFoundException("User already exists.");
-
-            var newUser = new ApplicationUser
-            {
-                UserName = registerTrainingManagerDto.Email,
-                Email = registerTrainingManagerDto.Email,
-                FirstName = registerTrainingManagerDto.FirstName,
-                LastName = registerTrainingManagerDto.LastName,
-                Dob = registerTrainingManagerDto.Dob,
-                PersonId = registerTrainingManagerDto.PersonId,
-                PhoneNumber = registerTrainingManagerDto.PhoneNumber
-            };
-
-            var result = await _userManager.CreateAsync(newUser, registerTrainingManagerDto.Password);
-            if (!result.Succeeded)
-                throw new Exception(string.Join("; ", result.Errors.Select(e => e.Description)));
-
-            await _userManager.AddToRoleAsync(newUser, "TrainingManager");
-
-            var trainingManager = new TrainingManager
-            {
-                ApplicationUserId = newUser.Id,
-                ApplicationUser = newUser,
-                TrainingManagerCode = registerTrainingManagerDto.TrainingManagerCode
-            };
-
-            await _trainingManagerRepo.CreateTrainingManagerAsync(trainingManager);
-
-            Console.WriteLine($"--------TrainingManager Created: {trainingManager.Id} - {trainingManager.TrainingManagerCode}");
-
-            return new OkObjectResult("TrainingManager registered successfully.");
         }
 
         public async Task<string> LoginAsync(LoginDto model)
@@ -206,11 +60,6 @@ namespace UserService.Business.Services.AuthService
             );
 
             return token;
-        }
-        public async Task<List<UserReadDto>> GetAllUsersAsync()
-        {
-            var users = await _userManager.Users.ToListAsync();
-            return _mapper.Map<List<UserReadDto>>(users);
         }
     }
 }
