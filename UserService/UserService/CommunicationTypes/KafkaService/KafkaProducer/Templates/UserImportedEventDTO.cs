@@ -12,15 +12,13 @@ namespace UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates
     public class UserImportedEventData
     {
         public List<UserImportedEventDataSingleData> Users { get; set; }
-    }
-    
-    public class UserImportedEventDataSingleData
+    }    public class UserImportedEventDataSingleData
     {
         [Required]
-        public string UserEmail { get; set; }
+        public string UserEmail { get; set; } = string.Empty;
         [Required]
-        public string Password { get; set; }    
+        public string Password { get; set; } = string.Empty;    
         [Required]
-        public string PhoneNumber { get; set; } 
+        public string PrivateEmail { get; set; } = string.Empty; 
     }
 }

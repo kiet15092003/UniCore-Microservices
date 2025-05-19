@@ -7,6 +7,13 @@
     <UserSecretsId>dotnet-NotificationService-042b9df2-7cd9-49f0-bfb8-62c23e26063e</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services\**" />
+    <Content Remove="Services\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <None Remove="Services\**" />
+  </ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="14.0.0" />
 		<PackageReference Include="Confluent.Kafka" Version="2.8.0" />
@@ -33,8 +40,6 @@
 	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Services\" />
+    <PackageReference Include="Twilio" Version="7.11.1" />
   </ItemGroup>
 </Project>

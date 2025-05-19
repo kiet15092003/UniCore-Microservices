@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.Channels;
 using StudentService.CommunicationTypes.KafkaService.KafkaConsumer.Templates;
 using UserService.CommunicationTypes.Http.HttpClient;
+using NotificationService.Helpers.EmailService;
 
 namespace NotificationService
 {
@@ -9,12 +10,14 @@ namespace NotificationService
     {
         private readonly ILogger<Worker> _logger;
         private readonly SmtpClientService _smtpClientService;
+        private readonly SendEmailVerifyAccountService _emailVerifyService;
         private readonly Channel<UserImportedEventDataSingleData> _emailQueue;
 
-        public Worker(ILogger<Worker> logger, SmtpClientService smtpClientService)
+        public Worker(ILogger<Worker> logger, SmtpClientService smtpClientService, SendEmailVerifyAccountService emailVerifyService)
         {
             _logger = logger;
             _smtpClientService = smtpClientService;
+            _emailVerifyService = emailVerifyService;
             // Create unbounded channel for queuing email creation tasks
             _emailQueue = Channel.CreateUnbounded<UserImportedEventDataSingleData>(new UnboundedChannelOptions 
             { 
@@ -90,9 +93,7 @@ namespace NotificationService
             {
                 _logger.LogInformation("Email creation worker shutting down at: {time}", DateTimeOffset.Now);
             }
-        }
-
-        private async Task CreateEmailAsync(UserImportedEventDataSingleData user)
+        }        private async Task CreateEmailAsync(UserImportedEventDataSingleData user)
         {
             try
             {
@@ -103,6 +104,18 @@ namespace NotificationService
                 if (result)
                 {
                     _logger.LogInformation($"Successfully created email account for: {user.UserEmail}");
+                    
+                    // Send verification email to the user's private email address
+                    var emailSent = await _emailVerifyService.SendAccountVerificationEmailAsync(user);
+                    
+                    if (emailSent)
+                    {
+                        _logger.LogInformation($"Successfully sent verification email to {user.PrivateEmail} for user {user.UserEmail}");
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Failed to send verification email to {user.PrivateEmail} for user {user.UserEmail}");
+                    }
                 }
                 else
                 {

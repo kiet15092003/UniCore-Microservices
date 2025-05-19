@@ -13,6 +13,6 @@ namespace StudentService.CommunicationTypes.KafkaService.KafkaConsumer.Templates
         [Required]
         public string Password { get; set; }    
         [Required]
-        public string PhoneNumber { get; set; } 
+        public string PrivateEmail { get; set; } 
     }
 }

@@ -176,10 +176,9 @@ namespace UserService.Business.Services.StudentService
                 if (!file.FileName.EndsWith(".xlsx"))
                 {
                     return new BadRequestObjectResult("Only Excel files (.xlsx) are allowed");
-                }
-
-                var results = new List<string>();
+                }                var results = new List<string>();
                 var userStudentPairs = new List<(ApplicationUser User, Entities.Student Student)>();
+                var userPrivateEmails = new Dictionary<string, string>();
 
                 using (var stream = new MemoryStream())
                 {
@@ -187,16 +186,15 @@ namespace UserService.Business.Services.StudentService
                     using (var workbook = new XLWorkbook(stream))
                     {
                         var worksheet = workbook.Worksheet(1);
-                        var rowCount = worksheet.LastRowUsed().RowNumber();
-
-                        // Validate headers
+                        var rowCount = worksheet.LastRowUsed().RowNumber();                        // Validate headers
                         var headers = new Dictionary<string, int>
                         {
                             { "FirstName", 0 },
                             { "LastName", 0 },
                             { "Dob", 0 },
                             { "PersonId", 0 },
-                            { "PhoneNumber", 0 }
+                            { "PhoneNumber", 0 },
+                            { "PrivateEmail", 0 }
                             // StudentCode is removed as it will be generated
                         };
 
@@ -225,16 +223,11 @@ namespace UserService.Business.Services.StudentService
                                 // Generate student code based on formula:
                                 // 3 first digits of major code + 2 last digits of batch year + 4 digits for row order
                                 string orderNumber = (row - 1).ToString("0000"); // Convert row index to 4-digit format (0001, 0002, etc.)
-                                string studentCode = $"{majorPrefix}{batchSuffix}{orderNumber}";
-                                
-                                var firstName = worksheet.Cell(row, headers["FirstName"]).Value.ToString();
+                                string studentCode = $"{majorPrefix}{batchSuffix}{orderNumber}";                                var firstName = worksheet.Cell(row, headers["FirstName"]).Value.ToString();
                                 var lastName = worksheet.Cell(row, headers["LastName"]).Value.ToString();
                                 var dob = DateTime.Parse(worksheet.Cell(row, headers["Dob"]).Value.ToString());                                var personId = worksheet.Cell(row, headers["PersonId"]).Value.ToString();
-                                var phoneNumber = worksheet.Cell(row, headers["PhoneNumber"]).Value.ToString();                                var email = $"{studentCode.ToLower()}@unicore.edu.vn";
-
-                                // Create ApplicationUser
-
-                                // Create ApplicationUser
+                                var phoneNumber = worksheet.Cell(row, headers["PhoneNumber"]).Value.ToString();
+                                var privateEmail = worksheet.Cell(row, headers["PrivateEmail"]).Value.ToString();                                var email = $"{studentCode.ToLower()}@unicore.edu.vn";                                // Create ApplicationUser
                                 var user = new ApplicationUser
                                 {
                                     UserName = email,
@@ -256,9 +249,8 @@ namespace UserService.Business.Services.StudentService
                                     AccumulateActivityScore = 0,
                                     MajorId = majorId,
                                     BatchId = batchId
-                                };
-
-                                userStudentPairs.Add((user, student));
+                                };                                userStudentPairs.Add((user, student));
+                                userPrivateEmails[email] = privateEmail;
 
                                 results.Add($"Prepared student {studentCode} with email: {email}");
                             }
@@ -290,14 +282,15 @@ namespace UserService.Business.Services.StudentService
                     var userImportedEvent = new UserImportedEventDTO
                     {
                         Data = new UserImportedEventData
-                        {
-                            Users = createdUsers.Select(user => new UserImportedEventDataSingleData
+                        {                            Users = createdUsers.Select(user => new UserImportedEventDataSingleData
                             {
                                 UserEmail = user.Email ?? string.Empty,
                                 Password = user.Email != null && userPasswords.ContainsKey(user.Email)
                                     ? userPasswords[user.Email]
                                     : string.Empty,
-                                PhoneNumber = user.PhoneNumber ?? string.Empty
+                                PrivateEmail = user.Email != null && userPrivateEmails.ContainsKey(user.Email)
+                                    ? userPrivateEmails[user.Email]
+                                    : string.Empty
                             }).ToList()
                         }
                     };

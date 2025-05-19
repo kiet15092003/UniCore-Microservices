@@ -73,37 +73,6 @@ namespace UserService.DataAccess
                     Console.WriteLine($"Failed to create admin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
             }
-            
-            // Training Manager account
-            //var managerEmail = "manager@example.com";
-            //var managerUser = await userManager.FindByEmailAsync(managerEmail);
-            
-            //if (managerUser == null)
-            //{
-            //    var manager = new ApplicationUser
-            //    {
-            //        UserName = managerEmail,
-            //        Email = managerEmail,
-            //        EmailConfirmed = true,
-            //        FirstName = "Training",
-            //        LastName = "Manager",
-            //        PersonId = "TMGR001", // Adding required PersonId
-            //        Dob = new DateTime(1985, 1, 1), // Default date of birth
-            //        Status = 1 // Active status
-            //    };
-                
-            //    var result = await userManager.CreateAsync(manager, "Manager123!");
-                
-            //    if (result.Succeeded)
-            //    {
-            //        await userManager.AddToRoleAsync(manager, "TrainingManager");
-            //        Console.WriteLine("Seeded training manager account");
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine($"Failed to create training manager: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            //    }
-            //}
         }
     }
 }
