@@ -24,5 +24,13 @@ namespace UserService.Controllers
             var result = await _authService.LoginAsync(model);
             return ApiResponse<string>.SuccessResponse(result);
         }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<ApiResponse<bool>> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            var result = await _authService.ChangePasswordAsync(model);
+            return ApiResponse<bool>.SuccessResponse(result, "Password changed successfully");
+        }
     }
 }
