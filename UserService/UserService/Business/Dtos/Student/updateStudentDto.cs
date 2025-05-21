@@ -1,32 +1,27 @@
 using System.ComponentModel.DataAnnotations;
-
+using UserService.Business.Dtos.Guardian;
+using UserService.Business.Dtos.Address;
 namespace UserService.Business.Dtos.Student
 {
     public class UpdateStudentDto
     { 
-        [Required]
-        public int AccumulateCredits { get; set; }
-        [Required]
-        public double AccumulateScore { get; set; }
-        [Required]
-        public int AccumulateActivityScore { get; set; }
-        [Required]
-        public Guid MajorId { get; set; }
-        [Required]
-        public Guid BatchId { get; set; }
-        [Required]
-        public string FirstName { get; set; }
-        [Required]
-        public string LastName { get; set; }
-        [Required]
-        public string PersonId { get; set; }
-        [Required]
-        public DateTime Dob { get; set; }
-        [Required]
-        public string PhoneNumber { get; set; }
-        [Required]
-        public int Status { get; set; }
-       
+      
+        public int? AccumulateCredits { get; set; }
+   
+        public double? AccumulateScore { get; set; }
+     
+        public int? AccumulateActivityScore { get; set; }
+        public Guid? MajorId { get; set; }
+        public Guid? BatchId { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? PersonId { get; set; }
+        public DateTime? Dob { get; set; }
+        public string? PhoneNumber { get; set; }
+        public int? Status { get; set; }
+        public string? ImageUrl { get; set; }
+        public List<GuardianDto>? Guardians { get; set; }
+        public AddressDto? Address { get; set; }
     }
 
 }

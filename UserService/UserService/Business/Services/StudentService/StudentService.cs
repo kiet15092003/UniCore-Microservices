@@ -98,21 +98,76 @@ namespace UserService.Business.Services.StudentService
                 }
 
                 // Update student properties
-                existingStudent.AccumulateCredits = updateStudentDto.AccumulateCredits;
-                existingStudent.AccumulateScore = updateStudentDto.AccumulateScore;
-                existingStudent.AccumulateActivityScore = updateStudentDto.AccumulateActivityScore;
-                existingStudent.MajorId = updateStudentDto.MajorId;
-                existingStudent.BatchId = updateStudentDto.BatchId;
+                if (updateStudentDto.AccumulateCredits.HasValue)
+                {
+                    existingStudent.AccumulateCredits = updateStudentDto.AccumulateCredits.Value;
+                }
+                if (updateStudentDto.AccumulateScore.HasValue)
+                {
+                    existingStudent.AccumulateScore = updateStudentDto.AccumulateScore.Value;
+                }
+                if (updateStudentDto.AccumulateActivityScore.HasValue)
+                {
+                    existingStudent.AccumulateActivityScore = updateStudentDto.AccumulateActivityScore.Value;
+                }
+                if (updateStudentDto.MajorId.HasValue)
+                {
+                    existingStudent.MajorId = updateStudentDto.MajorId.Value;
+                }
+                if (updateStudentDto.BatchId.HasValue)
+                {
+                    existingStudent.BatchId = updateStudentDto.BatchId.Value;
+                }
 
                 // Update ApplicationUser properties if ApplicationUser exists
                 if (existingStudent.ApplicationUser != null)
                 {
-                    existingStudent.ApplicationUser.FirstName = updateStudentDto.FirstName;
-                    existingStudent.ApplicationUser.LastName = updateStudentDto.LastName;
-                    existingStudent.ApplicationUser.PersonId = updateStudentDto.PersonId;
-                    existingStudent.ApplicationUser.Dob = updateStudentDto.Dob;
-                    existingStudent.ApplicationUser.PhoneNumber = updateStudentDto.PhoneNumber;
-                    existingStudent.ApplicationUser.Status = updateStudentDto.Status;
+                    if (!string.IsNullOrEmpty(updateStudentDto.FirstName))
+                    {
+                        existingStudent.ApplicationUser.FirstName = updateStudentDto.FirstName;
+                    }
+                    if (!string.IsNullOrEmpty(updateStudentDto.LastName))
+                    {
+                        existingStudent.ApplicationUser.LastName = updateStudentDto.LastName;
+                    }
+                    if (!string.IsNullOrEmpty(updateStudentDto.PersonId))
+                    {
+                        existingStudent.ApplicationUser.PersonId = updateStudentDto.PersonId;
+                    }
+                    if (updateStudentDto.Dob.HasValue)
+                    {
+                        existingStudent.ApplicationUser.Dob = updateStudentDto.Dob.Value;
+                    }
+                    if (!string.IsNullOrEmpty(updateStudentDto.PhoneNumber))
+                    {
+                        existingStudent.ApplicationUser.PhoneNumber = updateStudentDto.PhoneNumber;
+                    }
+                    if (updateStudentDto.Status.HasValue)
+                    {
+                        existingStudent.ApplicationUser.Status = updateStudentDto.Status.Value;
+                    }
+                }
+
+                // Update guardians
+                if (updateStudentDto.Guardians != null && updateStudentDto.Guardians.Any())
+                {
+                    if (existingStudent.Guardians == null)
+                    {
+                        existingStudent.Guardians = new List<Guardian>();
+                    }
+                    else
+                    {
+                        existingStudent.Guardians.Clear();
+                    }
+                    
+                    // Map guardians from request body
+                    var guardians = _mapper.Map<List<Guardian>>(updateStudentDto.Guardians);
+                    existingStudent.Guardians = guardians;
+                }
+
+                if (updateStudentDto.Address != null)
+                {
+                    existingStudent.ApplicationUser.Address = _mapper.Map<Address>(updateStudentDto.Address);
                 }
 
                 var updatedStudent = await _studentRepository.UpdateAsync(existingStudent);

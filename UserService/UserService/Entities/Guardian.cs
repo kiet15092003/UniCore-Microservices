@@ -5,6 +5,7 @@
         public string Name { get; set; }
         public string PhoneNumber { get; set; }
         public string Relationship { get; set; }
-        public List<Student> Students { get; set; }
+        public Guid? StudentId { get; set; }
+        public Student Student { get; set; }
     }
 }

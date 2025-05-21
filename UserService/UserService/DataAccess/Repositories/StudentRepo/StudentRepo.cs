@@ -9,6 +9,9 @@ using UserService.Business.Dtos.Student;
 using System.Collections.Concurrent;
 using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
+using UserService.DataAccess.Repositories.GuardianRepo;
+using UserService.Business.Services.GuardianService;
+using UserService.Business.Dtos.Guardian;
 
 namespace UserService.DataAccess.Repositories.StudentRepo
 {
@@ -19,19 +22,25 @@ namespace UserService.DataAccess.Repositories.StudentRepo
         private readonly SmtpClientService _smtpClient;
         private readonly ILogger<StudentRepo> _logger;
         private readonly IMapper _mapper;
+        private readonly IGuardianRepo _guardianRepo;
+        private readonly IGuardianService _guardianService;
 
         public StudentRepo(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             ILogger<StudentRepo> logger,
             SmtpClientService smtpClient,
-            IMapper mapper)
+            IMapper mapper,
+            IGuardianRepo guardianRepo,
+            IGuardianService guardianService)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
             _smtpClient = smtpClient;
             _mapper = mapper;
+            _guardianRepo = guardianRepo;
+            _guardianService = guardianService;
         }
 
 
@@ -231,11 +240,15 @@ namespace UserService.DataAccess.Repositories.StudentRepo
 
         public async Task<Student> UpdateAsync(Student student)
         {
+            _logger.LogInformation("-----------------------------------243 {student}", JsonSerializer.Serialize(student.ApplicationUser.Address));
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var existingStudent = await _context.Students
                     .Include(s => s.ApplicationUser)
+                        .ThenInclude(u => u.Address)
+                    .Include(s => s.Guardians)
                     .FirstOrDefaultAsync(s => s.Id == student.Id);
 
                 if (existingStudent == null)
@@ -248,7 +261,13 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                 existingStudent.AccumulateActivityScore = student.AccumulateActivityScore;
                 existingStudent.MajorId = student.MajorId;
                 existingStudent.BatchId = student.BatchId;
-                existingStudent.GuardianId = student.GuardianId;
+
+                // Copy guardians from input student
+                if (student.Guardians != null)
+                {
+                    // Create a new list instead of direct assignment
+                    existingStudent.Guardians = new List<Guardian>(student.Guardians);
+                }
 
                 // Update associated user if needed
                 if (existingStudent.ApplicationUser != null && student.ApplicationUser != null)
@@ -257,6 +276,109 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                     existingStudent.ApplicationUser.LastName = student.ApplicationUser.LastName;
                     existingStudent.ApplicationUser.PhoneNumber = student.ApplicationUser.PhoneNumber;
                     existingStudent.ApplicationUser.Status = student.ApplicationUser.Status;
+                    existingStudent.ApplicationUser.ImageUrl = student.ApplicationUser.ImageUrl;
+                }
+
+    
+                // Update guardians
+                if (student.Guardians != null && student.Guardians.Any())
+                {
+                    // Create a temporary list to store new guardians
+                    var newGuardians = new List<Guardian>();
+
+                    // Process guardians
+                    foreach (var guardian in student.Guardians)
+                    {
+                        if (guardian.Id != Guid.Empty)
+                        {
+                            // Update existing guardian
+                            var existingGuardian = await _guardianRepo.GetGuardianByIdAsync(guardian.Id);
+                            if (existingGuardian != null)
+                            {
+                                existingGuardian.Name = guardian.Name;
+                                existingGuardian.PhoneNumber = guardian.PhoneNumber;
+                                existingGuardian.Relationship = guardian.Relationship;
+                                existingGuardian.StudentId = existingStudent.Id;
+                                await _guardianRepo.UpdateGuardianAsync(existingGuardian);
+                                newGuardians.Add(existingGuardian);
+                            }
+                        }
+                        else
+                        {
+                            // Create new guardian
+                            guardian.StudentId = existingStudent.Id;
+                            var newGuardian = await _guardianRepo.CreateGuardianAsync(guardian);
+                            newGuardians.Add(newGuardian);
+                        }
+                    }
+
+                    // Add all processed guardians to existingStudent
+                    existingStudent.Guardians.AddRange(newGuardians);
+                }
+
+                if (student.ApplicationUser.Address != null)
+                {
+                    if (existingStudent.ApplicationUser.Address == null)
+                    {
+                        // Tạo mới Address
+                        var newAddress = new Address
+                        {
+                            Country = student.ApplicationUser.Address.Country,
+                            City = student.ApplicationUser.Address.City,
+                            District = student.ApplicationUser.Address.District,
+                            Ward = student.ApplicationUser.Address.Ward,
+                            AddressDetail = student.ApplicationUser.Address.AddressDetail
+                        };
+                        
+                        // Thêm vào context để theo dõi
+                        _context.Addresses.Add(newAddress);
+                        
+                        // Lưu ngay để có Id
+                        await _context.SaveChangesAsync();
+                        
+                        // Cập nhật mối quan hệ trong ApplicationUser
+                        existingStudent.ApplicationUser.Address = newAddress;
+                        existingStudent.ApplicationUser.AddressId = newAddress.Id;
+                    }
+                    else
+                    {
+                        // Lấy Address từ context để đảm bảo nó được theo dõi
+                        var addressId = existingStudent.ApplicationUser.AddressId.Value;
+                        var existingAddress = await _context.Set<Address>().FindAsync(addressId);
+                        
+                        if (existingAddress != null)
+                        {
+                            // Cập nhật thuộc tính cho đối tượng được theo dõi
+                            existingAddress.Country = student.ApplicationUser.Address.Country;
+                            existingAddress.City = student.ApplicationUser.Address.City;
+                            existingAddress.District = student.ApplicationUser.Address.District;
+                            existingAddress.Ward = student.ApplicationUser.Address.Ward;
+                            existingAddress.AddressDetail = student.ApplicationUser.Address.AddressDetail;
+                            
+                            // Đánh dấu đã thay đổi
+                            _context.Entry(existingAddress).State = EntityState.Modified;
+                        }
+                        else
+                        {
+                            // Address không tồn tại trong DB mặc dù có ID
+                            // Tạo mới Address
+                            var newAddress = new Address
+                            {
+                                Country = student.ApplicationUser.Address.Country,
+                                City = student.ApplicationUser.Address.City,
+                                District = student.ApplicationUser.Address.District,
+                                Ward = student.ApplicationUser.Address.Ward,
+                                AddressDetail = student.ApplicationUser.Address.AddressDetail
+                            };
+                            
+                            _context.Addresses.Add(newAddress);
+                            await _context.SaveChangesAsync();
+                            
+                            // Cập nhật mối quan hệ
+                            existingStudent.ApplicationUser.Address = newAddress;
+                            existingStudent.ApplicationUser.AddressId = newAddress.Id;
+                        }
+                    }
                 }
 
                 _context.Students.Update(existingStudent);

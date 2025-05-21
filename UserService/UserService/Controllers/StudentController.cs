@@ -57,6 +57,7 @@ namespace UserService.Controllers
         {
             var students = await _studentService.GetAllStudentsAsync(pagination, filter, order);
             _logger.LogInformation("-----------------------------------51", JsonSerializer.Serialize(students));
+            
             return ApiResponse<StudentListResponse>.SuccessResponse(students);
         }
 

@@ -69,6 +69,22 @@ namespace UserService.DataAccess
                 .HasOne(a => a.Student)
                 .WithOne(s => s.ApplicationUser)
                 .HasForeignKey<Student>(s => s.ApplicationUserId);
+
+            modelBuilder.Entity<Guardian>()
+               .HasIndex(p => p.PhoneNumber)
+               .IsUnique();
+
+            modelBuilder.Entity<Student>()
+               .HasMany(s => s.Guardians)
+               .WithOne(g => g.Student)
+               .HasForeignKey(g => g.StudentId)
+               .IsRequired(false);
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.Address)
+                .WithOne(a => a.ApplicationUser)
+                .HasForeignKey<ApplicationUser>(u => u.AddressId)
+                .IsRequired(false); 
         }
     }
 }

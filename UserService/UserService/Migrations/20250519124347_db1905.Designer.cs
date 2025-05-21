@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.DataAccess;
 
@@ -11,9 +12,11 @@ using UserService.DataAccess;
 namespace UserService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250519124347_db1905")]
+    partial class db1905
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -101,9 +104,7 @@ namespace UserService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AddressId")
-                        .IsUnique()
-                        .HasFilter("[AddressId] IS NOT NULL");
+                    b.HasIndex("AddressId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -349,9 +350,6 @@ namespace UserService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("StudentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -362,8 +360,6 @@ namespace UserService.Migrations
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
-
-                    b.HasIndex("StudentId");
 
                     b.ToTable("Guardians");
                 });
@@ -396,6 +392,12 @@ namespace UserService.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("GuardianId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("GuardianId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("MajorId")
                         .HasColumnType("uniqueidentifier");
 
@@ -415,6 +417,10 @@ namespace UserService.Migrations
                         .IsUnique();
 
                     b.HasIndex("BatchId");
+
+                    b.HasIndex("GuardianId");
+
+                    b.HasIndex("GuardianId1");
 
                     b.ToTable("Students");
                 });
@@ -455,8 +461,8 @@ namespace UserService.Migrations
             modelBuilder.Entity("ApplicationUser", b =>
                 {
                     b.HasOne("UserService.Entities.Address", "Address")
-                        .WithOne("ApplicationUser")
-                        .HasForeignKey("ApplicationUser", "AddressId");
+                        .WithMany()
+                        .HasForeignKey("AddressId");
 
                     b.Navigation("Address");
                 });
@@ -512,15 +518,6 @@ namespace UserService.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("UserService.Entities.Guardian", b =>
-                {
-                    b.HasOne("UserService.Entities.Student", "Student")
-                        .WithMany("Guardians")
-                        .HasForeignKey("StudentId");
-
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("UserService.Entities.Student", b =>
                 {
                     b.HasOne("ApplicationUser", "ApplicationUser")
@@ -535,9 +532,19 @@ namespace UserService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("UserService.Entities.Guardian", "Guardian")
+                        .WithMany()
+                        .HasForeignKey("GuardianId");
+
+                    b.HasOne("UserService.Entities.Guardian", null)
+                        .WithMany("Students")
+                        .HasForeignKey("GuardianId1");
+
                     b.Navigation("ApplicationUser");
 
                     b.Navigation("Batch");
+
+                    b.Navigation("Guardian");
                 });
 
             modelBuilder.Entity("UserService.Entities.TrainingManager", b =>
@@ -556,20 +563,14 @@ namespace UserService.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("UserService.Entities.Address", b =>
-                {
-                    b.Navigation("ApplicationUser")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("UserService.Entities.Batch", b =>
                 {
                     b.Navigation("Students");
                 });
 
-            modelBuilder.Entity("UserService.Entities.Student", b =>
+            modelBuilder.Entity("UserService.Entities.Guardian", b =>
                 {
-                    b.Navigation("Guardians");
+                    b.Navigation("Students");
                 });
 #pragma warning restore 612, 618
         }
