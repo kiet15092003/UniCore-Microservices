@@ -311,6 +311,24 @@ namespace UserService.Business.Services.StudentService
                 return new BadRequestObjectResult($"Unexpected error: {ex.Message}");
             }
         }
+
+        public async Task<StudentDetailDto> GetStudentDetailByIdAsync(Guid id)
+        {
+            try
+            {
+                var student = await _studentRepository.GetStudentDetailByIdAsync(id);
+                if (student == null)
+                {
+                    return null;
+                }
+                return _mapper.Map<StudentDetailDto>(student);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting student with id {Id}", id);
+                throw;
+            }
+        }
     }
 }            
        

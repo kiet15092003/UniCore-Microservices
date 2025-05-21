@@ -13,6 +13,7 @@ namespace UserService.Business.Services.StudentService
         Task<bool> DeleteStudentAsync(Guid id);  
         Task<StudentListResponse> GetAllStudentsAsync(Pagination pagination, StudentListFilterParams filter, Order? order);
         Task<StudentDto> GetStudentByIdAsync(Guid id);
+        Task<StudentDetailDto> GetStudentDetailByIdAsync(Guid id);
         // Task<PaginationResult<StudentDto>> GetAllPaginationAsync(Pagination pagination, StudentListFilterParams filter, Order order);
     }
 }

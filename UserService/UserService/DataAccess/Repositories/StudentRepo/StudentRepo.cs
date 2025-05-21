@@ -399,5 +399,21 @@ namespace UserService.DataAccess.Repositories.StudentRepo
         {
             await _context.SaveChangesAsync();
         }
+
+        public async Task<Student> GetStudentDetailByIdAsync(Guid id)
+        {
+            var result = await _context.Students
+                .Include(s => s.ApplicationUser)
+                    .ThenInclude(u => u.Address)
+                .Include(s => s.Guardians)
+                .Include(s => s.Batch)
+                .FirstOrDefaultAsync(d => d.Id == id);
+
+            if (result == null)
+            {
+                throw new KeyNotFoundException("Student not found");
+            }
+            return result;
+        }
     }
 }
