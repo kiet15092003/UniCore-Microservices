@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CourseService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250521150505_update-course-fields")]
+    partial class updatecoursefields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -79,6 +82,9 @@ namespace CourseService.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsOpenForAll")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRegistrable")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsRequired")
@@ -201,9 +207,6 @@ namespace CourseService.Migrations
 
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Credit")
-                        .HasColumnType("int");
 
                     b.Property<string>("GroupName")
                         .IsRequired()
