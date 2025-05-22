@@ -24,7 +24,9 @@ namespace CourseService.Controllers
         {
             var result = await _courseService.GetProductByPagination(c.Pagination, c.Filter, c.Order);
             return ApiResponse<CourseListResponse>.SuccessResponse(result);
-        }        [HttpPost]
+        }
+        
+        [HttpPost]
         public async Task<ApiResponse<CourseReadDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
         {
             // The Code field will be auto-generated as a 6-digit number in the repository
@@ -38,13 +40,20 @@ namespace CourseService.Controllers
             var result = await _courseService.UpdateCourseAsync(id, courseUpdateDto);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
-
-        
+      
         [HttpPost("{id}/deactivate")]
         public async Task<ApiResponse<CourseReadDto>> DeactivateCourse(Guid id)
         {
             var result = await _courseService.DeactivateCourseAsync(id);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
+        }
+
+        [HttpGet("major/{majorId}")]
+        public async Task<ApiResponse<List<CourseReadDto>>> GetAllCoursesByMajorId(Guid majorId)
+        {
+            // Returns courses for the specified major and any courses marked as IsOpenForAll = true
+            var result = await _courseService.GetCoursesByMajorIdAsync(majorId);
+            return ApiResponse<List<CourseReadDto>>.SuccessResponse(result);
         }
     }
 }

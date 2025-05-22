@@ -26,24 +26,18 @@ namespace CourseService.DataAccess.Repositories
             await _context.SaveChangesAsync();
             return newCourse.Entity;
         }
-          private string GenerateSixDigitCode()
+        private string GenerateSixDigitCode()
         {
             // Generate a random 6-digit code
             int code = _random.Next(100000, 1000000); // 100000 to 999999
             return code.ToString();
         }
-        
-        // Fix for the null handling error in other methods
-        private string GetOrderByPropertyName(string? orderBy)
-        {
-            return string.IsNullOrEmpty(orderBy) ? "CreatedAt" : orderBy;
-        }
-
+     
         private IQueryable<Course> ApplyFilters(IQueryable<Course> queryable, CourseListFilterParams courseListFilterParams)
         {
-            if (!string.IsNullOrWhiteSpace(courseListFilterParams.SearchQuery))
+            if (!string.IsNullOrWhiteSpace(courseListFilterParams.Name))
             {
-                queryable = queryable.Where(c => c.Name.Contains(courseListFilterParams.SearchQuery));
+                queryable = queryable.Where(c => c.Name.Contains(courseListFilterParams.Name));
             }
 
             if (courseListFilterParams.IsActive.HasValue)
@@ -68,10 +62,10 @@ namespace CourseService.DataAccess.Repositories
                 queryable = queryable.Where(c => c.Code.Contains(courseListFilterParams.Code));
             }
 
-            // Filter by IsRegistrable
-            if (courseListFilterParams.IsRegistrable.HasValue)
+            // Filter by IsOpenForAll
+            if (courseListFilterParams.IsOpenForAll.HasValue)
             {
-                queryable = queryable.Where(c => c.IsRegistrable == courseListFilterParams.IsRegistrable.Value);
+                queryable = queryable.Where(c => c.IsOpenForAll == courseListFilterParams.IsOpenForAll.Value);
             }
 
             // Filter by IsRequired
@@ -81,9 +75,10 @@ namespace CourseService.DataAccess.Repositories
             }
 
             // Filter by MajorId
-            if (courseListFilterParams.MajorId.HasValue)
+            if (courseListFilterParams.MajorIds != null && courseListFilterParams.MajorIds.Length > 0)
             {
-                queryable = queryable.Where(c => c.MajorId == courseListFilterParams.MajorId.Value);
+                queryable = queryable.Where(c => c.MajorIds != null &&
+                    courseListFilterParams.MajorIds.Any(id => c.MajorIds.Contains(id)));
             }
 
             // Filter by PreCourseIds - courses that contain all specified prerequisite course IDs
@@ -107,61 +102,13 @@ namespace CourseService.DataAccess.Repositories
         {
             if (order != null && !string.IsNullOrEmpty(order.By))
             {
-                if (order.By.Equals("Major", StringComparison.OrdinalIgnoreCase))
+                if (order.IsDesc)
                 {
-                    // For sorting by major name, we need to materialize the courses first
-                    // and fetch major information via gRPC
-                    var courses = await queryable.ToListAsync();
-                    
-                    // Get all distinct majorIds
-                    var majorIds = courses.Select(c => c.MajorId.ToString()).Distinct().ToList();
-                    
-                    // Create a dictionary to map majorId to major name
-                    var majorNameDictionary = new ConcurrentDictionary<string, string>();
-                    
-                    // Fetch major information for all majors in parallel
-                    var tasks = majorIds.Select(async majorId => {
-                        var majorResponse = await _majorClient.GetMajorByIdAsync(majorId);
-                        if (majorResponse.Success)
-                        {
-                            majorNameDictionary.TryAdd(majorId, majorResponse.Data.Name);
-                        }
-                        else
-                        {
-                            // If we can't get the name, use the ID as fallback
-                            majorNameDictionary.TryAdd(majorId, majorId);
-                        }
-                    });
-                    
-                    await Task.WhenAll(tasks);
-                    
-                    // Sort courses by major name
-                    IEnumerable<Course> sortedCourses;
-                    if (order.IsDesc)
-                    {
-                        sortedCourses = courses.OrderByDescending(c => 
-                            majorNameDictionary.TryGetValue(c.MajorId.ToString(), out string majorName) 
-                                ? majorName 
-                                : c.MajorId.ToString());
-                    }
-                    else
-                    {
-                        sortedCourses = courses.OrderBy(c => 
-                            majorNameDictionary.TryGetValue(c.MajorId.ToString(), out string majorName) 
-                                ? majorName 
-                                : c.MajorId.ToString());
-                    }
-                    
-                    // Convert back to IQueryable
-                    return sortedCourses.AsQueryable();
-                }
-                else if (order.IsDesc)
-                {
-                    queryable = queryable.OrderByDescending(e => EF.Property<Course>(e, order.By));
+                    queryable = queryable.OrderByDescending(e => EF.Property<CoursesGroup>(e, order.By));
                 }
                 else
                 {
-                    queryable = queryable.OrderBy(e => EF.Property<Course>(e, order.By));
+                    queryable = queryable.OrderBy(e => EF.Property<CoursesGroup>(e, order.By));
                 }
             }
             return queryable;
@@ -176,44 +123,25 @@ namespace CourseService.DataAccess.Repositories
 
             queryable = ApplyFilters(queryable, courseListFilterParams);
             queryable = queryable.OrderByDescending(e => EF.Property<DateTime>(e, "CreatedAt"));
-            
+
             // Get total count before applying pagination
             int total = await queryable.CountAsync();
-            
-            // Apply sorting (may convert to in-memory sorting for "Major" field)
+
+            // Apply sorting
             queryable = await ApplySortingAsync(queryable, order);
 
-            // If sorting was done in-memory (for Major field), we need to apply pagination manually
-            if (order?.By?.Equals("Major", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                var sortedList = queryable.Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
-                                         .Take(pagination.ItemsPerpage)
-                                         .ToList();
-                
-                return new PaginationResult<Course>
-                {
-                    Data = sortedList,
-                    Total = total,
-                    PageIndex = pagination.PageNumber,
-                    PageSize = pagination.ItemsPerpage
-                };
-            }
-            else
-            {
-                // Normal EF pagination
-                var result = await queryable
+            var result = await queryable
                     .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
                     .Take(pagination.ItemsPerpage)
                     .ToListAsync();
-                
-                return new PaginationResult<Course>
-                {
-                    Data = result,
-                    Total = total,
-                    PageIndex = pagination.PageNumber,
-                    PageSize = pagination.ItemsPerpage
-                };
-            }
+
+            return new PaginationResult<Course>
+            {
+                Data = result,
+                Total = total,
+                PageIndex = pagination.PageNumber,
+                PageSize = pagination.ItemsPerpage
+            };
         }
 
         public async Task<Course> UpdateCourseAsync(Course course)
