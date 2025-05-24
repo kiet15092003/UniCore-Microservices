@@ -99,10 +99,10 @@ builder.Logging.AddConsole();
 
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
-{
-    cfg.AddProfile<CourseProfile>();
+{    cfg.AddProfile<CourseProfile>();
     cfg.AddProfile<TrainingRoadmapProfile>();
     cfg.AddProfile<CoursesGroupProfile>();
+    cfg.AddProfile<SemesterProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 

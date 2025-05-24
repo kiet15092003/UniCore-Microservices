@@ -20,6 +20,8 @@ namespace CourseService.DataAccess
         public DbSet<TrainingRoadmap> TrainingRoadmaps { get; set; }
         public DbSet<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
         public DbSet<CoursesGroup> CoursesGroups { get; set; }
+        public DbSet<AcademicClass> AcademicClasses { get; set; }
+        public DbSet<Semester> Semesters { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,7 +29,7 @@ namespace CourseService.DataAccess
             modelBuilder.Entity<CoursesGroup>()
                 .HasIndex(g => new { g.GroupName })
                 .IsUnique();
-                
+
             base.OnModelCreating(modelBuilder);
         }
 
