@@ -26,7 +26,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
         
         public async Task<List<MajorGroup>> GetAllMajorGroupsAsync()
         {
-            return await _context.MajorGroups.ToListAsync();
+            return await _context.MajorGroups.Where(d => d.IsActive).ToListAsync();
         }
         
         public async Task<MajorGroup> CreateMajorGroupAsync(MajorGroup majorGroup)
@@ -40,8 +40,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             
             return majorGroup;
         }
-        
-        public async Task<bool> DeactivateMajorGroupAsync(Guid id)
+          public async Task<bool> DeactivateMajorGroupAsync(Guid id)
         {
             var majorGroup = await _context.MajorGroups.FirstOrDefaultAsync(mg => mg.Id == id);
             if (majorGroup == null)
@@ -50,6 +49,21 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             }
             
             majorGroup.IsActive = false;
+            majorGroup.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        
+        public async Task<bool> ActivateMajorGroupAsync(Guid id)
+        {
+            var majorGroup = await _context.MajorGroups.FirstOrDefaultAsync(mg => mg.Id == id);
+            if (majorGroup == null)
+            {
+                return false;
+            }
+            
+            majorGroup.IsActive = true;
             majorGroup.UpdatedAt = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();

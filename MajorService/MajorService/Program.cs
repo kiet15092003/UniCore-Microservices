@@ -1,6 +1,5 @@
 using AutoMapper;
 using MajorService.Business;
-using MajorService.Business.Profiles;
 using MajorService.CommunicationTypes;
 using MajorService.DataAccess;
 using MajorService.Middleware;
@@ -86,7 +85,6 @@ builder.Services.AddCommunicationTypes();
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
-    cfg.AddProfile<MajorProfile>();
     cfg.AddProfile<MajorService.Business.Mapper.MappingProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();

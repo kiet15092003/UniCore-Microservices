@@ -10,5 +10,6 @@ namespace CourseService.Business.Services
         Task<CourseListResponse> GetProductByPagination(Pagination pagination, CourseListFilterParams courseListFilterParams, Order? order);
         Task<CourseReadDto> UpdateCourseAsync(Guid id, CourseUpdateDto courseUpdateDto);
         Task<CourseReadDto> DeactivateCourseAsync(Guid id);
+        Task<List<CourseReadDto>> GetCoursesByMajorIdAsync(Guid majorId);
     }
 }

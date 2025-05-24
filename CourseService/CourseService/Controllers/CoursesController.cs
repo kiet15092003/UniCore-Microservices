@@ -24,10 +24,11 @@ namespace CourseService.Controllers
         {
             var result = await _courseService.GetProductByPagination(c.Pagination, c.Filter, c.Order);
             return ApiResponse<CourseListResponse>.SuccessResponse(result);
-        }        [HttpPost]
+        }
+        
+        [HttpPost]
         public async Task<ApiResponse<CourseReadDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
         {
-            // The Code field will be auto-generated as a 6-digit number in the repository
             var result = await _courseService.CreateCourseAsync(courseCreateDto);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
@@ -38,12 +39,19 @@ namespace CourseService.Controllers
             var result = await _courseService.UpdateCourseAsync(id, courseUpdateDto);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
-
-        [HttpPut("{id}/deactivate")]
+      
+        [HttpPost("{id}/deactivate")]
         public async Task<ApiResponse<CourseReadDto>> DeactivateCourse(Guid id)
         {
             var result = await _courseService.DeactivateCourseAsync(id);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
+        }
+
+        [HttpGet("major/{majorId}")]
+        public async Task<ApiResponse<List<CourseReadDto>>> GetAllCoursesByMajorId(Guid majorId)
+        {
+            var result = await _courseService.GetCoursesByMajorIdAsync(majorId);
+            return ApiResponse<List<CourseReadDto>>.SuccessResponse(result);
         }
     }
 }

@@ -63,10 +63,14 @@ namespace MajorService.Business.Services.MajorGroupServices
             
             return await _majorGroupRepo.CreateMajorGroupAsync(majorGroup);
         }
-        
-        public async Task<bool> DeactivateMajorGroupAsync(DeactivateDto deactivateDto)
+          public async Task<bool> DeactivateMajorGroupAsync(DeactivateDto deactivateDto)
         {
             return await _majorGroupRepo.DeactivateMajorGroupAsync(deactivateDto.Id);
+        }
+        
+        public async Task<bool> ActivateMajorGroupAsync(ActivateDto activateDto)
+        {
+            return await _majorGroupRepo.ActivateMajorGroupAsync(activateDto.Id);
         }
         
         public async Task<MajorGroupListResponse> GetMajorGroupsByPaginationAsync(

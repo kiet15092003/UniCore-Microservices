@@ -50,8 +50,7 @@ namespace CourseService.Controllers
             var result = await _trainingRoadmapService.UpdateTrainingRoadmapAsync(id, updateDto);
             return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
         }        
-        
-        [HttpPost("components")]
+          [HttpPost("components")]
         public async Task<ApiResponse<TrainingRoadmapReadDto>> UpdateTrainingRoadmapComponents([FromBody] TrainingRoadmapAddComponentsDto componentsDto)
         {
             try
@@ -63,6 +62,28 @@ namespace CourseService.Controllers
             {
                 return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { ex.Message });
             }
+        }
+
+        [HttpPost("{id}/deactivate")]
+        public async Task<ApiResponse<TrainingRoadmapReadDto>> DeactivateTrainingRoadmap(Guid id)
+        {
+            var result = await _trainingRoadmapService.DeactivateTrainingRoadmapAsync(id);
+            if (result == null)
+            {
+                return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { "Training roadmap not found" });
+            }
+            return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
+        }
+
+        [HttpPost("{id}/activate")]
+        public async Task<ApiResponse<TrainingRoadmapReadDto>> ActivateTrainingRoadmap(Guid id)
+        {
+            var result = await _trainingRoadmapService.ActivateTrainingRoadmapAsync(id);
+            if (result == null)
+            {
+                return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { "Training roadmap not found" });
+            }
+            return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
         }
     }
 }

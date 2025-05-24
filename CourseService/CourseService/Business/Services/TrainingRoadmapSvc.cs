@@ -47,9 +47,7 @@ namespace CourseService.Business.Services
             }
             
             return roadmapDto;
-        }
-
-        public async Task<TrainingRoadmapReadDto> DeactivateTrainingRoadmapAsync(Guid id)
+        }        public async Task<TrainingRoadmapReadDto> DeactivateTrainingRoadmapAsync(Guid id)
         {
             var roadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(id);
             if (roadmap == null)
@@ -57,6 +55,34 @@ namespace CourseService.Business.Services
                 return null;
             }
 
+            roadmap.IsActive = false;
+            roadmap.UpdatedAt = DateTime.Now;
+            
+            var result = await _trainingRoadmapRepository.UpdateTrainingRoadmapAsync(roadmap);
+            var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(result);
+            
+            // Get major information from gRPC service
+            if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
+            {
+                var major = await _grpcClient.GetMajorByIdAsync(roadmapDto.MajorId.Value.ToString());
+                if (major.Success && major.Data != null)
+                {
+                    roadmapDto.MajorData = major.Data;
+                }
+            }
+            
+            return roadmapDto;
+        }
+        
+        public async Task<TrainingRoadmapReadDto> ActivateTrainingRoadmapAsync(Guid id)
+        {
+            var roadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(id);
+            if (roadmap == null)
+            {
+                return null;
+            }
+
+            roadmap.IsActive = true;
             roadmap.UpdatedAt = DateTime.Now;
             
             var result = await _trainingRoadmapRepository.UpdateTrainingRoadmapAsync(roadmap);

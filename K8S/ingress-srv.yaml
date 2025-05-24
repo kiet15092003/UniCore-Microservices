@@ -54,18 +54,4 @@ spec:
                 name: major-clusterip-srv
                 port:
                   number: 666
-          - path: /api/s/
-            pathType: Prefix
-            backend:
-              service:
-                name: student-clusterip-srv
-                port:
-                  number: 80
-          - path: /grpc/s/ 
-            pathType: Prefix
-            backend:
-              service:
-                name: student-clusterip-srv
-                port:
-                  number: 666
-         
+      

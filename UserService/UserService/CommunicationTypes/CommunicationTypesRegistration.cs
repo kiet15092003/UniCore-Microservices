@@ -1,5 +1,4 @@
-﻿using UserService.Business.Services.AuthService;
-using UserService.CommunicationTypes.KafkaService.KafkaProducer;
+﻿using UserService.CommunicationTypes.KafkaService.KafkaProducer;
 
 namespace UserService.CommunicationTypes
 {

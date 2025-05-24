@@ -13,10 +13,7 @@ namespace UserService.DataAccess
             : base(options)
         {
             _httpContextAccessor = httpContextAccessor;
-        }
-
-
-        public DbSet<ApplicationUser> Users { get; set; }
+        }        // Users is already defined in IdentityDbContext, so we don't redefine it here
         public DbSet<TrainingManager> TrainingManagers { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Batch> Batches { get; set; }
@@ -57,6 +54,10 @@ namespace UserService.DataAccess
 
             modelBuilder.Entity<ApplicationUser>()
                 .HasIndex(p => p.PersonId)
+                .IsUnique();
+                
+            modelBuilder.Entity<ApplicationUser>()
+                .HasIndex(p => p.PhoneNumber)
                 .IsUnique();
             
             modelBuilder.Entity<Student>()

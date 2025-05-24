@@ -63,7 +63,8 @@ namespace CourseService.DataAccess.Repositories
             Pagination pagination, 
             TrainingRoadmapFilterParams filterParams, 
             Order? order)
-        {            var queryable = _context.TrainingRoadmaps
+        {            
+            var queryable = _context.TrainingRoadmaps
                 .Include(t => t.TrainingRoadmapCourses)
                     .ThenInclude(trc => trc.Course)
                 .Include(t => t.CoursesGroupSemesters)
@@ -110,7 +111,8 @@ namespace CourseService.DataAccess.Repositories
                     PageSize = pagination.ItemsPerpage
                 };
             }
-        }        public async Task<TrainingRoadmap> AddTrainingRoadmapComponentsAsync(Guid trainingRoadmapId, List<CoursesGroupSemester> coursesGroupSemesters, List<TrainingRoadmapCourse> trainingRoadmapCourses)
+        }        
+        public async Task<TrainingRoadmap> AddTrainingRoadmapComponentsAsync(Guid trainingRoadmapId, List<CoursesGroupSemester> coursesGroupSemesters, List<TrainingRoadmapCourse> trainingRoadmapCourses)
         {
             var trainingRoadmap = await _context.TrainingRoadmaps
                 .Include(t => t.TrainingRoadmapCourses)

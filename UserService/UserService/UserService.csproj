@@ -39,8 +39,6 @@
   </ItemGroup>
 	<ItemGroup>
 		<Protobuf Include="CommunicationTypes\Grpc\GrpcClient\Protos\major.proto" GrpcServices="Client" />
-		<Protobuf Include="CommunicationTypes\Grpc\GrpcClient\Protos\batch.proto" GrpcServices="Client" />
-		<Protobuf Include="CommunicationTypes\Grpc\GrpcClient\Protos\student.proto" GrpcServices="Client" />
 	</ItemGroup>
 
 </Project>

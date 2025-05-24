@@ -10,6 +10,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
         Task<List<Department>> GetAllDepartmentsAsync();
         Task<Department> CreateDepartmentAsync(Department department);
         Task<bool> DeactivateDepartmentAsync(Guid id);
+        Task<bool> ActivateDepartmentAsync(Guid id);
         Task<PaginationResult<Department>> GetDepartmentsByPaginationAsync(
             Pagination pagination,
             DepartmentListFilterParams departmentListFilterParams,

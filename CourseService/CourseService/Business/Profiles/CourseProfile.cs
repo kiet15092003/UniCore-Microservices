@@ -9,12 +9,15 @@ namespace CourseService.Business.Profiles
     {
         public CourseProfile()
         {
-            CreateMap<CourseCreateDto, Course>();
+            CreateMap<CourseCreateDto, Course>()
+                .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.MajorIds));
+
 
             // Map Course -> CourseReadDto
             CreateMap<Course, CourseReadDto>()
                 .ForMember(dest => dest.CourseCertificates, opt => opt.MapFrom(src => src.CourseCertificates))
-                .ForMember(dest => dest.CourseMaterials, opt => opt.MapFrom(src => src.CourseMaterials));
+                .ForMember(dest => dest.CourseMaterials, opt => opt.MapFrom(src => src.CourseMaterials))
+                .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.MajorIds));
 
             // Map CourseCertificate -> CourseCertificateReadDto
             CreateMap<CourseCertificate, CourseCertificateReadDto>()
@@ -30,7 +33,8 @@ namespace CourseService.Business.Profiles
 
             CreateMap<PaginationResult<Course>, CourseListResponse>();
 
-            CreateMap<CourseUpdateDto, Course>();
+            CreateMap<CourseUpdateDto, Course>()
+                .ForMember(dest => dest.MajorIds, opt => opt.MapFrom(src => src.MajorIds));
         }
     }
 }

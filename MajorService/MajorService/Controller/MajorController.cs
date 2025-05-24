@@ -27,7 +27,7 @@ namespace MajorService.Controller
             var majors = await _majorSvc.GetAllMajorAsync();
             return ApiResponse<List<MajorReadDto>>.SuccessResponse(majors);
         }
-          [HttpPost]
+        [HttpPost]
         public async Task<ApiResponse<MajorReadDto>> CreateNewMajorAsync(CreateNewMajorDto request)
         {
             try
@@ -39,17 +39,29 @@ namespace MajorService.Controller
             {
                 return ApiResponse<MajorReadDto>.ErrorResponse([ex.Message]);
             }
-        }
-        
-        [HttpPost("deactivate")]
-        public async Task<ApiResponse<bool>> DeactivateMajorAsync(DeactivateDto deactivateDto)
+        }        
+        [HttpPost("{id}/deactivate")]
+        public async Task<ApiResponse<bool>> DeactivateMajorAsync(Guid id)
         {
+            var deactivateDto = new DeactivateDto { Id = id };
             var result = await _majorSvc.DeactivateMajorAsync(deactivateDto);
             if (result)
             {
                 return ApiResponse<bool>.SuccessResponse(true);
             }
             return ApiResponse<bool>.ErrorResponse(["Failed to deactivate major"]);
+        }
+        
+        [HttpPost("{id}/activate")]
+        public async Task<ApiResponse<bool>> ActivateMajorAsync(Guid id)
+        {
+            var activateDto = new ActivateDto { Id = id };
+            var result = await _majorSvc.ActivateMajorAsync(activateDto);
+            if (result)
+            {
+                return ApiResponse<bool>.SuccessResponse(true);
+            }
+            return ApiResponse<bool>.ErrorResponse(["Failed to activate major"]);
         }
         
         [HttpGet("page")]
