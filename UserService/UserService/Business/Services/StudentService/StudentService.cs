@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using UserService.Entities;
 using ClosedXML.Excel;
 using UserService.Business.Dtos.Student;
@@ -13,6 +14,9 @@ using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
 using AutoMapper;
 using System.Text.Json;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Microsoft.Extensions.Configuration;
 using UserService.Business.Dtos.Auth;
 namespace UserService.Business.Services.StudentService
 {    public class StudentService : IStudentService
@@ -20,25 +24,34 @@ namespace UserService.Business.Services.StudentService
         private readonly IStudentRepo _studentRepository;
         private readonly ILogger<StudentService> _logger;
         private readonly SmtpClientService _smtpClient;
-        private readonly GrpcMajorClientService _grpcMajorClient;
         private readonly IMapper _mapper;
+        private readonly GrpcMajorClientService _grpcMajorClient;
+        private readonly Cloudinary _cloudinary;
         private readonly IKafkaProducerService _kafkaProducer;
         private readonly IBatchRepo _batchRepository;
 
         public StudentService(
             IStudentRepo studentRepository,
             ILogger<StudentService> logger,
-            SmtpClientService smtpClient,
-            GrpcMajorClientService grpcMajorClient,
+            SmtpClientService smtpClient, 
             IMapper mapper,
+            IConfiguration configuration,
+            GrpcMajorClientService grpcMajorClient,
             IKafkaProducerService kafkaProducer,
             IBatchRepo batchRepository)
         {
             _studentRepository = studentRepository;
             _logger = logger;
             _smtpClient = smtpClient;
-            _grpcMajorClient = grpcMajorClient;
             _mapper = mapper;
+            _grpcMajorClient = grpcMajorClient;
+
+            // Setup Cloudinary
+            var cloudinaryAccount = new Account(
+                configuration["Cloudinary:CloudName"],
+                configuration["Cloudinary:ApiKey"],
+                configuration["Cloudinary:ApiSecret"]);
+            _cloudinary = new Cloudinary(cloudinaryAccount);
             _kafkaProducer = kafkaProducer;
             _batchRepository = batchRepository;
         }
@@ -99,31 +112,50 @@ namespace UserService.Business.Services.StudentService
         {
             try
             {
+                // Get existing student from database
                 var existingStudent = await _studentRepository.GetStudentByIdAsync(id);
                 if (existingStudent == null)
                 {
                     return null;
                 }
 
-                // Update student properties
-                existingStudent.AccumulateCredits = updateStudentDto.AccumulateCredits;
-                existingStudent.AccumulateScore = updateStudentDto.AccumulateScore;
-                existingStudent.AccumulateActivityScore = updateStudentDto.AccumulateActivityScore;
-                existingStudent.MajorId = updateStudentDto.MajorId;
-                existingStudent.BatchId = updateStudentDto.BatchId;
-
-                // Update ApplicationUser properties if ApplicationUser exists
-                if (existingStudent.ApplicationUser != null)
+                // Create a Student object with updated properties
+                var studentToUpdate = new Entities.Student
                 {
-                    existingStudent.ApplicationUser.FirstName = updateStudentDto.FirstName;
-                    existingStudent.ApplicationUser.LastName = updateStudentDto.LastName;
-                    existingStudent.ApplicationUser.PersonId = updateStudentDto.PersonId;
-                    existingStudent.ApplicationUser.Dob = updateStudentDto.Dob;
-                    existingStudent.ApplicationUser.PhoneNumber = updateStudentDto.PhoneNumber;
-                    existingStudent.ApplicationUser.Status = updateStudentDto.Status;
+                    Id = existingStudent.Id,
+                    StudentCode = existingStudent.StudentCode,
+                    AccumulateCredits = updateStudentDto.AccumulateCredits ?? existingStudent.AccumulateCredits,
+                    AccumulateScore = updateStudentDto.AccumulateScore ?? existingStudent.AccumulateScore,
+                    AccumulateActivityScore = updateStudentDto.AccumulateActivityScore ?? existingStudent.AccumulateActivityScore,
+                    MajorId = updateStudentDto.MajorId ?? existingStudent.MajorId,
+                    BatchId = updateStudentDto.BatchId ?? existingStudent.BatchId,
+                    ApplicationUser = new ApplicationUser
+                    {
+                        Id = existingStudent.ApplicationUserId,
+                        FirstName = updateStudentDto.FirstName ?? existingStudent.ApplicationUser.FirstName,
+                        LastName = updateStudentDto.LastName ?? existingStudent.ApplicationUser.LastName,
+                        PhoneNumber = updateStudentDto.PhoneNumber ?? existingStudent.ApplicationUser.PhoneNumber,
+                        Status = updateStudentDto.Status ?? existingStudent.ApplicationUser.Status,
+                        ImageUrl = existingStudent.ApplicationUser.ImageUrl
+                    }
+                };
+
+                // Map guardians if provided
+                if (updateStudentDto.Guardians != null && updateStudentDto.Guardians.Any())
+                {
+                    studentToUpdate.Guardians = _mapper.Map<List<Guardian>>(updateStudentDto.Guardians);
                 }
 
-                var updatedStudent = await _studentRepository.UpdateAsync(existingStudent);
+                // Map address if provided
+                if (updateStudentDto.Address != null)
+                {
+                    studentToUpdate.ApplicationUser.Address = _mapper.Map<Address>(updateStudentDto.Address);
+                }
+
+                
+
+                // Update the student in the database
+                var updatedStudent = await _studentRepository.UpdateAsync(studentToUpdate);
                 return _mapper.Map<StudentDto>(updatedStudent);
             }
             catch (Exception ex)
@@ -131,6 +163,36 @@ namespace UserService.Business.Services.StudentService
                 _logger.LogError(ex, "Error updating student with id {Id}", id);
                 throw;
             }
+        }
+
+        public async Task<string> UpdateUserImageAsync(UpdateUserImageDto updateUserImageDto)
+        {
+            var imageUrl = await UploadImageToCloudinary(updateUserImageDto.ImageFile);
+            return await _studentRepository.UpdateStudentImageAsync(updateUserImageDto.StudentId, imageUrl);
+        }
+
+        private async Task<string> UploadImageToCloudinary(IFormFile imageFile)
+        {
+            using var stream = imageFile.OpenReadStream();
+            
+            // Create upload parameters
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(imageFile.FileName, stream),
+                Folder = "student_profile_images",
+                Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+            };
+            
+            // Upload to Cloudinary
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            
+            if (uploadResult.Error != null)
+            {
+                throw new Exception($"Failed to upload image: {uploadResult.Error.Message}");
+            }
+            
+            // Return the secure URL
+            return uploadResult.SecureUrl.ToString();
         }
 
         public async Task<IActionResult> CreateStudentByExcelAsync(CreateStudentByExcelDto createStudentByExcelDto)
@@ -311,5 +373,33 @@ namespace UserService.Business.Services.StudentService
                 return new BadRequestObjectResult($"Unexpected error: {ex.Message}");
             }
         }
+
+        public async Task<StudentDetailDto> GetStudentDetailByIdAsync(Guid id)
+        {
+            try
+            {
+                var student = await _studentRepository.GetStudentDetailByIdAsync(id);
+                if (student == null)
+                {
+                    return null;
+                }
+                var studentDetailDto = _mapper.Map<StudentDetailDto>(student);
+                
+                // Get major information
+                var majorResponse = await _grpcMajorClient.GetMajorByIdAsync(student.MajorId.ToString());
+                
+                if (majorResponse != null && majorResponse.Success && majorResponse.Data != null)
+                {
+                    studentDetailDto.MajorName = majorResponse.Data.Name;
+                }
+                
+                return studentDetailDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting student with id {Id}", id);
+                throw;
+            }
+        }
     }
-}
+}            

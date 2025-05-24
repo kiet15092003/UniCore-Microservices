@@ -25,8 +25,7 @@ namespace UserService.Entities
         public Guid BatchId { get; set; }
         public Batch Batch { get; set; }
 
-        public Guid? GuardianId { get; set; }
-        public Guardian? Guardian { get; set; }
+        public List<Guardian> Guardians { get; set; }
 
         [Required]
         public String ApplicationUserId { get; set; }

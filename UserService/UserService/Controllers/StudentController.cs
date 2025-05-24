@@ -96,6 +96,32 @@ namespace UserService.Controllers
                 return ApiResponse<StudentDto>.ErrorResponse([$"Error updating student: {ex.Message}"]);
             }
         }
+
+        [HttpGet("{id}")]
+        public async Task<ApiResponse<StudentDetailDto>> GetStudentById(Guid id)
+        {
+            try
+            {
+                var result = await _studentService.GetStudentDetailByIdAsync(id);
+                if (result != null)
+                {
+                    return ApiResponse<StudentDetailDto>.SuccessResponse(result);
+                }
+                return ApiResponse<StudentDetailDto>.ErrorResponse(["Student not found"]);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting student with id {Id}", id);
+                return ApiResponse<StudentDetailDto>.ErrorResponse([$"Error getting student: {ex.Message}"]);
+            }
+        }
+
+        [HttpPut("update-image")]
+        public async Task<ApiResponse<string>> UpdateUserImage(UpdateUserImageDto updateUserImageDto)
+        {
+            var result = await _studentService.UpdateUserImageAsync(updateUserImageDto);
+            return ApiResponse<string>.SuccessResponse(result);
+        }
     }
 }
 
