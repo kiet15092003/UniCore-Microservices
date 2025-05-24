@@ -280,35 +280,22 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                 if (studentFromDto.Guardians != null && studentFromDto.Guardians.Any())
                 {
                     // Clear existing guardians
-                    if (existingStudent.Guardians == null)
-                    {
-                        existingStudent.Guardians = new List<Guardian>();
-                    }
+                    _context.Guardians.RemoveRange(existingStudent.Guardians);
+                    
+                    existingStudent.Guardians = new List<Guardian>();
+                    
 
                     // Process guardians
                     foreach (var guardian in studentFromDto.Guardians)
                     {
                         if (guardian.Id != Guid.Empty)
                         {
-                            // Update existing guardian
-                            var existingGuardian = await _guardianRepo.GetGuardianByIdAsync(guardian.Id);
-                            if (existingGuardian != null)
-                            {
-                                existingGuardian.Name = guardian.Name;
-                                existingGuardian.PhoneNumber = guardian.PhoneNumber;
-                                existingGuardian.Relationship = guardian.Relationship;
-                                existingGuardian.StudentId = existingStudent.Id;
-                                await _guardianRepo.UpdateGuardianAsync(existingGuardian);
-                                existingStudent.Guardians.Add(existingGuardian);
-                            }
+                            guardian.Id = Guid.Empty;
                         }
-                        else
-                        {
-                            // Create new guardian
-                            guardian.StudentId = existingStudent.Id;
-                            var newGuardian = await _guardianRepo.CreateGuardianAsync(guardian);
-                            existingStudent.Guardians.Add(newGuardian);
-                        }
+
+                        guardian.StudentId = existingStudent.Id;
+                        var newGuardian = await _guardianRepo.CreateGuardianAsync(guardian);
+                        existingStudent.Guardians.Add(newGuardian);
                     }
                 }
 
