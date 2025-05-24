@@ -29,7 +29,6 @@ namespace CourseService.Controllers
         [HttpPost]
         public async Task<ApiResponse<CourseReadDto>> CreateCourse([FromBody] CourseCreateDto courseCreateDto)
         {
-            // The Code field will be auto-generated as a 6-digit number in the repository
             var result = await _courseService.CreateCourseAsync(courseCreateDto);
             return ApiResponse<CourseReadDto>.SuccessResponse(result);
         }
@@ -51,7 +50,6 @@ namespace CourseService.Controllers
         [HttpGet("major/{majorId}")]
         public async Task<ApiResponse<List<CourseReadDto>>> GetAllCoursesByMajorId(Guid majorId)
         {
-            // Returns courses for the specified major and any courses marked as IsOpenForAll = true
             var result = await _courseService.GetCoursesByMajorIdAsync(majorId);
             return ApiResponse<List<CourseReadDto>>.SuccessResponse(result);
         }
