@@ -22,6 +22,8 @@ namespace CourseService.DataAccess
         public DbSet<CoursesGroup> CoursesGroups { get; set; }
         public DbSet<AcademicClass> AcademicClasses { get; set; }
         public DbSet<Semester> Semesters { get; set; }
+        public DbSet<Shift> Shifts { get; set; }
+        public DbSet<ScheduleInDay> ScheduleInDays { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +31,11 @@ namespace CourseService.DataAccess
             modelBuilder.Entity<CoursesGroup>()
                 .HasIndex(g => new { g.GroupName })
                 .IsUnique();
+
+            modelBuilder.Entity<AcademicClass>()
+                .HasOne(ac => ac.ScheduleInDay)
+                .WithOne(sd => sd.AcademicClass)
+                .HasForeignKey<ScheduleInDay>(sd => sd.AcademicClassId);
 
             base.OnModelCreating(modelBuilder);
         }

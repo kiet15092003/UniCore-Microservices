@@ -99,10 +99,13 @@ builder.Logging.AddConsole();
 
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
-{    cfg.AddProfile<CourseProfile>();
+{
+    cfg.AddProfile<CourseProfile>();
     cfg.AddProfile<TrainingRoadmapProfile>();
     cfg.AddProfile<CoursesGroupProfile>();
     cfg.AddProfile<SemesterProfile>();
+    cfg.AddProfile<ShiftProfile>();
+    cfg.AddProfile<AcademicClassProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -144,5 +147,8 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Initialize the database and seed data
+await DbInitializer.InitializeAsync(app.Services);
 
 app.Run();
