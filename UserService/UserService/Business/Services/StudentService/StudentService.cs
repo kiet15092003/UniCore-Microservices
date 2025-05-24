@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using UserService.Entities;
 using ClosedXML.Excel;
 using UserService.Business.Dtos.Student;
@@ -9,6 +10,10 @@ using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
 using AutoMapper;
 using System.Text.Json;
+using UserService.CommunicationTypes.Grpc.GrpcClient;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Microsoft.Extensions.Configuration;
 namespace UserService.Business.Services.StudentService
 {
     public class StudentService : IStudentService
@@ -17,19 +22,29 @@ namespace UserService.Business.Services.StudentService
         private readonly ILogger<StudentService> _logger;
         private readonly SmtpClientService _smtpClient;
         private readonly IMapper _mapper;
-
+        private readonly GrpcMajorClientService _grpcClient;
+        private readonly Cloudinary _cloudinary;
 
         public StudentService(
             IStudentRepo studentRepository,
             ILogger<StudentService> logger,
             SmtpClientService smtpClient,
-
-            IMapper mapper)
+            GrpcMajorClientService grpcClient,  
+            IMapper mapper,
+            IConfiguration configuration)
         {
             _studentRepository = studentRepository;
             _logger = logger;
             _smtpClient = smtpClient;
             _mapper = mapper;
+            _grpcClient = grpcClient;
+
+            // Setup Cloudinary
+            var cloudinaryAccount = new Account(
+                configuration["Cloudinary:CloudName"],
+                configuration["Cloudinary:ApiKey"],
+                configuration["Cloudinary:ApiSecret"]);
+            _cloudinary = new Cloudinary(cloudinaryAccount);
         }
 
         public async Task<StudentListResponse> GetAllStudentsAsync(Pagination pagination, StudentListFilterParams filter, Order? order)
@@ -96,7 +111,7 @@ namespace UserService.Business.Services.StudentService
                 }
 
                 // Create a Student object with updated properties
-                var studentToUpdate = new Student
+                var studentToUpdate = new Entities.Student
                 {
                     Id = existingStudent.Id,
                     StudentCode = existingStudent.StudentCode,
@@ -139,6 +154,36 @@ namespace UserService.Business.Services.StudentService
                 _logger.LogError(ex, "Error updating student with id {Id}", id);
                 throw;
             }
+        }
+
+        public async Task<string> UpdateUserImageAsync(UpdateUserImageDto updateUserImageDto)
+        {
+            var imageUrl = await UploadImageToCloudinary(updateUserImageDto.ImageFile);
+            return await _studentRepository.UpdateStudentImageAsync(updateUserImageDto.StudentId, imageUrl);
+        }
+
+        private async Task<string> UploadImageToCloudinary(IFormFile imageFile)
+        {
+            using var stream = imageFile.OpenReadStream();
+            
+            // Create upload parameters
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(imageFile.FileName, stream),
+                Folder = "student_profile_images",
+                Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+            };
+            
+            // Upload to Cloudinary
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            
+            if (uploadResult.Error != null)
+            {
+                throw new Exception($"Failed to upload image: {uploadResult.Error.Message}");
+            }
+            
+            // Return the secure URL
+            return uploadResult.SecureUrl.ToString();
         }
 
         public async Task<IActionResult> CreateStudentByExcelAsync(CreateStudentByExcelDto createStudentByExcelDto)
@@ -282,7 +327,17 @@ namespace UserService.Business.Services.StudentService
                 {
                     return null;
                 }
-                return _mapper.Map<StudentDetailDto>(student);
+                var studentDetailDto = _mapper.Map<StudentDetailDto>(student);
+                
+                // Get major information
+                var majorResponse = await _grpcClient.GetMajorByIdAsync(student.MajorId.ToString());
+                
+                if (majorResponse != null && majorResponse.Success && majorResponse.Data != null)
+                {
+                    studentDetailDto.MajorName = majorResponse.Data.Name;
+                }
+                
+                return studentDetailDto;
             }
             catch (Exception ex)
             {
@@ -292,4 +347,3 @@ namespace UserService.Business.Services.StudentService
         }
     }
 }            
-       

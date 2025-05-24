@@ -304,7 +304,6 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                         }
                         else
                         {
-                            _logger.LogInformation("-----------------------------------311 Create new guardian");
                             // Create new guardian
                             guardian.StudentId = existingStudent.Id;
                             var newGuardian = await _guardianRepo.CreateGuardianAsync(guardian);
@@ -405,6 +404,20 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                 throw new KeyNotFoundException("Student not found");
             }
             return result;
+        }
+
+        public async Task<string> UpdateStudentImageAsync(Guid id, string imageUrl)
+        {
+            var student = await _context.Students
+                .Include(s => s.ApplicationUser)
+                .FirstOrDefaultAsync(s => s.Id == id);
+                
+            if (student == null)
+                throw new KeyNotFoundException("Student not found");
+                
+            student.ApplicationUser.ImageUrl = imageUrl;
+            await _context.SaveChangesAsync();
+            return imageUrl;
         }
     }
 }

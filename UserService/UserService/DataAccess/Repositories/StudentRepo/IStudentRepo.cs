@@ -16,5 +16,6 @@ namespace UserService.DataAccess.Repositories.StudentRepo
         Task<bool> DeleteAsync(Guid id);
         Task SaveChangesAsync();
         Task<(List<ApplicationUser> Users, List<Student> Students)> AddStudentsWithUsersAsync(List<(ApplicationUser User, Student Student)> userStudentPairs);
+        Task<string> UpdateStudentImageAsync(Guid id, string imageUrl);
     }
 }

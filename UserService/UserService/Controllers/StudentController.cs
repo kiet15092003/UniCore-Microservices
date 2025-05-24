@@ -117,6 +117,13 @@ namespace UserService.Controllers
                 return ApiResponse<StudentDetailDto>.ErrorResponse([$"Error getting student: {ex.Message}"]);
             }
         }
+
+        [HttpPut("update-image")]
+        public async Task<ApiResponse<string>> UpdateUserImage(UpdateUserImageDto updateUserImageDto)
+        {
+            var result = await _studentService.UpdateUserImageAsync(updateUserImageDto);
+            return ApiResponse<string>.SuccessResponse(result);
+        }
     }
 }
 
