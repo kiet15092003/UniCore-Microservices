@@ -112,6 +112,12 @@ namespace UserService.Business.Services.StudentService
         {
             try
             {
+                // Check if updateStudentDto is null
+                if (updateStudentDto == null)
+                {
+                    throw new ArgumentNullException(nameof(updateStudentDto), "Update data cannot be null");
+                }
+                
                 // Get existing student from database
                 var existingStudent = await _studentRepository.GetStudentByIdAsync(id);
                 if (existingStudent == null)
@@ -149,6 +155,14 @@ namespace UserService.Business.Services.StudentService
                 // Map address if provided
                 if (updateStudentDto.Address != null)
                 {
+                    // Handle empty string or empty Guid for AddressId
+                    if (updateStudentDto.Address.Id.HasValue && 
+                        (updateStudentDto.Address.Id.Value == Guid.Empty || 
+                         updateStudentDto.Address.Id.Value.ToString() == ""))
+                    {
+                        updateStudentDto.Address.Id = null;
+                    }
+                    
                     studentToUpdate.ApplicationUser.Address = _mapper.Map<Address>(updateStudentDto.Address);
                 }
 
@@ -383,6 +397,7 @@ namespace UserService.Business.Services.StudentService
                 {
                     return null;
                 }
+                _logger.LogInformation("400__________GetStudentDetailByIdAsync: {Student}", JsonSerializer.Serialize(student.ApplicationUser.PersonId));
                 var studentDetailDto = _mapper.Map<StudentDetailDto>(student);
                 
                 // Get major information
@@ -398,6 +413,20 @@ namespace UserService.Business.Services.StudentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting student with id {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<StudentDto> GetStudentByEmailAsync(string email)
+        {
+            try
+            {
+                var student = await _studentRepository.GetStudentByEmailAsync(email);
+                return _mapper.Map<StudentDto>(student);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting student with email {Email}", email);
                 throw;
             }
         }

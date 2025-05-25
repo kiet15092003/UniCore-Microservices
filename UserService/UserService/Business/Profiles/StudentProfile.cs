@@ -9,7 +9,8 @@ public class StudentProfile : Profile
 {
     public StudentProfile()
     {
-         CreateMap<ApplicationUser, ApplicationUserDto>()
+        CreateMap<ApplicationUser, ApplicationUserDto>();
+        CreateMap<ApplicationUser, ApplicationUserDto>()
             .ForMember(dest => dest.Dob, opt => opt.MapFrom(src => src.Dob.ToString("yyyy-MM-dd")));
 
         CreateMap<Student, StudentDto>()
@@ -25,6 +26,7 @@ public class StudentProfile : Profile
             .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.ApplicationUser.PhoneNumber))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.ApplicationUser.Status))
             .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ApplicationUser.ImageUrl))
+            .ForMember(dest => dest.PersonId, opt => opt.MapFrom(src => src.ApplicationUser.PersonId))
             .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.ApplicationUser.Address))
             .ForMember(dest => dest.Guardians, opt => opt.MapFrom(src => src.Guardians))
             .ForMember(dest => dest.BatchName, opt => opt.MapFrom(src => src.Batch.Title))
