@@ -122,6 +122,13 @@ namespace UserService.Controllers
             var result = await _studentService.UpdateUserImageAsync(updateUserImageDto);
             return ApiResponse<string>.SuccessResponse(result);
         }
+
+        [HttpGet("get-student-by-email")]
+        public async Task<ApiResponse<StudentDto>> GetStudentByEmail(string email)
+        {
+            var result = await _studentService.GetStudentByEmailAsync(email);
+            return ApiResponse<StudentDto>.SuccessResponse(result);
+        }
     }
 }
 

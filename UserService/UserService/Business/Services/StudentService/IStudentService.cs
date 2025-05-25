@@ -15,6 +15,7 @@ namespace UserService.Business.Services.StudentService
         Task<StudentDto> GetStudentByIdAsync(Guid id);
         Task<StudentDetailDto> GetStudentDetailByIdAsync(Guid id);
         Task<string> UpdateUserImageAsync(UpdateUserImageDto updateUserImageDto);
+        Task<StudentDto> GetStudentByEmailAsync(string email);
         // Task<PaginationResult<StudentDto>> GetAllPaginationAsync(Pagination pagination, StudentListFilterParams filter, Order order);
     }
 }

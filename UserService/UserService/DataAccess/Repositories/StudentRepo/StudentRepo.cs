@@ -308,8 +308,12 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                 // Update address
                 if (studentFromDto.ApplicationUser?.Address != null)
                 {
-                    if (existingStudent.ApplicationUser.Address == null)
+                    // Check if the user already has an address
+                    if (existingStudent.ApplicationUser.Address == null || 
+                        existingStudent.ApplicationUser.AddressId == null || 
+                        existingStudent.ApplicationUser.AddressId == Guid.Empty)
                     {
+                        _logger.LogInformation("Creating new address as existing address is null or has empty ID");
                         // Create new address
                         var newAddress = new Address
                         {
@@ -344,6 +348,7 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                         }
                         else
                         {
+                            _logger.LogInformation("Address not found in db despite having ID, creating new address");
                             // Address not found in db despite having ID
                             var newAddress = new Address
                             {
@@ -391,7 +396,7 @@ namespace UserService.DataAccess.Repositories.StudentRepo
                 .Include(s => s.Guardians)
                 .Include(s => s.Batch)
                 .FirstOrDefaultAsync(d => d.Id == id);
-
+            _logger.LogInformation("GetStudentDetailByIdAsync: {Student}", JsonSerializer.Serialize(result.ApplicationUser.PersonId));
             if (result == null)
             {
                 throw new KeyNotFoundException("Student not found");
@@ -411,6 +416,26 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             student.ApplicationUser.ImageUrl = imageUrl;
             await _context.SaveChangesAsync();
             return imageUrl;
+        }
+
+        public async Task<Student> GetStudentByEmailAsync(string email)
+        {
+            var result = await _context.Students
+                .Include(s => s.ApplicationUser)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.ApplicationUser.Email == email);
+                
+            if (result == null)
+            {
+                throw new KeyNotFoundException("Student not found");
+            }
+            
+            // Kiểm tra xem ImageUrl có null hay empty không
+            var imageUrl = result.ApplicationUser.ImageUrl;
+            _logger.LogInformation("Student found with email {Email}, ImageUrl: '{ImageUrl}', ImageUrl is null: {IsNull}, ImageUrl is empty: {IsEmpty}", 
+                email, imageUrl, imageUrl == null, string.IsNullOrEmpty(imageUrl));
+                
+            return result;
         }
     }
 }

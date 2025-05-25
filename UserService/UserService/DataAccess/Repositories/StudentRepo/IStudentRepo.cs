@@ -16,5 +16,6 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             Dictionary<string, string>? passwords = null);
         Task<string> UpdateStudentImageAsync(Guid id, string imageUrl);
         Task<Student> GetStudentDetailByIdAsync(Guid id);
+        Task<Student> GetStudentByEmailAsync(string email);
     }
 }

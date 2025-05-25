@@ -24,6 +24,7 @@ namespace UserService.Business.Dtos.Student
         public string PhoneNumber { get; set; }
         public string Status { get; set; }
         public string ImageUrl { get; set; }
+        public string PersonId { get; set; }
 
         // Address information
         public AddressDto Address { get; set; }
