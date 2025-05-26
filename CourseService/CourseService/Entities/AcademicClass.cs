@@ -13,7 +13,6 @@
         public Semester Semester { get; set; }
         public Guid CourseId { get; set; }
         public Course Course { get; set; }
-        public Guid ScheduleInDayId { get; set; }
-        public ScheduleInDay ScheduleInDay { get; set; }
+        public List<ScheduleInDay> ScheduleInDays { get; set; } = new List<ScheduleInDay>();
     }
 }

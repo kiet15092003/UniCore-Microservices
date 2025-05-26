@@ -89,6 +89,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
+builder.Services.AddSingleton<GrpcRoomClientService>();
 
 //Config DI
 builder.Services.AddRepositories();

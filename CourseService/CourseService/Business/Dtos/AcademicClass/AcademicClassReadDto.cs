@@ -1,6 +1,7 @@
 ﻿using CourseService.Business.Dtos.Course;
 using CourseService.Business.Dtos.Semester;
 using CourseService.Business.Dtos.Shift;
+using MajorService;
 
 namespace CourseService.Business.Dtos.AcademicClass
 {
@@ -9,6 +10,7 @@ namespace CourseService.Business.Dtos.AcademicClass
         public Guid Id { get; set; }
         public string DayOfWeek { get; set; } = string.Empty;
         public Guid RoomId { get; set; }
+        public RoomData? Room { get; set; }
         public Guid ShiftId { get; set; }
         public ShiftDto? Shift { get; set; }
     }
@@ -27,7 +29,6 @@ namespace CourseService.Business.Dtos.AcademicClass
         public CourseReadDto? Course { get; set; }
         public Guid SemesterId { get; set; }
         public SemesterReadDto? Semester { get; set; }
-        public Guid ScheduleInDayId { get; set; }
-        public ScheduleInDayReadDto? ScheduleInDay { get; set; }
+        public List<ScheduleInDayReadDto> ScheduleInDays { get; set; } = new List<ScheduleInDayReadDto>();
     }
 }

@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CourseService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250526090337_update-class")]
+    partial class updateclass
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,6 +43,10 @@ namespace CourseService.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("DayOfWeek")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
@@ -57,7 +64,13 @@ namespace CourseService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("SemesterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ShiftId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("StartDate")
@@ -74,6 +87,8 @@ namespace CourseService.Migrations
                     b.HasIndex("CourseId");
 
                     b.HasIndex("SemesterId");
+
+                    b.HasIndex("ShiftId");
 
                     b.ToTable("AcademicClasses");
                 });
@@ -349,46 +364,6 @@ namespace CourseService.Migrations
                     b.ToTable("Materials");
                 });
 
-            modelBuilder.Entity("CourseService.Entities.ScheduleInDay", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AcademicClassId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("DayOfWeek")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ShiftId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AcademicClassId");
-
-                    b.HasIndex("ShiftId");
-
-                    b.ToTable("ScheduleInDays");
-                });
-
             modelBuilder.Entity("CourseService.Entities.Semester", b =>
                 {
                     b.Property<Guid>("Id")
@@ -548,9 +523,17 @@ namespace CourseService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CourseService.Entities.Shift", "Shift")
+                        .WithMany()
+                        .HasForeignKey("ShiftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Semester");
+
+                    b.Navigation("Shift");
                 });
 
             modelBuilder.Entity("CourseService.Entities.CourseCertificate", b =>
@@ -610,25 +593,6 @@ namespace CourseService.Migrations
                     b.Navigation("TrainingRoadmap");
                 });
 
-            modelBuilder.Entity("CourseService.Entities.ScheduleInDay", b =>
-                {
-                    b.HasOne("CourseService.Entities.AcademicClass", "AcademicClass")
-                        .WithMany("ScheduleInDays")
-                        .HasForeignKey("AcademicClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CourseService.Entities.Shift", "Shift")
-                        .WithMany()
-                        .HasForeignKey("ShiftId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AcademicClass");
-
-                    b.Navigation("Shift");
-                });
-
             modelBuilder.Entity("CourseService.Entities.TrainingRoadmapCourse", b =>
                 {
                     b.HasOne("CourseService.Entities.Course", "Course")
@@ -646,11 +610,6 @@ namespace CourseService.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("TrainingRoadmap");
-                });
-
-            modelBuilder.Entity("CourseService.Entities.AcademicClass", b =>
-                {
-                    b.Navigation("ScheduleInDays");
                 });
 
             modelBuilder.Entity("CourseService.Entities.Certificate", b =>

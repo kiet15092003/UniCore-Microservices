@@ -1,4 +1,7 @@
-﻿namespace CourseService.Utils.Filter
+﻿using System;
+using System.Collections.Generic;
+
+namespace CourseService.Utils.Filter
 {
     public class AcademicClassFilterParams
     {
@@ -11,5 +14,8 @@
         public bool? IsRegistrable { get; set; }
         public Guid? CourseId { get; set; }
         public Guid? SemesterId { get; set; }
+        public Guid? RoomId { get; set; }
+        public Guid? ShiftId { get; set; }
+        public List<Guid>? ScheduleInDayIds { get; set; }
     }
 }

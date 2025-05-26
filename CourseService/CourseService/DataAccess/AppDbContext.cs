@@ -30,12 +30,10 @@ namespace CourseService.DataAccess
             // Create a unique constraint for GroupName within each MajorId
             modelBuilder.Entity<CoursesGroup>()
                 .HasIndex(g => new { g.GroupName })
-                .IsUnique();
-
-            modelBuilder.Entity<AcademicClass>()
-                .HasOne(ac => ac.ScheduleInDay)
+                .IsUnique();            modelBuilder.Entity<AcademicClass>()
+                .HasMany(ac => ac.ScheduleInDays)
                 .WithOne(sd => sd.AcademicClass)
-                .HasForeignKey<ScheduleInDay>(sd => sd.AcademicClassId);
+                .HasForeignKey(sd => sd.AcademicClassId);
 
             base.OnModelCreating(modelBuilder);
         }

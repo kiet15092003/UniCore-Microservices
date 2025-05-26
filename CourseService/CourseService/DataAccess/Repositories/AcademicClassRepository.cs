@@ -26,7 +26,7 @@ namespace CourseService.DataAccess.Repositories
             return await _context.AcademicClasses
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
-                .Include(ac => ac.ScheduleInDay)
+                .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift)
                 .FirstOrDefaultAsync(ac => ac.Id == id);
         }
@@ -36,7 +36,7 @@ namespace CourseService.DataAccess.Repositories
             return await _context.AcademicClasses
                 .Where(ac => ac.CourseId == courseId)
                 .Include(ac => ac.Semester)
-                .Include(ac => ac.ScheduleInDay)
+                .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift)
                 .ToListAsync();
         }
@@ -46,7 +46,7 @@ namespace CourseService.DataAccess.Repositories
             return await _context.AcademicClasses
                 .Where(ac => ac.SemesterId == semesterId)
                 .Include(ac => ac.Course)
-                .Include(ac => ac.ScheduleInDay)
+                .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift)
                 .ToListAsync();
         }
@@ -57,7 +57,7 @@ namespace CourseService.DataAccess.Repositories
             IQueryable<AcademicClass> query = _context.AcademicClasses
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
-                .Include(ac => ac.ScheduleInDay)
+                .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift);
 
             // Apply filters if provided
@@ -138,6 +138,24 @@ namespace CourseService.DataAccess.Repositories
             {
                 DateTime endDate = filterParams.EndDate.Value.Date;
                 queryable = queryable.Where(ac => ac.EndDate.Date == endDate);
+            }
+
+            // Filter by room ID
+            if (filterParams.RoomId.HasValue && filterParams.RoomId != Guid.Empty)
+            {
+                queryable = queryable.Where(ac => ac.ScheduleInDays.Any(s => s.RoomId == filterParams.RoomId.Value));
+            }
+
+            // Filter by shift ID
+            if (filterParams.ShiftId.HasValue && filterParams.ShiftId != Guid.Empty)
+            {
+                queryable = queryable.Where(ac => ac.ScheduleInDays.Any(s => s.ShiftId == filterParams.ShiftId.Value));
+            }
+
+            // Filter by specific schedule in day IDs
+            if (filterParams.ScheduleInDayIds != null && filterParams.ScheduleInDayIds.Any())
+            {
+                queryable = queryable.Where(ac => ac.ScheduleInDays.Any(s => filterParams.ScheduleInDayIds.Contains(s.Id)));
             }
 
             return queryable;
