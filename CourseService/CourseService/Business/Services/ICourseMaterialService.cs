@@ -8,7 +8,7 @@ namespace CourseService.Business.Services
     {
         Task<ApiResponse<IEnumerable<CourseMaterialReadDto>>> GetMaterialsByCourseIdAsync(Guid courseId);
         Task<ApiResponse<CourseMaterialReadDto>> GetMaterialByIdAsync(Guid courseId, Guid materialId);
-        Task<ApiResponse<CourseMaterialReadDto>> AddMaterialAsync(CourseMaterialCreateDto createDto);
+        Task<ApiResponse<CourseMaterialReadDto>> AddMaterialAsync(CourseMaterialCreateDto createDto, Guid courseId);
         Task<ApiResponse<CourseMaterialReadDto>> UpdateMaterialAsync(Guid courseId, CourseMaterialUpdateDto updateDto);
         Task<ApiResponse<bool>> DeleteMaterialAsync(Guid courseId, Guid materialId);
     }

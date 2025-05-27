@@ -9,7 +9,7 @@ namespace CourseService.Controllers
 {
     [Route("api/courses/{courseId}/materials")]
     [ApiController]
-    // [Authorize] - Comment lại để tắt xác thực
+    // [Authorize]
     public class MaterialsController : ControllerBase
     {
         private readonly ICourseMaterialService _materialService;
@@ -40,13 +40,10 @@ namespace CourseService.Controllers
         }
 
         [HttpPost]
-        // [Authorize(Roles = "Admin")] - Comment lại để tắt xác thực role
+        // [Authorize(Roles = "Admin")] 
         public async Task<ActionResult<ApiResponse<CourseMaterialReadDto>>> CreateMaterial([FromForm] CourseMaterialCreateDto createDto, Guid courseId)
         {
-            // Tự động gán courseId từ URL vào DTO
-            createDto.CourseId = courseId;
-
-            var response = await _materialService.AddMaterialAsync(createDto);
+            var response = await _materialService.AddMaterialAsync(createDto, courseId);
             if (!response.Success)
                 return BadRequest(response);
 

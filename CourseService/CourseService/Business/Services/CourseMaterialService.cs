@@ -49,9 +49,9 @@ namespace CourseService.Business.Services
             return new ApiResponse<CourseMaterialReadDto>(true, courseMaterialDto);
         }
 
-        public async Task<ApiResponse<CourseMaterialReadDto>> AddMaterialAsync(CourseMaterialCreateDto createDto)
+        public async Task<ApiResponse<CourseMaterialReadDto>> AddMaterialAsync(CourseMaterialCreateDto createDto, Guid courseId)
         {
-            var course = await _courseRepository.GetCourseByIdAsync(createDto.CourseId);
+            var course = await _courseRepository.GetCourseByIdAsync(courseId);
             if (course == null)
                 return new ApiResponse<CourseMaterialReadDto>(false, null, new List<string> { "Course not found" });
 
@@ -72,14 +72,14 @@ namespace CourseService.Business.Services
             // Create course material relationship
             var courseMaterial = new CourseMaterial
             {
-                CourseId = createDto.CourseId,
+                CourseId = courseId,
                 MaterialId = addedMaterial.Id
             };
 
             await _repository.AddAsync(courseMaterial);
 
             // Get the added material with course relationship
-            var result = await _repository.GetByIdAsync(createDto.CourseId, addedMaterial.Id);
+            var result = await _repository.GetByIdAsync(courseId, addedMaterial.Id);
             var courseMaterialDto = _mapper.Map<CourseMaterialReadDto>(result);
 
             return new ApiResponse<CourseMaterialReadDto>(true, courseMaterialDto);
