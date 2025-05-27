@@ -9,7 +9,7 @@ using Microsoft.OpenApi.Models;
 using CourseService.CommunicationTypes;
 using CourseService.Business;
 using CourseService.Business.Profiles;
-using UserService.Middleware;
+using CourseService.Middleware;
 using System.Security.Claims;
 using CourseService.CommunicationTypes.Grpc.GrpcClient;
 
@@ -25,6 +25,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
+// Comment lại phần xác thực JWT để test không cần token
+/*
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = ClaimTypes.Role
         };
     });
+*/
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
@@ -99,10 +102,11 @@ builder.Logging.AddConsole();
 
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
-{    cfg.AddProfile<CourseProfile>();
+{   cfg.AddProfile<CourseProfile>();
     cfg.AddProfile<TrainingRoadmapProfile>();
     cfg.AddProfile<CoursesGroupProfile>();
     cfg.AddProfile<SemesterProfile>();
+    cfg.AddProfile<MaterialProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -131,8 +135,9 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+// Comment lại phần middleware xác thực để test không cần token
+// app.UseAuthentication();
+// app.UseAuthorization();
 app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())

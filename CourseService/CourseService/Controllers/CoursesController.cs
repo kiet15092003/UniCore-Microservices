@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using UserService.Middleware;
+using CourseService.Middleware;
 
 namespace CourseService.Controllers
 {
