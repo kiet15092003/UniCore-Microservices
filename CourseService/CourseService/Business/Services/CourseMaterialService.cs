@@ -64,7 +64,8 @@ namespace CourseService.Business.Services
             var material = new Material
             {
                 Name = createDto.Name,
-                FileUrl = fileUrl
+                FileUrl = fileUrl,
+                MaterialTypeId = createDto.MaterialTypeId
             };
 
             var addedMaterial = await _repository.AddMaterialAsync(material);

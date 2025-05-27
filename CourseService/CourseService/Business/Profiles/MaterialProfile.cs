@@ -17,7 +17,14 @@ namespace CourseService.Business.Profiles
             CreateMap<CourseMaterial, CourseMaterialReadDto>()
                 .ForMember(dest => dest.MaterialId, opt => opt.MapFrom(src => src.MaterialId))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Material.Name))
-                .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.Material.FileUrl));
+                .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.Material.FileUrl))
+                .ForMember(dest => dest.MaterialTypeId, opt => opt.MapFrom(src => src.Material.MaterialTypeId))
+                .ForMember(dest => dest.MaterialTypeName, opt => opt.MapFrom(src => src.Material.MaterialType != null ? src.Material.MaterialType.Name : null));
+
+            // Map MaterialType
+            CreateMap<MaterialType, MaterialTypeReadDto>();
+            CreateMap<MaterialTypeCreateDto, MaterialType>();
+            CreateMap<MaterialTypeUpdateDto, MaterialType>();
         }
     }
 }
