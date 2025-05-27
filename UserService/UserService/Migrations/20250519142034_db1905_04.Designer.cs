@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UserService.DataAccess;
 
@@ -11,9 +12,11 @@ using UserService.DataAccess;
 namespace UserService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250519142034_db1905_04")]
+    partial class db1905_04
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,9 +84,7 @@ namespace UserService.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
@@ -103,9 +104,7 @@ namespace UserService.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AddressId")
-                        .IsUnique()
-                        .HasFilter("[AddressId] IS NOT NULL");
+                    b.HasIndex("AddressId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -116,9 +115,6 @@ namespace UserService.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.HasIndex("PersonId")
-                        .IsUnique();
-
-                    b.HasIndex("PhoneNumber")
                         .IsUnique();
 
                     b.ToTable("AspNetUsers", (string)null);
@@ -460,8 +456,8 @@ namespace UserService.Migrations
             modelBuilder.Entity("ApplicationUser", b =>
                 {
                     b.HasOne("UserService.Entities.Address", "Address")
-                        .WithOne("ApplicationUser")
-                        .HasForeignKey("ApplicationUser", "AddressId");
+                        .WithMany()
+                        .HasForeignKey("AddressId");
 
                     b.Navigation("Address");
                 });
@@ -559,12 +555,6 @@ namespace UserService.Migrations
             modelBuilder.Entity("ApplicationUser", b =>
                 {
                     b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("UserService.Entities.Address", b =>
-                {
-                    b.Navigation("ApplicationUser")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("UserService.Entities.Batch", b =>

@@ -9,7 +9,9 @@ public class ApplicationUser : IdentityUser
     [Required]
     public string LastName { get; set; }
     [Required]
-    public string PersonId { get; set; }    [Required]
+    public string PersonId { get; set; }
+    
+    [Required]
     [Phone]
     [StringLength(10, MinimumLength = 10, ErrorMessage = "Phone number must be exactly 10 digits")]
     [RegularExpression(@"^\d{10}$", ErrorMessage = "Phone number must contain exactly 10 digits")]

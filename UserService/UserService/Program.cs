@@ -29,7 +29,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// Configure JWT and authentication
+// Configure JWT and authenticationF
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
@@ -78,6 +78,7 @@ builder.Services.AddControllers()
       .AddJsonOptions(options =>
       {
           options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+          options.JsonSerializerOptions.Converters.Add(new UserService.Utils.JsonConverters.StringToNullableGuidConverter());
       });
 
 //Add Swagger
@@ -120,6 +121,8 @@ builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfi
     cfg.AddProfile<UserProfile>();
     cfg.AddProfile<BatchProfile>();
     cfg.AddProfile<StudentProfile>();
+    cfg.AddProfile<GuardianProfile>();
+    cfg.AddProfile<AddressProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 

@@ -12,5 +12,6 @@ namespace UserService.Business.Dtos.Student
         public string Dob { get; set; }
         public string PhoneNumber { get; set; }
         public int Status { get; set; }
+        public string ImageUrl { get; set; }
     }
 } 

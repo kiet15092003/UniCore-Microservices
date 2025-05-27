@@ -7,5 +7,6 @@
         public string District { get; set; }
         public string Ward { get; set; }
         public string AddressDetail { get; set; }   
+        public ApplicationUser ApplicationUser { get; set; }
     }
 }

@@ -9,6 +9,9 @@ using UserService.Business.Dtos.Student;
 using System.Collections.Concurrent;
 using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
+using UserService.DataAccess.Repositories.GuardianRepo;
+using UserService.Business.Services.GuardianService;
+using UserService.Business.Dtos.Guardian;
 
 namespace UserService.DataAccess.Repositories.StudentRepo
 {
@@ -19,19 +22,25 @@ namespace UserService.DataAccess.Repositories.StudentRepo
         private readonly SmtpClientService _smtpClient;
         private readonly ILogger<StudentRepo> _logger;
         private readonly IMapper _mapper;
+        private readonly IGuardianRepo _guardianRepo;
+        private readonly IGuardianService _guardianService;
 
         public StudentRepo(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             ILogger<StudentRepo> logger,
             SmtpClientService smtpClient,
-            IMapper mapper)
+            IMapper mapper,
+            IGuardianRepo guardianRepo,
+            IGuardianService guardianService)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
             _smtpClient = smtpClient;
             _mapper = mapper;
+            _guardianRepo = guardianRepo;
+            _guardianService = guardianService;
         }
 
 
@@ -235,36 +244,131 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             }
         }
 
-        public async Task<Student> UpdateAsync(Student student)
+        public async Task<Student> UpdateAsync(Student studentFromDto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Log incoming DTO data
+                
+
+                // Load existing student from database
                 var existingStudent = await _context.Students
                     .Include(s => s.ApplicationUser)
-                    .FirstOrDefaultAsync(s => s.Id == student.Id);
-
+                        .ThenInclude(u => u.Address)
+                    .Include(s => s.Guardians)
+                    .FirstOrDefaultAsync(s => s.Id == studentFromDto.Id);
                 if (existingStudent == null)
                     throw new KeyNotFoundException("Student not found");
 
+                // Log existing data from database
+                
+
                 // Update student properties
-                existingStudent.StudentCode = student.StudentCode;
-                existingStudent.AccumulateCredits = student.AccumulateCredits;
-                existingStudent.AccumulateScore = student.AccumulateScore;
-                existingStudent.AccumulateActivityScore = student.AccumulateActivityScore;
-                existingStudent.MajorId = student.MajorId;
-                existingStudent.BatchId = student.BatchId;
-                existingStudent.GuardianId = student.GuardianId;
+                existingStudent.StudentCode = studentFromDto.StudentCode;
+                existingStudent.AccumulateCredits = studentFromDto.AccumulateCredits;
+                existingStudent.AccumulateScore = studentFromDto.AccumulateScore;
+                existingStudent.AccumulateActivityScore = studentFromDto.AccumulateActivityScore;
+                existingStudent.MajorId = studentFromDto.MajorId;
+                existingStudent.BatchId = studentFromDto.BatchId;
 
                 // Update associated user if needed
-                if (existingStudent.ApplicationUser != null && student.ApplicationUser != null)
+                if (existingStudent.ApplicationUser != null && studentFromDto.ApplicationUser != null)
                 {
-                    existingStudent.ApplicationUser.FirstName = student.ApplicationUser.FirstName;
-                    existingStudent.ApplicationUser.LastName = student.ApplicationUser.LastName;
-                    existingStudent.ApplicationUser.PhoneNumber = student.ApplicationUser.PhoneNumber;
-                    existingStudent.ApplicationUser.Status = student.ApplicationUser.Status;
+                    existingStudent.ApplicationUser.FirstName = studentFromDto.ApplicationUser.FirstName;
+                    existingStudent.ApplicationUser.LastName = studentFromDto.ApplicationUser.LastName;
+                    existingStudent.ApplicationUser.PhoneNumber = studentFromDto.ApplicationUser.PhoneNumber;
+                    existingStudent.ApplicationUser.Status = studentFromDto.ApplicationUser.Status;
+                    existingStudent.ApplicationUser.ImageUrl = studentFromDto.ApplicationUser.ImageUrl;
                 }
 
+                // Update guardians
+                if (studentFromDto.Guardians != null && studentFromDto.Guardians.Any())
+                {
+                    // Clear existing guardians
+                    _context.Guardians.RemoveRange(existingStudent.Guardians);
+                    
+                    existingStudent.Guardians = new List<Guardian>();
+                    
+
+                    // Process guardians
+                    foreach (var guardian in studentFromDto.Guardians)
+                    {
+                        if (guardian.Id != Guid.Empty)
+                        {
+                            guardian.Id = Guid.Empty;
+                        }
+
+                        guardian.StudentId = existingStudent.Id;
+                        var newGuardian = await _guardianRepo.CreateGuardianAsync(guardian);
+                        existingStudent.Guardians.Add(newGuardian);
+                    }
+                }
+
+                // Update address
+                if (studentFromDto.ApplicationUser?.Address != null)
+                {
+                    // Check if the user already has an address
+                    if (existingStudent.ApplicationUser.Address == null || 
+                        existingStudent.ApplicationUser.AddressId == null || 
+                        existingStudent.ApplicationUser.AddressId == Guid.Empty)
+                    {
+                        _logger.LogInformation("Creating new address as existing address is null or has empty ID");
+                        // Create new address
+                        var newAddress = new Address
+                        {
+                            Country = studentFromDto.ApplicationUser.Address.Country,
+                            City = studentFromDto.ApplicationUser.Address.City,
+                            District = studentFromDto.ApplicationUser.Address.District,
+                            Ward = studentFromDto.ApplicationUser.Address.Ward,
+                            AddressDetail = studentFromDto.ApplicationUser.Address.AddressDetail
+                        };
+                        
+                        _context.Addresses.Add(newAddress);
+                        await _context.SaveChangesAsync();
+                        
+                        existingStudent.ApplicationUser.Address = newAddress;
+                        existingStudent.ApplicationUser.AddressId = newAddress.Id;
+                    }
+                    else
+                    {
+                        // Update existing address
+                        var addressId = existingStudent.ApplicationUser.AddressId.Value;
+                        var existingAddress = await _context.Set<Address>().FindAsync(addressId);
+                        
+                        if (existingAddress != null)
+                        {
+                            existingAddress.Country = studentFromDto.ApplicationUser.Address.Country;
+                            existingAddress.City = studentFromDto.ApplicationUser.Address.City;
+                            existingAddress.District = studentFromDto.ApplicationUser.Address.District;
+                            existingAddress.Ward = studentFromDto.ApplicationUser.Address.Ward;
+                            existingAddress.AddressDetail = studentFromDto.ApplicationUser.Address.AddressDetail;
+                            
+                            _context.Entry(existingAddress).State = EntityState.Modified;
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Address not found in db despite having ID, creating new address");
+                            // Address not found in db despite having ID
+                            var newAddress = new Address
+                            {
+                                Country = studentFromDto.ApplicationUser.Address.Country,
+                                City = studentFromDto.ApplicationUser.Address.City,
+                                District = studentFromDto.ApplicationUser.Address.District,
+                                Ward = studentFromDto.ApplicationUser.Address.Ward,
+                                AddressDetail = studentFromDto.ApplicationUser.Address.AddressDetail
+                            };
+                            
+                            _context.Addresses.Add(newAddress);
+                            await _context.SaveChangesAsync();
+                            
+                            existingStudent.ApplicationUser.Address = newAddress;
+                            existingStudent.ApplicationUser.AddressId = newAddress.Id;
+                        }
+                    }
+                }
+
+                // Save all changes
                 _context.Students.Update(existingStudent);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -274,7 +378,7 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error updating student with id {Id}", student.Id);
+                _logger.LogError(ex, "Error updating student with id {Id}", studentFromDto.Id);
                 throw;
             }
         }
@@ -282,6 +386,56 @@ namespace UserService.DataAccess.Repositories.StudentRepo
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<Student> GetStudentDetailByIdAsync(Guid id)
+        {
+            var result = await _context.Students
+                .Include(s => s.ApplicationUser)
+                    .ThenInclude(u => u.Address)
+                .Include(s => s.Guardians)
+                .Include(s => s.Batch)
+                .FirstOrDefaultAsync(d => d.Id == id);
+            _logger.LogInformation("GetStudentDetailByIdAsync: {Student}", JsonSerializer.Serialize(result.ApplicationUser.PersonId));
+            if (result == null)
+            {
+                throw new KeyNotFoundException("Student not found");
+            }
+            return result;
+        }
+
+        public async Task<string> UpdateStudentImageAsync(Guid id, string imageUrl)
+        {
+            var student = await _context.Students
+                .Include(s => s.ApplicationUser)
+                .FirstOrDefaultAsync(s => s.Id == id);
+                
+            if (student == null)
+                throw new KeyNotFoundException("Student not found");
+                
+            student.ApplicationUser.ImageUrl = imageUrl;
+            await _context.SaveChangesAsync();
+            return imageUrl;
+        }
+
+        public async Task<Student> GetStudentByEmailAsync(string email)
+        {
+            var result = await _context.Students
+                .Include(s => s.ApplicationUser)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.ApplicationUser.Email == email);
+                
+            if (result == null)
+            {
+                throw new KeyNotFoundException("Student not found");
+            }
+            
+            // Kiểm tra xem ImageUrl có null hay empty không
+            var imageUrl = result.ApplicationUser.ImageUrl;
+            _logger.LogInformation("Student found with email {Email}, ImageUrl: '{ImageUrl}', ImageUrl is null: {IsNull}, ImageUrl is empty: {IsEmpty}", 
+                email, imageUrl, imageUrl == null, string.IsNullOrEmpty(imageUrl));
+                
+            return result;
         }
     }
 }
