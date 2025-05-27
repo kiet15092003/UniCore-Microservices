@@ -11,5 +11,8 @@ namespace CourseService.Business.Dtos.Semester
         [Required]
         [Range(2020, 2050, ErrorMessage = "Year must be between 2020 and 2050")]
         public int Year { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int NumberOfWeeks { get; set; }
     }
 }

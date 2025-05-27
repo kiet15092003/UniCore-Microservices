@@ -1,12 +1,12 @@
 ﻿using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
 
-namespace CourseService.Business.Dtos.Course
+namespace CourseService.Business.Dtos.AcademicClass
 {
-    public class GetCourseByPaginationParam
+    public class GetAcademicClassByPaginationParam
     {
         public Pagination Pagination { get; set; } = new Pagination();
-        public CourseListFilterParams Filter { get; set; } = new CourseListFilterParams();
+        public AcademicClassFilterParams Filter { get; set; } = new AcademicClassFilterParams();
         public Order Order { get; set; } = new Order();
     }
 }

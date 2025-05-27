@@ -1,6 +1,7 @@
 using AutoMapper;
 using MajorService.Business;
 using MajorService.CommunicationTypes;
+using MajorService.CommunicationTypes.Grpc;
 using MajorService.DataAccess;
 using MajorService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -141,6 +142,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 app.MapGrpcService<GrpcMajorService>();
+app.MapGrpcService<GrpcRoomService>();
 
 // use the exception middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
