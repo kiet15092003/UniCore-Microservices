@@ -35,8 +35,6 @@ namespace CourseService.Business.Services
                 Name = academicClassCreateDto.Name,
                 GroupNumber = academicClassCreateDto.GroupNumber,
                 Capacity = academicClassCreateDto.Capacity,
-                StartDate = academicClassCreateDto.StartDate,
-                EndDate = academicClassCreateDto.EndDate,
                 ListOfWeeks = academicClassCreateDto.ListOfWeeks,
                 IsRegistrable = academicClassCreateDto.IsRegistrable,
                 CourseId = academicClassCreateDto.CourseId,

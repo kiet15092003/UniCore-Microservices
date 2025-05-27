@@ -5,7 +5,7 @@ using UserService.Middleware;
 
 namespace CourseService.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/c/[controller]")]
     [ApiController]
     public class AcademicClassesController : ControllerBase
     {

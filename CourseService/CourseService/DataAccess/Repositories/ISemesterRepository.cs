@@ -1,7 +1,6 @@
 ﻿using CourseService.Entities;
 using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
-using CourseService.Business.Dtos.Semester;
 
 namespace CourseService.DataAccess.Repositories
 {

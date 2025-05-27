@@ -83,7 +83,8 @@ namespace CourseService.DataAccess.Repositories
                 PageSize = pagination.ItemsPerpage,
                 PageIndex = pagination.PageNumber
             };
-        }        private IQueryable<AcademicClass> ApplyFilters(IQueryable<AcademicClass> queryable, AcademicClassFilterParams filterParams)
+        }        
+        private IQueryable<AcademicClass> ApplyFilters(IQueryable<AcademicClass> queryable, AcademicClassFilterParams filterParams)
         {
             // Filter by name
             if (!string.IsNullOrWhiteSpace(filterParams.Name))
@@ -126,20 +127,6 @@ namespace CourseService.DataAccess.Repositories
                 queryable = queryable.Where(ac => ac.Capacity <= filterParams.MaxCapacity.Value);
             }
 
-            // Filter by start date range
-            if (filterParams.StartDate.HasValue)
-            {
-                DateTime startDate = filterParams.StartDate.Value.Date;
-                queryable = queryable.Where(ac => ac.StartDate.Date == startDate);
-            }
-
-            // Filter by end date
-            if (filterParams.EndDate.HasValue)
-            {
-                DateTime endDate = filterParams.EndDate.Value.Date;
-                queryable = queryable.Where(ac => ac.EndDate.Date == endDate);
-            }
-
             // Filter by room ID
             if (filterParams.RoomId.HasValue && filterParams.RoomId != Guid.Empty)
             {
@@ -163,43 +150,20 @@ namespace CourseService.DataAccess.Repositories
 
         private IQueryable<AcademicClass> ApplySorting(IQueryable<AcademicClass> queryable, Order? order)
         {
-            if (order != null)
+            if (order != null && !string.IsNullOrEmpty(order.By))
             {
-                switch (order.By.ToLower())
+                if (order.IsDesc)
                 {
-                    case "name":
-                        queryable = order.IsDesc
-                            ? queryable.OrderByDescending(ac => ac.Name)
-                            : queryable.OrderBy(ac => ac.Name);
-                        break;
-                    case "startdate":
-                        queryable = order.IsDesc
-                            ? queryable.OrderByDescending(ac => ac.StartDate)
-                            : queryable.OrderBy(ac => ac.StartDate);
-                        break;
-                    case "enddate":
-                        queryable = order.IsDesc
-                            ? queryable.OrderByDescending(ac => ac.EndDate)
-                            : queryable.OrderBy(ac => ac.EndDate);
-                        break;
-                    case "capacity":
-                        queryable = order.IsDesc
-                            ? queryable.OrderByDescending(ac => ac.Capacity)
-                            : queryable.OrderBy(ac => ac.Capacity);
-                        break;
-                    case "groupnumber":
-                        queryable = order.IsDesc
-                            ? queryable.OrderByDescending(ac => ac.GroupNumber)
-                            : queryable.OrderBy(ac => ac.GroupNumber);
-                        break;
-                    default:
-                        queryable = queryable.OrderBy(ac => ac.Name);
-                        break;
+                    queryable = queryable.OrderByDescending(e => EF.Property<TrainingRoadmap>(e, order.By));
+                }
+                else
+                {
+                    queryable = queryable.OrderBy(e => EF.Property<TrainingRoadmap>(e, order.By));
                 }
             }
             else
             {
-                queryable = queryable.OrderBy(ac => ac.Name);
+                queryable = queryable.OrderByDescending(s => s.CreatedAt);
             }
 
             return queryable;

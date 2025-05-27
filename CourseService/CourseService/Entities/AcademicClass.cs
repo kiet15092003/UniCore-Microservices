@@ -4,9 +4,7 @@
     {
         public string Name { get; set; }
         public int GroupNumber { get; set; }
-        public int Capacity { get; set; }   
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public int Capacity { get; set; }          
         public List<int> ListOfWeeks { get; set; }
         public bool IsRegistrable { get; set; }
         public Guid SemesterId { get; set; }

@@ -21,8 +21,6 @@ namespace CourseService.Business.Dtos.AcademicClass
         public string Name { get; set; } = string.Empty;
         public int GroupNumber { get; set; }
         public int Capacity { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
         public List<int> ListOfWeeks { get; set; } = new List<int>();
         public bool IsRegistrable { get; set; }
         public Guid CourseId { get; set; }
