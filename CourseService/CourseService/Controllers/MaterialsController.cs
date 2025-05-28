@@ -2,12 +2,13 @@ using CourseService.Business.Dtos.Course;
 using CourseService.Business.Dtos.Material;
 using CourseService.Business.Services;
 using CourseService.Middleware;
+using CourseService.Utils.Pagination;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseService.Controllers
 {
-    [Route("api/courses/{courseId}/materials")]
+    [Route("api/courses/{courseId}/course-materials")]
     [ApiController]
     // [Authorize]
     public class MaterialsController : ControllerBase
@@ -19,6 +20,23 @@ namespace CourseService.Controllers
             _materialService = courseMaterialService;
         }
 
+        [HttpGet("page")]
+        public async Task<ActionResult<ApiResponse<PaginationResult<MaterialReadDto>>>> GetMaterials(
+            Guid courseId,
+            [FromQuery] GetMaterialByPaginationParam param)
+        {
+            var response = await _materialService.GetMaterialsPaginationAsync(
+                courseId,
+                param.Pagination,
+                param.Filter,
+                param.Order);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+        
         [HttpGet]
         public async Task<ActionResult<ApiResponse<IEnumerable<CourseMaterialReadDto>>>> GetMaterials(Guid courseId)
         {

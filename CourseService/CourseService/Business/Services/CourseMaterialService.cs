@@ -5,6 +5,8 @@ using CourseService.DataAccess.Repositories;
 using CourseService.Entities;
 using CourseService.Middleware;
 using CourseService.Utils;
+using CourseService.Utils.Filter;
+using CourseService.Utils.Pagination;
 
 namespace CourseService.Business.Services
 {
@@ -25,6 +27,41 @@ namespace CourseService.Business.Services
             _courseRepository = courseRepository;
             _cloudinaryService = cloudinaryService;
             _mapper = mapper;
+        }
+
+        public async Task<ApiResponse<PaginationResult<MaterialReadDto>>> GetMaterialsPaginationAsync(
+            Guid courseId,
+            Pagination pagination,
+            MaterialListFilterParams filterParams,
+            Order? order)
+        {
+            // Kiểm tra course có tồn tại không
+            var course = await _courseRepository.GetCourseByIdAsync(courseId);
+            if (course == null)
+                return new ApiResponse<PaginationResult<MaterialReadDto>>(
+                    false, 
+                    null, 
+                    new List<string> { "Course not found" });
+
+            // Lấy danh sách material với phân trang
+            var paginationResult = await _repository.GetMaterialsPaginationAsync(
+                courseId, 
+                pagination, 
+                filterParams, 
+                order);
+
+            // Map kết quả sang DTO
+            var materialDtos = _mapper.Map<List<MaterialReadDto>>(paginationResult.Data);
+            
+            var result = new PaginationResult<MaterialReadDto>
+            {
+                Data = materialDtos,
+                Total = paginationResult.Total,
+                PageIndex = paginationResult.PageIndex,
+                PageSize = paginationResult.PageSize
+            };
+
+            return new ApiResponse<PaginationResult<MaterialReadDto>>(true, result);
         }
 
         public async Task<ApiResponse<IEnumerable<CourseMaterialReadDto>>> GetMaterialsByCourseIdAsync(Guid courseId)

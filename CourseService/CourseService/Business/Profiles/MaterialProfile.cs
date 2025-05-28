@@ -22,6 +22,12 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.MaterialTypeName, opt => opt.MapFrom(src => src.Material.MaterialType != null ? src.Material.MaterialType.Name : null));
 
             // Map MaterialType
+            CreateMap<PaginationResult<Material>, MaterialListResponse>();
+            CreateMap<Material, MaterialReadDto>();
+            CreateMap<Material, MaterialReadDto>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.FileUrl))
+                .ForMember(dest => dest.MaterialTypeId, opt => opt.MapFrom(src => src.MaterialType.Id));
             CreateMap<MaterialType, MaterialTypeReadDto>();
             CreateMap<MaterialTypeCreateDto, MaterialType>();
             CreateMap<MaterialTypeUpdateDto, MaterialType>();

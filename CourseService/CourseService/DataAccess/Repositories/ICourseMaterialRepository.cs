@@ -1,4 +1,6 @@
 using CourseService.Entities;
+using CourseService.Utils.Filter;
+using CourseService.Utils.Pagination;
 
 namespace CourseService.DataAccess.Repositories
 {
@@ -13,5 +15,12 @@ namespace CourseService.DataAccess.Repositories
         Task<Material> AddMaterialAsync(Material material);
         Task<bool> UpdateMaterialAsync(Material material);
         Task<bool> DeleteMaterialAsync(Guid materialId);
+        
+        // Phương thức phân trang
+        Task<PaginationResult<Material>> GetMaterialsPaginationAsync(
+            Guid courseId,
+            Pagination pagination,
+            MaterialListFilterParams filterParams,
+            Order? order);
     }
 } 

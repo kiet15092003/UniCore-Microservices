@@ -1,4 +1,6 @@
 using CourseService.Entities;
+using CourseService.Utils.Filter;
+using CourseService.Utils.Pagination;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseService.DataAccess.Repositories
@@ -12,10 +14,118 @@ namespace CourseService.DataAccess.Repositories
             _context = context;
         }
 
+        private IQueryable<Material> ApplyFilters(IQueryable<Material> queryable, MaterialListFilterParams filterParams)
+        {
+            // Lọc theo tên
+            if (!string.IsNullOrWhiteSpace(filterParams.Name))
+            {
+                queryable = queryable.Where(m => m.Name.Contains(filterParams.Name));
+            }
+
+            // Lọc theo loại tài liệu
+            if (filterParams.MaterialTypeId.HasValue)
+            {
+                queryable = queryable.Where(m => m.MaterialTypeId == filterParams.MaterialTypeId.Value);
+            }
+
+            // Lọc theo có file hay không
+            if (filterParams.HasFile.HasValue)
+            {
+                if (filterParams.HasFile.Value)
+                {
+                    queryable = queryable.Where(m => !string.IsNullOrEmpty(m.FileUrl));
+                }
+                else
+                {
+                    queryable = queryable.Where(m => string.IsNullOrEmpty(m.FileUrl));
+                }
+            }
+
+            return queryable;
+        }
+
+        private IQueryable<Material> ApplySorting(IQueryable<Material> queryable, Order? order)
+        {
+            if (order != null && !string.IsNullOrEmpty(order.By))
+            {
+                switch (order.By.ToLower())
+                {
+                    case "name":
+                        queryable = order.IsDesc 
+                            ? queryable.OrderByDescending(m => m.Name)
+                            : queryable.OrderBy(m => m.Name);
+                        break;
+                    case "createdat":
+                        queryable = order.IsDesc 
+                            ? queryable.OrderByDescending(m => m.CreatedAt)
+                            : queryable.OrderBy(m => m.CreatedAt);
+                        break;
+                    case "updatedat":
+                        queryable = order.IsDesc 
+                            ? queryable.OrderByDescending(m => m.UpdatedAt)
+                            : queryable.OrderBy(m => m.UpdatedAt);
+                        break;
+                    default:
+                        queryable = queryable.OrderByDescending(m => m.CreatedAt);
+                        break;
+                }
+            }
+            else
+            {
+                // Mặc định sắp xếp theo thời gian tạo mới nhất
+                queryable = queryable.OrderByDescending(m => m.CreatedAt);
+            }
+
+            return queryable;
+        }
+
+        public async Task<PaginationResult<Material>> GetMaterialsPaginationAsync(
+            Guid courseId,
+            Pagination pagination,
+            MaterialListFilterParams filterParams,
+            Order? order)
+        {
+            // Lấy danh sách materialId từ CourseMaterial
+            var materialIds = await _context.CourseMaterials
+                .Where(cm => cm.CourseId == courseId)
+                .Select(cm => cm.MaterialId)
+                .ToListAsync();
+
+            // Tạo query với các material thuộc course
+            var queryable = _context.Materials
+                .Include(m => m.MaterialType)
+                .Where(m => materialIds.Contains(m.Id))
+                .AsQueryable();
+
+            // Áp dụng các bộ lọc
+            queryable = ApplyFilters(queryable, filterParams);
+
+            // Đếm tổng số lượng trước khi phân trang
+            int total = await queryable.CountAsync();
+
+            // Áp dụng sắp xếp
+            queryable = ApplySorting(queryable, order);
+
+            // Phân trang
+            var result = await queryable
+                .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
+                .Take(pagination.ItemsPerpage)
+                .ToListAsync();
+
+            return new PaginationResult<Material>
+            {
+                Data = result,
+                Total = total,
+                PageIndex = pagination.PageNumber,
+                PageSize = pagination.ItemsPerpage
+            };
+        }
+
         public async Task<CourseMaterial> GetByIdAsync(Guid courseId, Guid materialId)
         {
             return await _context.CourseMaterials
                 .Include(cm => cm.Material)
+                .ThenInclude(m => m.MaterialType)
                 .FirstOrDefaultAsync(cm => cm.CourseId == courseId && cm.MaterialId == materialId);
         }
 
@@ -23,6 +133,7 @@ namespace CourseService.DataAccess.Repositories
         {
             return await _context.CourseMaterials
                 .Include(cm => cm.Material)
+                .ThenInclude(m => m.MaterialType)
                 .Where(cm => cm.CourseId == courseId)
                 .ToListAsync();
         }
@@ -54,7 +165,9 @@ namespace CourseService.DataAccess.Repositories
 
         public async Task<Material> GetMaterialByIdAsync(Guid materialId)
         {
-            return await _context.Materials.FindAsync(materialId);
+            return await _context.Materials
+                .Include(m => m.MaterialType)
+                .FirstOrDefaultAsync(m => m.Id == materialId);
         }
 
         public async Task<Material> AddMaterialAsync(Material material)

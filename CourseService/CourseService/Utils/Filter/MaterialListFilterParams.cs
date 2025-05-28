@@ -1,6 +1,10 @@
-public class MaterialListFilterParams
+namespace CourseService.Utils.Filter
 {
-    public string? Name { get; set; }
-    public string? MaterialTypeId { get; set; }
+    public class MaterialListFilterParams
+    {
+        public string? Name { get; set; }
+        public Guid? MaterialTypeId { get; set; }
+        public bool? HasFile { get; set; }
+    }
 }
 

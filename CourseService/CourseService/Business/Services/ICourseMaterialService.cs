@@ -1,6 +1,8 @@
 using CourseService.Business.Dtos.Course;
 using CourseService.Business.Dtos.Material;
 using CourseService.Middleware;
+using CourseService.Utils.Filter;
+using CourseService.Utils.Pagination;
 
 namespace CourseService.Business.Services
 {
@@ -11,5 +13,12 @@ namespace CourseService.Business.Services
         Task<ApiResponse<CourseMaterialReadDto>> AddMaterialAsync(CourseMaterialCreateDto createDto, Guid courseId);
         Task<ApiResponse<CourseMaterialReadDto>> UpdateMaterialAsync(Guid courseId, CourseMaterialUpdateDto updateDto);
         Task<ApiResponse<bool>> DeleteMaterialAsync(Guid courseId, Guid materialId);
+        
+        // Phương thức phân trang
+        Task<ApiResponse<PaginationResult<MaterialReadDto>>> GetMaterialsPaginationAsync(
+            Guid courseId,
+            Pagination pagination,
+            MaterialListFilterParams filterParams,
+            Order? order);
     }
 } 
