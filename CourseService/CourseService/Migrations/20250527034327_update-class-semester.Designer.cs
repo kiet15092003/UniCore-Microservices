@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CourseService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250527034327_update-class-semester")]
+    partial class updateclasssemester
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -328,9 +331,6 @@ namespace CourseService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("MaterialTypeId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -342,44 +342,8 @@ namespace CourseService.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("MaterialTypeId");
 
                     b.ToTable("Materials");
-                });
-
-            modelBuilder.Entity("CourseService.Entities.MaterialType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MaterialTypes");
                 });
 
             modelBuilder.Entity("CourseService.Entities.ScheduleInDay", b =>
@@ -652,15 +616,6 @@ namespace CourseService.Migrations
                     b.Navigation("TrainingRoadmap");
                 });
 
-            modelBuilder.Entity("CourseService.Entities.Material", b =>
-                {
-                    b.HasOne("CourseService.Entities.MaterialType", "MaterialType")
-                        .WithMany("Materials")
-                        .HasForeignKey("MaterialTypeId");
-
-                    b.Navigation("MaterialType");
-                });
-
             modelBuilder.Entity("CourseService.Entities.ScheduleInDay", b =>
                 {
                     b.HasOne("CourseService.Entities.AcademicClass", "AcademicClass")
@@ -726,11 +681,6 @@ namespace CourseService.Migrations
             modelBuilder.Entity("CourseService.Entities.Material", b =>
                 {
                     b.Navigation("CourseMaterials");
-                });
-
-            modelBuilder.Entity("CourseService.Entities.MaterialType", b =>
-                {
-                    b.Navigation("Materials");
                 });
 
             modelBuilder.Entity("CourseService.Entities.TrainingRoadmap", b =>

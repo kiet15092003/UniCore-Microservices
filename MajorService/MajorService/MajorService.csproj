@@ -29,8 +29,9 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="CommunicationTypes\Grpc\Protos\" />
-	</ItemGroup>
+	</ItemGroup>	
 	<ItemGroup>
 		<Protobuf Include="CommunicationTypes\Grpc\Protos\major.proto" GrpcServices="Server" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\room.proto" GrpcServices="Server" />
 	</ItemGroup>
 </Project>

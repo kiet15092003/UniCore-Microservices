@@ -2,7 +2,6 @@
 using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
 using Microsoft.EntityFrameworkCore;
-using CourseService.Business.Dtos.Semester;
 
 namespace CourseService.DataAccess.Repositories
 {
@@ -94,6 +93,21 @@ namespace CourseService.DataAccess.Repositories
             if (filterParams.IsActive.HasValue)
             {
                 queryable = queryable.Where(s => s.IsActive == filterParams.IsActive.Value);
+            }
+
+            if (filterParams.StartDate.HasValue)
+            {
+                queryable = queryable.Where(s => s.StartDate >= filterParams.StartDate.Value);
+            }
+
+            if (filterParams.EndDate.HasValue)
+            {
+                queryable = queryable.Where(s => s.EndDate <= filterParams.EndDate.Value);
+            }
+
+            if (filterParams.NumberOfWeeks.HasValue)
+            {
+                queryable = queryable.Where(s => s.NumberOfWeeks == filterParams.NumberOfWeeks.Value);
             }
 
             return queryable;

@@ -23,13 +23,18 @@ namespace CourseService.DataAccess
         public DbSet<CoursesGroup> CoursesGroups { get; set; }
         public DbSet<AcademicClass> AcademicClasses { get; set; }
         public DbSet<Semester> Semesters { get; set; }
+        public DbSet<Shift> Shifts { get; set; }
+        public DbSet<ScheduleInDay> ScheduleInDays { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Create a unique constraint for GroupName within each MajorId
             modelBuilder.Entity<CoursesGroup>()
                 .HasIndex(g => new { g.GroupName })
-                .IsUnique();
+                .IsUnique();            modelBuilder.Entity<AcademicClass>()
+                .HasMany(ac => ac.ScheduleInDays)
+                .WithOne(sd => sd.AcademicClass)
+                .HasForeignKey(sd => sd.AcademicClassId);
 
             base.OnModelCreating(modelBuilder);
         }

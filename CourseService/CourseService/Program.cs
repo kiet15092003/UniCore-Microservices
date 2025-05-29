@@ -25,7 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
-// Comment lại phần xác thực JWT để test không cần token
+
 /*
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -92,6 +92,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
+builder.Services.AddSingleton<GrpcRoomClientService>();
 
 //Config DI
 builder.Services.AddRepositories();
@@ -102,10 +103,13 @@ builder.Logging.AddConsole();
 
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
-{   cfg.AddProfile<CourseProfile>();
+{
+    cfg.AddProfile<CourseProfile>();
     cfg.AddProfile<TrainingRoadmapProfile>();
     cfg.AddProfile<CoursesGroupProfile>();
     cfg.AddProfile<SemesterProfile>();
+    cfg.AddProfile<ShiftProfile>();
+    cfg.AddProfile<AcademicClassProfile>();
     cfg.AddProfile<MaterialProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
@@ -135,7 +139,7 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-// Comment lại phần middleware xác thực để test không cần token
+
 // app.UseAuthentication();
 // app.UseAuthorization();
 app.UseCors(corsPolicy);
@@ -149,5 +153,8 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Initialize the database and seed data
+await DbInitializer.InitializeAsync(app.Services);
 
 app.Run();
