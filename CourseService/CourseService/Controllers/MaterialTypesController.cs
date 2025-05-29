@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CourseService.Controllers
 {
-    [Route("api/material-types")]
+    [Route("api/c/Courses/material-types")]
     [ApiController]
     // [Authorize] - Comment lại để tắt xác thực
     public class MaterialTypesController : ControllerBase

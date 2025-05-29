@@ -123,36 +123,39 @@ namespace CourseService.Business.Services
             return new ApiResponse<CourseMaterialReadDto>(true, courseMaterialDto);
         }
 
-        public async Task<ApiResponse<CourseMaterialReadDto>> UpdateMaterialAsync(Guid courseId, CourseMaterialUpdateDto updateDto)
+        public async Task<ApiResponse<bool>> UpdateMaterialAsync(Guid courseId, Guid materialId, CourseMaterialUpdateDto updateDto)
         {
-            var courseMaterial = await _repository.GetByIdAsync(courseId, updateDto.MaterialId);
+            var courseMaterial = await _repository.GetByIdAsync(courseId, materialId);
             if (courseMaterial == null)
-                return new ApiResponse<CourseMaterialReadDto>(false, null, new List<string> { "Course material not found" });
+                return new ApiResponse<bool>(false, false, new List<string> { "Course material not found" });
 
-            var material = await _repository.GetMaterialByIdAsync(updateDto.MaterialId);
+            var material = await _repository.GetMaterialByIdAsync(materialId);
             if (material == null)
-                return new ApiResponse<CourseMaterialReadDto>(false, null, new List<string> { "Material not found" });
+                return new ApiResponse<bool>(false, false, new List<string> { "Material not found" });
 
             // Update material name
             material.Name = updateDto.Name;
+            
+            // Update material type if provided
+            if (updateDto.MaterialTypeId.HasValue)
+            {
+                material.MaterialTypeId = updateDto.MaterialTypeId;
+            }
 
             // If new file is provided, upload it and update the URL
             if (updateDto.File != null)
             {
                 var fileUrl = await _cloudinaryService.UploadFileAsync(updateDto.File);
                 if (string.IsNullOrEmpty(fileUrl))
-                    return new ApiResponse<CourseMaterialReadDto>(false, null, new List<string> { "Failed to upload file" });
+                    return new ApiResponse<bool>(false, false, new List<string> { "Failed to upload file" });
 
                 material.FileUrl = fileUrl;
             }
 
-            await _repository.UpdateMaterialAsync(material);
-
-            // Get updated material
-            var updatedCourseMaterial = await _repository.GetByIdAsync(courseId, updateDto.MaterialId);
-            var courseMaterialDto = _mapper.Map<CourseMaterialReadDto>(updatedCourseMaterial);
-
-            return new ApiResponse<CourseMaterialReadDto>(true, courseMaterialDto);
+            // Update the material
+            var result = await _repository.UpdateMaterialAsync(material);
+            
+            return new ApiResponse<bool>(true, result);
         }
 
         public async Task<ApiResponse<bool>> DeleteMaterialAsync(Guid courseId, Guid materialId)

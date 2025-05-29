@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CourseService.Controllers
 {
-    [Route("api/courses/{courseId}/course-materials")]
+    [Route("api/c/Courses/{courseId}/course-materials")]
     [ApiController]
     // [Authorize]
     public class MaterialsController : ControllerBase
@@ -70,12 +70,9 @@ namespace CourseService.Controllers
 
         [HttpPut("{materialId}")]
         // [Authorize(Roles = "Admin,Teacher")] - Comment lại để tắt xác thực role
-        public async Task<ActionResult<ApiResponse<CourseMaterialReadDto>>> UpdateMaterial([FromForm] CourseMaterialUpdateDto updateDto, Guid courseId, Guid materialId)
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateMaterial([FromForm] CourseMaterialUpdateDto updateDto, Guid courseId, Guid materialId)
         {
-            // Ensure the materialId in the URL matches the one in the DTO
-            updateDto.MaterialId = materialId;
-
-            var response = await _materialService.UpdateMaterialAsync(courseId, updateDto);
+            var response = await _materialService.UpdateMaterialAsync(courseId, materialId, updateDto);
             if (!response.Success)
                 return NotFound(response);
 
