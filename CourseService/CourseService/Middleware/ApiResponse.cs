@@ -1,4 +1,4 @@
-﻿namespace UserService.Middleware
+﻿namespace CourseService.Middleware
 {
     public class ApiResponse<T>
     {

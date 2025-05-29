@@ -9,7 +9,7 @@ using Microsoft.OpenApi.Models;
 using CourseService.CommunicationTypes;
 using CourseService.Business;
 using CourseService.Business.Profiles;
-using UserService.Middleware;
+using CourseService.Middleware;
 using System.Security.Claims;
 using CourseService.CommunicationTypes.Grpc.GrpcClient;
 
@@ -25,6 +25,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
+
+/*
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             RoleClaimType = ClaimTypes.Role
         };
     });
+*/
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
@@ -107,6 +110,7 @@ builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfi
     cfg.AddProfile<SemesterProfile>();
     cfg.AddProfile<ShiftProfile>();
     cfg.AddProfile<AcademicClassProfile>();
+    cfg.AddProfile<MaterialProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -135,8 +139,9 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+
+// app.UseAuthentication();
+// app.UseAuthorization();
 app.UseCors(corsPolicy);
 
 if (app.Environment.IsDevelopment())

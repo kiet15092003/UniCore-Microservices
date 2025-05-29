@@ -10,6 +10,7 @@ namespace CourseService.DataAccess
             services.AddScoped<ITrainingRoadmapRepository, TrainingRoadmapRepository>();
             services.AddScoped<ICoursesGroupRepository, CoursesGroupRepository>();
             services.AddScoped<ISemesterRepository, SemesterRepository>();
+            services.AddScoped<ICourseMaterialRepository, CourseMaterialRepository>();
             services.AddScoped<IShiftRepository, ShiftRepository>();
             services.AddScoped<IAcademicClassRepository, AcademicClassRepository>();
             services.AddScoped<IScheduleInDayRepository, ScheduleInDayRepository>();

@@ -3,7 +3,7 @@ using CourseService.Business.Services;
 using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
-using UserService.Middleware;
+using CourseService.Middleware;
 
 namespace CourseService.Controllers
 {
