@@ -56,6 +56,7 @@ builder.Services
 
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
+builder.Services.AddSingleton<GrpcDepartmentClientService>();
 builder.Services.AddSingleton<SmtpClientService>();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -123,6 +124,7 @@ builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfi
     cfg.AddProfile<StudentProfile>();
     cfg.AddProfile<GuardianProfile>();
     cfg.AddProfile<AddressProfile>();
+    cfg.AddProfile<LecturerProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 

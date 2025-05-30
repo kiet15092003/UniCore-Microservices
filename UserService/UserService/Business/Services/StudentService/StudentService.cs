@@ -397,7 +397,6 @@ namespace UserService.Business.Services.StudentService
                 {
                     return null;
                 }
-                _logger.LogInformation("400__________GetStudentDetailByIdAsync: {Student}", JsonSerializer.Serialize(student.ApplicationUser.PersonId));
                 var studentDetailDto = _mapper.Map<StudentDetailDto>(student);
                 
                 // Get major information

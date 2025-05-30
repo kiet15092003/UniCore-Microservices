@@ -143,6 +143,7 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 app.MapGrpcService<GrpcMajorService>();
 app.MapGrpcService<GrpcRoomService>();
+app.MapGrpcService<GrpcDepartmentService>();
 
 // use the exception middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();

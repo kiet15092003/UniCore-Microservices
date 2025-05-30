@@ -3,6 +3,7 @@ using UserService.Business.Services.BatchService;
 using UserService.Business.Services.StudentService;
 using UserService.Business.Services.GuardianService;
 using UserService.Business.Services.AddressService;
+using UserService.Business.Services.LecturerService;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
 
 namespace UserService.Business
@@ -17,6 +18,8 @@ namespace UserService.Business
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IGuardianService, GuardianService>();
             services.AddScoped<IAddressService, AddressService>();
+            services.AddScoped<ILecturerService, LecturerService>();
+
         }
     }
 }
