@@ -24,4 +24,5 @@ public class ApplicationUser : IdentityUser
     public Guid? AddressId { get; set; }
     public Address? Address { get; set; }
     public Student? Student { get; set; }
+    public Lecturer? Lecturer { get; set; }
 }

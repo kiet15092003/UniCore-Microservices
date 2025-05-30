@@ -16,6 +16,7 @@ namespace UserService.DataAccess
         }        // Users is already defined in IdentityDbContext, so we don't redefine it here
         public DbSet<TrainingManager> TrainingManagers { get; set; }
         public DbSet<Student> Students { get; set; }
+        public DbSet<Lecturer> Lecturers { get; set; }
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Guardian> Guardians { get; set; }
         public DbSet<Address> Addresses { get; set; }   
@@ -70,6 +71,17 @@ namespace UserService.DataAccess
                 .HasOne(a => a.Student)
                 .WithOne(s => s.ApplicationUser)
                 .HasForeignKey<Student>(s => s.ApplicationUserId);
+
+            modelBuilder.Entity<Lecturer>()
+                .HasOne(l => l.ApplicationUser)
+                .WithOne(u => u.Lecturer)
+                .HasForeignKey<Lecturer>(l => l.ApplicationUserId)
+                .IsRequired();
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(a => a.Lecturer)
+                .WithOne(l => l.ApplicationUser)
+                .HasForeignKey<Lecturer>(l => l.ApplicationUserId);
 
             modelBuilder.Entity<Guardian>()
                .HasIndex(p => p.PhoneNumber)
