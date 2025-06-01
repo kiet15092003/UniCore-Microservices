@@ -103,5 +103,20 @@ namespace UserService.Controllers
             var result = await _lecturerService.GetLecturerByEmailAsync(email);
             return ApiResponse<LecturerDto>.SuccessResponse(result);
         }
+
+        [HttpPost]
+        public async Task<ApiResponse<LecturerDto>> CreateLecturer(CreateLecturerDto createLecturerDto)
+        {
+            try
+            {
+                var result = await _lecturerService.CreateLecturerAsync(createLecturerDto);
+                return ApiResponse<LecturerDto>.SuccessResponse(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating lecturer");
+                return ApiResponse<LecturerDto>.ErrorResponse([$"Error creating lecturer: {ex.Message}"]);
+            }
+        }
     }
 } 

@@ -8,6 +8,7 @@ namespace UserService.Business.Services.LecturerService
 {
     public interface ILecturerService
     {
+        Task<LecturerDto> CreateLecturerAsync(CreateLecturerDto createLecturerDto);
         Task<LecturerDto> UpdateLecturerAsync(Guid id, UpdateLecturerDto updateLecturerDto);
         Task<bool> DeleteLecturerAsync(Guid id);  
         Task<LecturerListResponse> GetAllLecturersAsync(Pagination pagination, LecturerListFilterParams filter, Order? order);

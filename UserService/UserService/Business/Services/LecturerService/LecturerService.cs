@@ -169,5 +169,95 @@ namespace UserService.Business.Services.LecturerService
             var lecturer = await _lecturerRepo.GetLecturerByEmailAsync(email);
             return _mapper.Map<LecturerDto>(lecturer);
         }
+
+        public async Task<LecturerDto> CreateLecturerAsync(CreateLecturerDto createLecturerDto)
+        {
+            try
+            {
+                // Verify that the department exists
+                var departmentResponse = await _departmentService.GetDepartmentByIdAsync(createLecturerDto.DepartmentId.ToString());
+                if (!departmentResponse.Success || departmentResponse.Data == null)
+                {
+                    throw new Exception("Invalid department ID");
+                }
+
+                // Create user
+                var user = new ApplicationUser
+                {
+                    UserName = createLecturerDto.Email,
+                    Email = createLecturerDto.Email,
+                    FirstName = createLecturerDto.FirstName,
+                    LastName = createLecturerDto.LastName,
+                    PhoneNumber = createLecturerDto.PhoneNumber,
+                    PersonId = createLecturerDto.PersonId,
+                    Status = 1,
+                    EmailConfirmed = true
+                };
+
+                // Parse date of birth
+                if (DateTime.TryParse(createLecturerDto.Dob, out DateTime dob))
+                {
+                    user.Dob = dob;
+                }
+                else
+                {
+                    throw new Exception("Invalid date of birth format");
+                }
+
+                // Create the address if provided
+                if (createLecturerDto.Address != null)
+                {
+                    user.Address = new Address
+                    {
+                        Id = Guid.NewGuid(),
+                        Country = createLecturerDto.Address.Country,
+                        City = createLecturerDto.Address.City,
+                        District = createLecturerDto.Address.District,
+                        Ward = createLecturerDto.Address.Ward,
+                        AddressDetail = createLecturerDto.Address.AddressDetail
+                    };
+                    user.AddressId = user.Address.Id;
+                }
+
+                // Create lecturer entity
+                var lecturer = new Lecturer
+                {
+                    Id = Guid.NewGuid(),
+                    LecturerCode = createLecturerDto.LecturerCode,
+                    Degree = createLecturerDto.Degree,
+                    Salary = createLecturerDto.Salary,
+                    DepartmentId = createLecturerDto.DepartmentId,
+                    WorkingStatus = createLecturerDto.WorkingStatus,
+                    JoinDate = DateTime.UtcNow,
+                    MainMajor = createLecturerDto.MainMajor
+                };
+
+                // Create user with password
+                var result = await _userManager.CreateAsync(user, createLecturerDto.Password);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    throw new Exception($"Failed to create user: {errors}");
+                }
+
+                // Add lecturer role
+                await _userManager.AddToRoleAsync(user, "Lecturer");
+
+                // Link the lecturer to the created user
+                lecturer.ApplicationUserId = user.Id;
+                lecturer.ApplicationUser = user;
+
+                // Save the lecturer
+                var createdLecturer = await _lecturerRepo.CreateAsync(lecturer);
+
+                // Map to DTO and return
+                return _mapper.Map<LecturerDto>(createdLecturer);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating lecturer");
+                throw;
+            }
+        }
     }
 } 
