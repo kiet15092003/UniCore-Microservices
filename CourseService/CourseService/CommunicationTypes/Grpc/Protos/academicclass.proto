@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+option csharp_namespace = "CourseService";
+
+import "CommunicationTypes/Grpc/Protos/room.proto";
+
+service GrpcAcademicClass {
+  rpc GetAcademicClassById (AcademicClassRequest) returns (AcademicClassResponse);
+}
+
+message AcademicClassRequest {
+  string id = 1;
+}
+
+message ShiftData {
+  string id = 1;
+  string name = 2;
+  string startTime = 3;
+  string endTime = 4;
+}
+
+message CourseData {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  string description = 4;
+  bool isActive = 5;
+  int32 credit = 6;
+  int32 practicePeriod = 7;
+  bool isRequired = 8;
+  double cost = 9;
+}
+
+message SemesterData {
+  string id = 1;
+  int32 semesterNumber = 2;
+  int32 year = 3;
+  bool isActive = 4;
+  string startDate = 5;
+  string endDate = 6;
+  int32 numberOfWeeks = 7;
+}
+
+message ScheduleInDayData {
+  string id = 1;
+  string dayOfWeek = 2;
+  string roomId = 3;
+  RoomData room = 4;
+  string shiftId = 5;
+  ShiftData shift = 6;
+}
+
+message AcademicClassData {
+  string id = 1;
+  string name = 2;
+  int32 groupNumber = 3;
+  int32 capacity = 4;
+  repeated int32 listOfWeeks = 5;
+  bool isRegistrable = 6;
+  string semesterId = 7;
+  SemesterData semester = 8;
+  string courseId = 9;
+  CourseData course = 10;
+  repeated ScheduleInDayData scheduleInDays = 11;
+}
+
+message AcademicClassResponse {
+  bool success = 1;
+  AcademicClassData data = 2;
+  repeated string error = 3;
+}

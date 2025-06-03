@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option csharp_namespace = "MajorService";
+
+service GrpcRoom {
+    rpc GetRoomById (RoomRequest) returns (RoomResponse);
+}
+
+message RoomRequest {
+    string id = 1;
+}
+
+message RoomData {
+    string id = 1;
+    string name = 2;
+    int32 availableSeats = 3;
+    string floorId = 4;
+}
+
+message RoomResponse {
+    bool success = 1;
+    RoomData data = 2;
+    repeated string error = 3;
+}

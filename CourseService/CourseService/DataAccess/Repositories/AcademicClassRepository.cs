@@ -19,46 +19,61 @@ namespace CourseService.DataAccess.Repositories
             var newAcademicClass = await _context.AcademicClasses.AddAsync(academicClass);
             await _context.SaveChangesAsync();
             return newAcademicClass.Entity;
-        }
-
-        public async Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id)
+        }        public async Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id)
         {
             return await _context.AcademicClasses
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
                 .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
                 .FirstOrDefaultAsync(ac => ac.Id == id);
-        }
-
-        public async Task<List<AcademicClass>> GetAcademicClassesByCourseIdAsync(Guid courseId)
+        }        public async Task<List<AcademicClass>> GetAcademicClassesByCourseIdAsync(Guid courseId)
         {
             return await _context.AcademicClasses
                 .Where(ac => ac.CourseId == courseId)
                 .Include(ac => ac.Semester)
                 .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
                 .ToListAsync();
-        }
-
-        public async Task<List<AcademicClass>> GetAcademicClassesBySemesterIdAsync(Guid semesterId)
+        }        public async Task<List<AcademicClass>> GetAcademicClassesBySemesterIdAsync(Guid semesterId)
         {
             return await _context.AcademicClasses
                 .Where(ac => ac.SemesterId == semesterId)
                 .Include(ac => ac.Course)
                 .Include(ac => ac.ScheduleInDays)
                     .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
                 .ToListAsync();
-        }
-
-        public async Task<PaginationResult<AcademicClass>> GetAllAcademicClassesPaginationAsync(
+        }public async Task<PaginationResult<AcademicClass>> GetAllAcademicClassesPaginationAsync(
             Pagination pagination, AcademicClassFilterParams? filterParams, Order? order)
-        {
-            IQueryable<AcademicClass> query = _context.AcademicClasses
+        {            IQueryable<AcademicClass> query = _context.AcademicClasses
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
                 .Include(ac => ac.ScheduleInDays)
-                    .ThenInclude(s => s.Shift);
+                    .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift);
 
             // Apply filters if provided
             if (filterParams != null)
@@ -168,12 +183,46 @@ namespace CourseService.DataAccess.Repositories
 
             return queryable;
         }
-
         public async Task<AcademicClass> UpdateAcademicClassAsync(AcademicClass academicClass)
         {
             _context.AcademicClasses.Update(academicClass);
             await _context.SaveChangesAsync();
             return academicClass;
+        }
+
+        public async Task<List<AcademicClass>> GetAcademicClassesByIdsAsync(List<Guid> ids)
+        {
+            return await _context.AcademicClasses
+                .Where(ac => ids.Contains(ac.Id))
+                .Include(ac => ac.Course)
+                .Include(ac => ac.Semester)
+                .ToListAsync();
+        }        public async Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId)
+        {
+            return await _context.AcademicClasses
+                .Where(ac => ac.IsRegistrable && 
+                            (ac.Course.MajorIds.Contains(majorId) || ac.Course.IsOpenForAll))
+                .Include(ac => ac.Course)
+                .Include(ac => ac.Semester)
+                .Include(ac => ac.ScheduleInDays)
+                    .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .ToListAsync();
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        public IQueryable<AcademicClass> GetQuery()
+        {
+            return _context.AcademicClasses.AsQueryable();
         }
     }
 }

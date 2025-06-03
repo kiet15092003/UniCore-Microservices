@@ -1,7 +1,7 @@
 using CourseService.Business.Dtos.TrainingRoadmap;
 using CourseService.Business.Services;
 using Microsoft.AspNetCore.Mvc;
-using UserService.Middleware;
+using CourseService.Middleware;
 
 namespace CourseService.Controllers
 {
@@ -18,7 +18,7 @@ namespace CourseService.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
+        public async Task<  ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
         {
             var result = await _trainingRoadmapService.GetTrainingRoadmapByIdAsync(id);
             if (result == null)

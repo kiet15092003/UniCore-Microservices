@@ -1,7 +1,7 @@
 ﻿using CourseService.Business.Dtos.Course;
 using CourseService.Business.Services;
 using Microsoft.AspNetCore.Mvc;
-using UserService.Middleware;
+using CourseService.Middleware;
 
 namespace CourseService.Controllers
 {

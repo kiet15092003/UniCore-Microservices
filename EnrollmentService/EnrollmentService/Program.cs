@@ -1,0 +1,149 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using CourseService.DataAccess;
+using EnrollmentService.Middleware;
+using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
+using EnrollmentService.DataAccess.Repositories;
+using EnrollmentService.Business.Services;
+using EnrollmentService.Business.Mappings;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Dynamic mode for testing
+var environment = builder.Environment.IsProduction();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("EnrollmentServiceConn")));
+
+// Configure JWT and authentication
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            RoleClaimType = ClaimTypes.Role
+        };
+    });
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+
+//Add cors
+var corsPolicy = "AllowSpecificOrigins";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicy, policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+//Add Swagger
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer {token}'"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new List<string>()
+        }
+    });
+});
+
+// Add grpc
+builder.Services.AddSingleton<GrpcAcademicClassClientService>();
+builder.Services.AddSingleton<GrpcStudentClientService>();
+
+//Config DI
+//Register repositories
+builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+//Register services
+builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+// Config automapper
+builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile<EnrollmentMappingProfile>();
+}));
+builder.Services.AddScoped<IMapper, Mapper>();
+
+// Config validation middleware
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(x => x.Value.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToList()
+            );
+
+        var errorMessages = errors.SelectMany(e => e.Value).ToList();
+
+        var response = new ApiResponse<List<string>>(false, null, errorMessages);
+        return new BadRequestObjectResult(response);
+    };
+});
+
+// Add GRPC:
+builder.Services.AddGrpc();
+
+var app = builder.Build();
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseCors(corsPolicy);
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.MapControllers();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.Run();

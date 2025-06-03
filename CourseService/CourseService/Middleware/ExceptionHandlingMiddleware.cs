@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 
-namespace UserService.Middleware
+namespace CourseService.Middleware
 {
     public class ExceptionHandlingMiddleware
     {

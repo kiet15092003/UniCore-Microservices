@@ -38,7 +38,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
   </ItemGroup>
 	<ItemGroup>
-		<Protobuf Include="CommunicationTypes\Grpc\GrpcClient\Protos\major.proto" GrpcServices="Client" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\student.proto" GrpcServices="Server" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\email.proto" GrpcServices="Server" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\major.proto" GrpcServices="Client" />
 	</ItemGroup>
-
 </Project>

@@ -1,6 +1,6 @@
 using CourseService.Business.Dtos.CoursesGroup;
 using CourseService.Business.Services;
-using UserService.Middleware;
+using CourseService.Middleware;
 using CourseService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
 

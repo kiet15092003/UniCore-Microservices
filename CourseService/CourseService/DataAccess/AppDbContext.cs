@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace CourseService.DataAccess
 {
     public class AppDbContext : DbContext
-    {private readonly IHttpContextAccessor _httpContextAccessor;
+    {
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor)
             : base(options)
@@ -23,17 +24,24 @@ namespace CourseService.DataAccess
         public DbSet<AcademicClass> AcademicClasses { get; set; }
         public DbSet<Semester> Semesters { get; set; }
         public DbSet<Shift> Shifts { get; set; }
-        public DbSet<ScheduleInDay> ScheduleInDays { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public DbSet<ScheduleInDay> ScheduleInDays { get; set; }        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Create a unique constraint for GroupName within each MajorId
             modelBuilder.Entity<CoursesGroup>()
                 .HasIndex(g => new { g.GroupName })
-                .IsUnique();            modelBuilder.Entity<AcademicClass>()
+                .IsUnique();
+                
+            modelBuilder.Entity<AcademicClass>()
                 .HasMany(ac => ac.ScheduleInDays)
                 .WithOne(sd => sd.AcademicClass)
                 .HasForeignKey(sd => sd.AcademicClassId);
+
+            // Configure parent-child relationship for AcademicClass
+            modelBuilder.Entity<AcademicClass>()
+                .HasOne(ac => ac.ParentTheoryAcademicClass)
+                .WithMany(ac => ac.ChildPracticeAcademicClasses)
+                .HasForeignKey(ac => ac.ParentTheoryAcademicClassId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete to avoid circular references
 
             base.OnModelCreating(modelBuilder);
         }

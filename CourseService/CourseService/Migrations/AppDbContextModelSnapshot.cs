@@ -31,6 +31,10 @@ namespace CourseService.Migrations
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
+                    b.PrimitiveCollection<string>("ChildPracticeAcademicClassIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("CourseId")
                         .HasColumnType("uniqueidentifier");
 
@@ -54,6 +58,15 @@ namespace CourseService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("ParentTheoryAcademicClassId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RegistrationCloseTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RegistrationOpenTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("SemesterId")
                         .HasColumnType("uniqueidentifier");
 
@@ -66,6 +79,8 @@ namespace CourseService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("ParentTheoryAcademicClassId");
 
                     b.HasIndex("SemesterId");
 
@@ -545,6 +560,11 @@ namespace CourseService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CourseService.Entities.AcademicClass", "ParentTheoryAcademicClass")
+                        .WithMany("ChildPracticeAcademicClasses")
+                        .HasForeignKey("ParentTheoryAcademicClassId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("CourseService.Entities.Semester", "Semester")
                         .WithMany()
                         .HasForeignKey("SemesterId")
@@ -552,6 +572,8 @@ namespace CourseService.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
+
+                    b.Navigation("ParentTheoryAcademicClass");
 
                     b.Navigation("Semester");
                 });
@@ -653,6 +675,8 @@ namespace CourseService.Migrations
 
             modelBuilder.Entity("CourseService.Entities.AcademicClass", b =>
                 {
+                    b.Navigation("ChildPracticeAcademicClasses");
+
                     b.Navigation("ScheduleInDays");
                 });
 
