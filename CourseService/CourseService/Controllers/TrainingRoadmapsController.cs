@@ -18,7 +18,7 @@ namespace CourseService.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
+        public async Task<  ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
         {
             var result = await _trainingRoadmapService.GetTrainingRoadmapByIdAsync(id);
             if (result == null)

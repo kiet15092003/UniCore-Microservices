@@ -1,4 +1,5 @@
 ﻿using Grpc.Net.Client;
+using MajorService;
 
 namespace UserService.CommunicationTypes.Grpc.GrpcClient
 {

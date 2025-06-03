@@ -1,10 +1,7 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using UserService.Entities;
 using ClosedXML.Excel;
 using UserService.Business.Dtos.Student;
-using UserService.CommunicationTypes.Http.HttpClient;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
@@ -16,24 +13,22 @@ using AutoMapper;
 using System.Text.Json;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Microsoft.Extensions.Configuration;
-using UserService.Business.Dtos.Auth;
+using MajorService;
 namespace UserService.Business.Services.StudentService
-{    public class StudentService : IStudentService
+{    
+    public class StudentService : IStudentService
     {
         private readonly IStudentRepo _studentRepository;
         private readonly ILogger<StudentService> _logger;
-        private readonly SmtpClientService _smtpClient;
         private readonly IMapper _mapper;
         private readonly GrpcMajorClientService _grpcMajorClient;
-        private readonly Cloudinary _cloudinary;
+        private readonly Cloudinary _cloudinary;        
         private readonly IKafkaProducerService _kafkaProducer;
         private readonly IBatchRepo _batchRepository;
 
         public StudentService(
             IStudentRepo studentRepository,
             ILogger<StudentService> logger,
-            SmtpClientService smtpClient, 
             IMapper mapper,
             IConfiguration configuration,
             GrpcMajorClientService grpcMajorClient,
@@ -42,7 +37,6 @@ namespace UserService.Business.Services.StudentService
         {
             _studentRepository = studentRepository;
             _logger = logger;
-            _smtpClient = smtpClient;
             _mapper = mapper;
             _grpcMajorClient = grpcMajorClient;
 
@@ -397,7 +391,6 @@ namespace UserService.Business.Services.StudentService
                 {
                     return null;
                 }
-                _logger.LogInformation("400__________GetStudentDetailByIdAsync: {Student}", JsonSerializer.Serialize(student.ApplicationUser.PersonId));
                 var studentDetailDto = _mapper.Map<StudentDetailDto>(student);
                 
                 // Get major information

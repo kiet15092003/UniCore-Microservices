@@ -13,8 +13,7 @@ using UserService.Business.Profiles;
 using UserService.CommunicationTypes;
 using System.Security.Claims;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
-using UserService.CommunicationTypes.Http.HttpClient;
-using UserService.CommunicationTypes.KafkaService.KafkaProducer;
+using UserService.CommunicationTypes.Grpc.GrpcServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,7 +55,6 @@ builder.Services
 
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
-builder.Services.AddSingleton<SmtpClientService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
@@ -165,6 +163,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
+
+// Map gRPC services
+app.MapGrpcService<GrpcStudentService>();
 
 // use the exception middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();

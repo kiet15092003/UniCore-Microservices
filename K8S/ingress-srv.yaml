@@ -54,4 +54,18 @@ spec:
                 name: major-clusterip-srv
                 port:
                   number: 666
+          - path: /api/e/
+            pathType: Prefix
+            backend:
+              service:
+                name: enrollment-clusterip-srv
+                port:
+                  number: 80
+          - path: /grpc/e/
+            pathType: Prefix
+            backend:
+              service:
+                name: enrollment-clusterip-srv
+                port:
+                  number: 666
       

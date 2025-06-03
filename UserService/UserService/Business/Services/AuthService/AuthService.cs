@@ -1,15 +1,9 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using UserService.Business.Dtos.Auth;
-using UserService.CommunicationTypes.Grpc.GrpcClient;
-using UserService.CommunicationTypes.KafkaService.KafkaProducer;
-using UserService.DataAccess.Repositories.TrainingManagerRepo;
-using UserService.CommunicationTypes.Http.HttpClient;
 
 namespace UserService.Business.Services.AuthService
 {

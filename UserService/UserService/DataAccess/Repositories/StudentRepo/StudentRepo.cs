@@ -1,17 +1,13 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UserService.Entities;
-using UserService.CommunicationTypes.Http.HttpClient;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using AutoMapper;
 using UserService.Business.Dtos.Student;
-using System.Collections.Concurrent;
 using UserService.Utils.Pagination;
 using UserService.Utils.Filter;
 using UserService.DataAccess.Repositories.GuardianRepo;
 using UserService.Business.Services.GuardianService;
-using UserService.Business.Dtos.Guardian;
 
 namespace UserService.DataAccess.Repositories.StudentRepo
 {
@@ -19,17 +15,14 @@ namespace UserService.DataAccess.Repositories.StudentRepo
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SmtpClientService _smtpClient;
         private readonly ILogger<StudentRepo> _logger;
         private readonly IMapper _mapper;
         private readonly IGuardianRepo _guardianRepo;
-        private readonly IGuardianService _guardianService;
 
         public StudentRepo(
             AppDbContext context,
             UserManager<ApplicationUser> userManager,
             ILogger<StudentRepo> logger,
-            SmtpClientService smtpClient,
             IMapper mapper,
             IGuardianRepo guardianRepo,
             IGuardianService guardianService)
@@ -37,10 +30,8 @@ namespace UserService.DataAccess.Repositories.StudentRepo
             _context = context;
             _userManager = userManager;
             _logger = logger;
-            _smtpClient = smtpClient;
             _mapper = mapper;
             _guardianRepo = guardianRepo;
-            _guardianService = guardianService;
         }
 
 
