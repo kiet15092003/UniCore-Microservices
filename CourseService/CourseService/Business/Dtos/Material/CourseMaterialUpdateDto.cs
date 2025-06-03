@@ -1,0 +1,11 @@
+using Microsoft.AspNetCore.Http;
+
+namespace CourseService.Business.Dtos.Material
+{
+    public class CourseMaterialUpdateDto
+    {
+        public string? Name { get; set; }
+        public IFormFile? File { get; set; }
+        public Guid? MaterialTypeId { get; set; }
+    }
+} 

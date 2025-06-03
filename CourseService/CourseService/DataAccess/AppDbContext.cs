@@ -15,6 +15,7 @@ namespace CourseService.DataAccess
 
         public DbSet<Course> Courses { get; set; }
         public DbSet<Material> Materials { get; set; }  
+        public DbSet<MaterialType> MaterialTypes { get; set; }
         public DbSet<Certificate> Certificates { get; set; }
         public DbSet<CourseCertificate> CourseCertificates { get; set; }
         public DbSet<CourseMaterial> CourseMaterials { get; set; }
