@@ -10,5 +10,6 @@
         public List<CoursesGroupSemester> CoursesGroupSemesters { get; set; }
         public List<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
         public bool IsActive { get; set; } = true;
+        public List<Guid> BatchIds { get; set; }
     }
 }

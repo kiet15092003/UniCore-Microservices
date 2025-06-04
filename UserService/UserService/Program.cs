@@ -166,6 +166,7 @@ app.MapControllers();
 
 // Map gRPC services
 app.MapGrpcService<GrpcStudentService>();
+app.MapGrpcService<GrpcBatchService>();
 
 // use the exception middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();
