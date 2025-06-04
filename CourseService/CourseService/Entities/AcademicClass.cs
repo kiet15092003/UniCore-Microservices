@@ -5,9 +5,8 @@
         public string Name { get; set; }
         public int GroupNumber { get; set; }
         public int Capacity { get; set; }          
-        public List<int> ListOfWeeks { get; set; }
-        public bool IsRegistrable { get; set; }
-        public DateTime RegistrationOpenTime { get; set; }
+        public List<int> ListOfWeeks { get; set; }        public bool IsRegistrable { get; set; }
+        public DateTime? RegistrationOpenTime { get; set; }
         public DateTime? RegistrationCloseTime { get; set; }
         public Guid SemesterId { get; set; }
         public Semester Semester { get; set; }

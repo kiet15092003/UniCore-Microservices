@@ -6,6 +6,7 @@ namespace CourseService.Business.Dtos.TrainingRoadmap
         public int SemesterNumber { get; set; }
         public Guid CoursesGroupId { get; set; }
         public string? CoursesGroupName { get; set; }
+        public int Credit { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

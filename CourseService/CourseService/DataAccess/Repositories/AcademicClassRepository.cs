@@ -33,7 +33,8 @@ namespace CourseService.DataAccess.Repositories
                     .ThenInclude(c => c.ScheduleInDays)
                         .ThenInclude(s => s.Shift)
                 .FirstOrDefaultAsync(ac => ac.Id == id);
-        }        public async Task<List<AcademicClass>> GetAcademicClassesByCourseIdAsync(Guid courseId)
+        }
+        public async Task<List<AcademicClass>> GetAcademicClassesByCourseIdAsync(Guid courseId)
         {
             return await _context.AcademicClasses
                 .Where(ac => ac.CourseId == courseId)
@@ -61,9 +62,11 @@ namespace CourseService.DataAccess.Repositories
                     .ThenInclude(c => c.ScheduleInDays)
                         .ThenInclude(s => s.Shift)
                 .ToListAsync();
-        }public async Task<PaginationResult<AcademicClass>> GetAllAcademicClassesPaginationAsync(
+        }
+        public async Task<PaginationResult<AcademicClass>> GetAllAcademicClassesPaginationAsync(
             Pagination pagination, AcademicClassFilterParams? filterParams, Order? order)
-        {            IQueryable<AcademicClass> query = _context.AcademicClasses
+        {            
+            IQueryable<AcademicClass> query = _context.AcademicClasses
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
                 .Include(ac => ac.ScheduleInDays)
@@ -197,7 +200,8 @@ namespace CourseService.DataAccess.Repositories
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
                 .ToListAsync();
-        }        public async Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId)
+        }        
+        public async Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId)
         {
             return await _context.AcademicClasses
                 .Where(ac => ac.IsRegistrable && 

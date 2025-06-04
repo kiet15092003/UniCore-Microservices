@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option csharp_namespace = "UserService";
+
+service GrpcBatch {
+  rpc GetBatchById (BatchRequest) returns (BatchResponse);
+}
+
+message BatchRequest {
+  string id = 1;
+}
+
+message BatchData {
+  string id = 1;
+  string title = 2;
+  int32 startYear = 3;
+  string createdAt = 4;
+  string updatedAt = 5;
+}
+
+message BatchResponse {
+  bool success = 1;
+  BatchData data = 2;
+  repeated string error = 3;
+}

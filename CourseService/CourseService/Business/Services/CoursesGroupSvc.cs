@@ -41,10 +41,12 @@ namespace CourseService.Business.Services
             
             // Store CourseIds directly
             coursesGroup.CourseIds = coursesGroupCreateDto.CourseIds?.ToList() ?? new List<Guid>();
-            
-            // Validate course IDs exist if needed
+              // Validate course IDs exist if needed
             if (coursesGroupCreateDto.CourseIds != null && coursesGroupCreateDto.CourseIds.Any())
             {
+                // First validate credit consistency
+                await ValidateCourseCreditConsistency(coursesGroupCreateDto.CourseIds, coursesGroupCreateDto.Credit);
+                
                 var validCourseIds = new List<Guid>();
                 var validCourses = new List<Entities.Course>();
                 
@@ -119,6 +121,15 @@ namespace CourseService.Business.Services
                     {
                         validCourses[courseId] = course;
                     }
+                }
+            }
+            
+            // Validate credit consistency for each group
+            foreach (var dto in coursesGroupCreateDtos)
+            {
+                if (dto.CourseIds != null && dto.CourseIds.Any())
+                {
+                    await ValidateCourseCreditConsistency(dto.CourseIds, dto.Credit);
                 }
             }
             
@@ -288,6 +299,41 @@ namespace CourseService.Business.Services
             }
             
             return result;
+        }
+
+        private async Task ValidateCourseCreditConsistency(List<Guid> courseIds, int expectedCredit)
+        {
+            if (courseIds == null || !courseIds.Any())
+                return;
+
+            var courses = new List<Entities.Course>();
+            foreach (var courseId in courseIds)
+            {
+                var course = await _courseRepository.GetCourseByIdAsync(courseId);
+                if (course != null)
+                {
+                    courses.Add(course);
+                }
+            }
+
+            if (!courses.Any())
+                return;
+
+            // Check if all courses have the same credit
+            var distinctCredits = courses.Select(c => c.Credit).Distinct().ToList();
+            
+            if (distinctCredits.Count > 1)
+            {
+                var creditList = string.Join(", ", distinctCredits);
+                throw new InvalidOperationException($"All courses in a group must have the same credit. Found courses with credits: {creditList}");
+            }
+
+            // Check if the course credit matches the expected credit from the group
+            var actualCredit = distinctCredits.First();
+            if (actualCredit != expectedCredit)
+            {
+                throw new InvalidOperationException($"Course group credit ({expectedCredit}) does not match the credit of its courses ({actualCredit}). All courses in the group must have credit {expectedCredit}.");
+            }
         }
     }
 }

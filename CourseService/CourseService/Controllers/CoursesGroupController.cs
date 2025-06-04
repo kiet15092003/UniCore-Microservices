@@ -36,21 +36,31 @@ namespace CourseService.Controllers
         {
             var coursesGroup = await _coursesGroupService.GetCoursesGroupByIdAsync(id);
             return ApiResponse<CoursesGroupReadDto>.SuccessResponse(coursesGroup);
-        }
-
-        [HttpPost]
+        }        [HttpPost]
         public async Task<ApiResponse<CoursesGroupReadDto>> CreateCoursesGroup([FromBody] CoursesGroupCreateDto coursesGroupCreateDto)
-        {          
-            var createdCoursesGroup = await _coursesGroupService.CreateCoursesGroupAsync(coursesGroupCreateDto);
-            return ApiResponse<CoursesGroupReadDto>.SuccessResponse(createdCoursesGroup);
-        }
-
-        [HttpPost("multiple")]
+        {
+            try
+            {
+                var createdCoursesGroup = await _coursesGroupService.CreateCoursesGroupAsync(coursesGroupCreateDto);
+                return ApiResponse<CoursesGroupReadDto>.SuccessResponse(createdCoursesGroup);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<CoursesGroupReadDto>.ErrorResponse([ex.Message]);
+            }
+        }        [HttpPost("multiple")]
         public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> CreateMultipleCoursesGroups(
             [FromBody] List<CoursesGroupCreateDto> coursesGroupCreateDtos)
         {
-            var createdCoursesGroups = await _coursesGroupService.CreateMultipleCoursesGroupsAsync(coursesGroupCreateDtos);
-            return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(createdCoursesGroups);
+            try
+            {
+                var createdCoursesGroups = await _coursesGroupService.CreateMultipleCoursesGroupsAsync(coursesGroupCreateDtos);
+                return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(createdCoursesGroups);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<IEnumerable<CoursesGroupReadDto>>.ErrorResponse([ex.Message]);
+            }
         }
 
         [HttpGet("major/{majorId}")]

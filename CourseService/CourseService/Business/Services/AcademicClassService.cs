@@ -205,6 +205,7 @@ namespace CourseService.Business.Services
                 }
             }
         }
+
         public async Task<AcademicClassListResponse> GetAllAcademicClassesPaginationAsync(
             Pagination pagination,
             AcademicClassFilterParams? filterParams,
@@ -251,8 +252,7 @@ namespace CourseService.Business.Services
             {
                 academicClass.RegistrationOpenTime = scheduleDto.RegistrationOpenTime;
                 academicClass.RegistrationCloseTime = scheduleDto.RegistrationCloseTime;
-                
-                // Set IsRegistrable based on the current time and the registration times
+                  // Set IsRegistrable based on the current time and the registration times
                 var currentTime = DateTime.UtcNow;
                 academicClass.IsRegistrable = currentTime >= scheduleDto.RegistrationOpenTime && 
                                              currentTime < scheduleDto.RegistrationCloseTime;

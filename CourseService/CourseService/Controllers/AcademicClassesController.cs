@@ -62,7 +62,8 @@ namespace CourseService.Controllers
             var createdAcademicClass = await _academicClassService.CreateAcademicClassAsync(academicClassCreateDto);
 
             return ApiResponse<AcademicClassReadDto>.SuccessResponse(createdAcademicClass);
-        }        // The registration scheduling functionality has been consolidated into a single endpoint: /registration/schedule-with-times/// <summary>
+        }        
+        // The registration scheduling functionality has been consolidated into a single endpoint: /registration/schedule-with-times/// <summary>
         /// Sets the registration open and close times for multiple academic classes at once.
         /// The registration will automatically open and close at the specified times.
         /// </summary>

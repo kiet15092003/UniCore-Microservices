@@ -13,7 +13,8 @@ namespace CourseService.Business.Dtos.AcademicClass
         public RoomData? Room { get; set; }
         public Guid ShiftId { get; set; }
         public ShiftDto? Shift { get; set; }
-    }    public class AcademicClassReadDto
+    }    
+    public class AcademicClassReadDto
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -30,5 +31,7 @@ namespace CourseService.Business.Dtos.AcademicClass
         public List<Guid> ChildPracticeAcademicClassIds { get; set; } = new List<Guid>();
         public List<AcademicClassBasicDto> ChildPracticeAcademicClasses { get; set; } = new List<AcademicClassBasicDto>();
         public List<ScheduleInDayReadDto> ScheduleInDays { get; set; } = new List<ScheduleInDayReadDto>();
+        public DateTime? RegistrationOpenTime { get; set; }
+        public DateTime? RegistrationCloseTime { get; set; }
     }
 }
