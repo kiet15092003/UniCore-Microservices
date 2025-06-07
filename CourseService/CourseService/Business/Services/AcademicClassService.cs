@@ -8,29 +8,34 @@ using CourseService.Utils.Pagination;
 using MajorService;
 
 namespace CourseService.Business.Services
-{
-    public class AcademicClassService : IAcademicClassService
+{    public class AcademicClassService : IAcademicClassService
     {        
         private readonly IAcademicClassRepository _academicClassRepository;
         private readonly IScheduleInDayRepository _scheduleInDayRepository;
         private readonly IMapper _mapper;
         private readonly GrpcRoomClientService _roomClientService;
+        private readonly GrpcEnrollmentClientService _enrollmentClientService;
         private readonly ILogger<AcademicClassService> _logger;
 
         public AcademicClassService(
             IAcademicClassRepository academicClassRepository,
             IScheduleInDayRepository scheduleInDayRepository,
             GrpcRoomClientService roomClientService,
+            GrpcEnrollmentClientService enrollmentClientService,
             IMapper mapper,
             ILogger<AcademicClassService> logger)
         {            _academicClassRepository = academicClassRepository;
             _scheduleInDayRepository = scheduleInDayRepository;
             _roomClientService = roomClientService;
+            _enrollmentClientService = enrollmentClientService;
             _mapper = mapper;
             _logger = logger;
         }
         public async Task<AcademicClassReadDto> CreateAcademicClassAsync(AcademicClassCreateDto academicClassCreateDto)
         {
+            // Validate schedule conflicts before creating the academic class
+            await ValidateScheduleConflictsAsync(academicClassCreateDto);
+
             // Create only the AcademicClass first without schedules
             var academicClass = new AcademicClass
             {
@@ -139,13 +144,32 @@ namespace CourseService.Business.Services
                     catch (Exception ex)
                     {
                         // Log the error but continue with other schedules
-                        Console.WriteLine($"Error fetching room data: {ex.Message}");
-                    }
+                        Console.WriteLine($"Error fetching room data: {ex.Message}");                    }
                 }
             }
 
+            // Get enrollment count from EnrollmentService
+            try
+            {
+                var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(id.ToString());
+                if (enrollmentCountResponse != null && enrollmentCountResponse.Success)
+                {
+                    academicClassDto.EnrollmentCount = enrollmentCountResponse.Count;
+                }
+                else
+                {
+                    academicClassDto.EnrollmentCount = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but continue with enrollment count as 0
+                _logger.LogError(ex, "Error fetching enrollment count for academic class {AcademicClassId}", id);
+                academicClassDto.EnrollmentCount = 0;
+            }
+
             return academicClassDto;
-        }       
+        }
         public async Task<List<AcademicClassReadDto>> GetAcademicClassesByCourseIdAsync(Guid courseId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesByCourseIdAsync(courseId);
@@ -154,27 +178,47 @@ namespace CourseService.Business.Services
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
 
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(academicClassDtos);
+
             return academicClassDtos;
         }
-
         public async Task<List<AcademicClassReadDto>> GetAcademicClassesBySemesterIdAsync(Guid semesterId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesBySemesterIdAsync(semesterId);
             var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
-            
+
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
-            
+
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(academicClassDtos);
+
             return academicClassDtos;
         }
-        
         public async Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAsync(Guid majorId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesForMajorAsync(majorId);
             var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
+
+            // Populate room data for each academic class
+            await PopulateRoomDataForClasses(academicClassDtos);
+
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(academicClassDtos);
+
+            return academicClassDtos;
+        }        
+        public async Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId)
+        {
+            var academicClasses = await _academicClassRepository.GetAcademicClassesForMajorAndBatchAsync(majorId, batchId);
+            var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
             
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
+            
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(academicClassDtos);
             
             return academicClassDtos;
         }
@@ -206,17 +250,43 @@ namespace CourseService.Business.Services
             }
         }
 
+        private async Task PopulateEnrollmentCountForClasses(List<AcademicClassReadDto> academicClasses)
+        {
+            foreach (var academicClass in academicClasses)
+            {
+                try
+                {
+                    var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(academicClass.Id.ToString());
+                    if (enrollmentCountResponse != null && enrollmentCountResponse.Success)
+                    {
+                        academicClass.EnrollmentCount = enrollmentCountResponse.Count;
+                    }
+                    else
+                    {
+                        academicClass.EnrollmentCount = 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue with enrollment count as 0
+                    _logger.LogError(ex, "Error fetching enrollment count for academic class {AcademicClassId}", academicClass.Id);
+                    academicClass.EnrollmentCount = 0;
+                }
+            }
+        }
+
         public async Task<AcademicClassListResponse> GetAllAcademicClassesPaginationAsync(
             Pagination pagination,
             AcademicClassFilterParams? filterParams,
             Order? order)
         {
-            var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);
-
-            var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
+            var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);            var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
 
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
+            
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(academicClassDtos);
 
             var response = new AcademicClassListResponse
             {
@@ -267,6 +337,56 @@ namespace CourseService.Business.Services
                 scheduleDto.RegistrationCloseTime);
             
             return true;
+        }
+
+        /// <summary>
+        /// Validates that the new academic class schedules don't conflict with existing ones.
+        /// A conflict occurs when: in the same semester, if any week overlaps with another class,
+        /// the combination of day of week, room, and shift must not all be the same.
+        /// </summary>
+        private async Task ValidateScheduleConflictsAsync(AcademicClassCreateDto academicClassCreateDto)
+        {
+            if (academicClassCreateDto.ScheduleInDays == null || academicClassCreateDto.ScheduleInDays.Count == 0)
+            {
+                return; // No schedules to validate
+            }
+
+            // Get all existing academic classes in the same semester with their schedules
+            var existingClasses = await _academicClassRepository.GetAcademicClassesBySemesterWithSchedulesAsync(academicClassCreateDto.SemesterId);
+
+            var newClassWeeks = academicClassCreateDto.ListOfWeeks?.ToHashSet() ?? new HashSet<int>();
+
+            foreach (var newSchedule in academicClassCreateDto.ScheduleInDays)
+            {
+                // Check against all existing classes
+                foreach (var existingClass in existingClasses)
+                {
+                    var existingClassWeeks = existingClass.ListOfWeeks?.ToHashSet() ?? new HashSet<int>();
+                    
+                    // Check if there's any week overlap
+                    bool hasWeekOverlap = newClassWeeks.Intersect(existingClassWeeks).Any();
+                    
+                    if (hasWeekOverlap)
+                    {
+                        // Check if any schedule conflicts with the new schedule
+                        foreach (var existingSchedule in existingClass.ScheduleInDays)
+                        {
+                            bool isDayOfWeekSame = string.Equals(newSchedule.DayOfWeek, existingSchedule.DayOfWeek, StringComparison.OrdinalIgnoreCase);
+                            bool isRoomSame = newSchedule.RoomId == existingSchedule.RoomId;
+                            bool isShiftSame = newSchedule.ShiftId == existingSchedule.ShiftId;
+
+                            if (isDayOfWeekSame && isRoomSame && isShiftSame)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Schedule conflict detected! Another class '{existingClass.Name}' already uses " +
+                                    $"Room {existingSchedule.RoomId} on {existingSchedule.DayOfWeek} " +
+                                    $"during Shift {existingSchedule.ShiftId} in weeks that overlap with this class. " +
+                                    $"Overlapping weeks: {string.Join(", ", newClassWeeks.Intersect(existingClassWeeks))}");
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

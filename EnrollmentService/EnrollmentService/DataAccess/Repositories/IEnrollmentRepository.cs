@@ -11,5 +11,10 @@ namespace EnrollmentService.DataAccess.Repositories
                 Pagination pagination,
                 EnrollmentListFilterParams enrollmentListFilterParams,
                 Order? order);
+        Task<Enrollment> CreateEnrollmentAsync(Enrollment enrollment);
+        Task<List<Enrollment>> CreateMultipleEnrollmentsAsync(List<Enrollment> enrollments);
+        Task<bool> ExistsAsync(Guid studentId, Guid academicClassId);
+        Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId);
+        Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId);
     }
 }

@@ -33,12 +33,20 @@ namespace CourseService.DataAccess.Repositories
             return await _context.CoursesGroups
                 .Include(cg => cg.CoursesGroupSemesters)
                 .FirstOrDefaultAsync(cg => cg.Id == id);
-        }
-
-        public async Task<bool> GroupNameExistsInMajorAsync(string groupName, Guid majorId, Guid? excludeId = null)
+        }        public async Task<bool> GroupNameExistsInMajorAsync(string groupName, Guid? majorId, Guid? excludeId = null)
         {
             var query = _context.CoursesGroups
-                .Where(cg => cg.GroupName == groupName && cg.MajorId == majorId);
+                .Where(cg => cg.GroupName == groupName);
+                
+            // If majorId is provided, filter by it; otherwise check for groups without major (null)
+            if (majorId.HasValue)
+            {
+                query = query.Where(cg => cg.MajorId == majorId.Value);
+            }
+            else
+            {
+                query = query.Where(cg => cg.MajorId == null);
+            }
                 
             if (excludeId.HasValue)
             {
@@ -103,6 +111,36 @@ namespace CourseService.DataAccess.Repositories
                 .Where(cg => cg.MajorId == majorId)
                 .OrderBy(cg => cg.GroupName)
                 .ToListAsync();
+        }        public async Task<IEnumerable<CoursesGroup>> GetCoursesGroupsWithAllCoursesOpenForAllAsync()
+        {
+            // First, get all course groups with their course IDs
+            var allCoursesGroups = await _context.CoursesGroups
+                .Include(cg => cg.CoursesGroupSemesters)
+                .Where(cg => cg.CourseIds.Any()) // Only groups that have courses
+                .ToListAsync();
+
+            if (!allCoursesGroups.Any())
+                return new List<CoursesGroup>();
+
+            // Get all unique course IDs from all groups
+            var allCourseIds = allCoursesGroups
+                .SelectMany(cg => cg.CourseIds)
+                .Distinct()
+                .ToList();
+
+            // Get all courses that are open for all in one query
+            var coursesOpenForAll = await _context.Courses
+                .Where(c => allCourseIds.Contains(c.Id) && c.IsOpenForAll == true)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            // Filter groups where ALL courses are open for all
+            var result = allCoursesGroups
+                .Where(cg => cg.CourseIds.All(courseId => coursesOpenForAll.Contains(courseId)))
+                .OrderBy(cg => cg.GroupName)
+                .ToList();
+
+            return result;
         }
     }
 }

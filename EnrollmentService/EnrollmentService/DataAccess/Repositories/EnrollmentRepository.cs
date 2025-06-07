@@ -18,7 +18,7 @@ namespace EnrollmentService.DataAccess.Repositories
         public async Task<Enrollment?> GetEnrollmentByIdAsync(Guid id)
         {
             return await _context.Enrollments
-                .Include(e => e.studentResults)
+                .Include(e => e.StudentResults)
                 .FirstOrDefaultAsync(e => e.Id == id);
         }
 
@@ -74,24 +74,65 @@ namespace EnrollmentService.DataAccess.Repositories
             }
 
             // Get total count
-            var totalCount = await query.CountAsync();
-
-            // Apply pagination
+            var totalCount = await query.CountAsync();            // Apply pagination
             var items = await query
-                .Skip((pagination.Page - 1) * pagination.PageSize)
-                .Take(pagination.PageSize)
-                .Include(e => e.studentResults)
+                .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
+                .Take(pagination.ItemsPerpage)
+                .Include(e => e.StudentResults)
                 .ToListAsync();
 
             // Create pagination result
             return new PaginationResult<Enrollment>
             {
-                Items = items,
-                Page = pagination.Page,
-                PageSize = pagination.PageSize,
-                TotalCount = totalCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pagination.PageSize)
+                Data = items,
+                Total = totalCount,
+                PageSize = pagination.ItemsPerpage,
+                PageIndex = pagination.PageNumber - 1
             };
+        }
+
+        public async Task<Enrollment> CreateEnrollmentAsync(Enrollment enrollment)
+        {
+            enrollment.Id = Guid.NewGuid();
+            enrollment.CreatedAt = DateTime.UtcNow;
+            enrollment.UpdatedAt = DateTime.UtcNow;
+            
+            var newEnrollment = await _context.Enrollments.AddAsync(enrollment);
+            await _context.SaveChangesAsync();
+            return newEnrollment.Entity;
+        }
+
+        public async Task<List<Enrollment>> CreateMultipleEnrollmentsAsync(List<Enrollment> enrollments)
+        {
+            foreach (var enrollment in enrollments)
+            {
+                enrollment.Id = Guid.NewGuid();
+                enrollment.CreatedAt = DateTime.UtcNow;
+                enrollment.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _context.Enrollments.AddRangeAsync(enrollments);
+            await _context.SaveChangesAsync();
+            return enrollments;
+        }        public async Task<bool> ExistsAsync(Guid studentId, Guid academicClassId)
+        {
+            return await _context.Enrollments
+                .AnyAsync(e => e.StudentId == studentId && e.AcademicClassId == academicClassId);
+        }
+
+        public async Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId)
+        {
+            return await _context.Enrollments
+                .Where(e => e.AcademicClassId == academicClassId)
+                .CountAsync();
+        }
+
+        public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId)
+        {
+            return await _context.Enrollments
+                .Include(e => e.StudentResults)
+                .Where(e => e.StudentId == studentId)
+                .ToListAsync();
         }
     }
 }

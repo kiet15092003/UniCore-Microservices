@@ -31,7 +31,6 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.ChildPracticeAcademicClasses, opt => opt.MapFrom(src => src.ChildPracticeAcademicClasses));
             
             CreateMap<AcademicClassCreateDto, AcademicClass>();
-            CreateMap<ScheduleInDayCreateDto, ScheduleInDay>();
             CreateMap<ScheduleInDayCreateForClassDto, ScheduleInDay>();
             
             CreateMap<PaginationResult<AcademicClass>, AcademicClassListResponse>();

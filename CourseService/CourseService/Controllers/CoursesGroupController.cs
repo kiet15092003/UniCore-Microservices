@@ -36,7 +36,8 @@ namespace CourseService.Controllers
         {
             var coursesGroup = await _coursesGroupService.GetCoursesGroupByIdAsync(id);
             return ApiResponse<CoursesGroupReadDto>.SuccessResponse(coursesGroup);
-        }        [HttpPost]
+        }
+        [HttpPost]
         public async Task<ApiResponse<CoursesGroupReadDto>> CreateCoursesGroup([FromBody] CoursesGroupCreateDto coursesGroupCreateDto)
         {
             try
@@ -48,7 +49,8 @@ namespace CourseService.Controllers
             {
                 return ApiResponse<CoursesGroupReadDto>.ErrorResponse([ex.Message]);
             }
-        }        [HttpPost("multiple")]
+        }        
+        [HttpPost("multiple")]
         public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> CreateMultipleCoursesGroups(
             [FromBody] List<CoursesGroupCreateDto> coursesGroupCreateDtos)
         {
@@ -67,6 +69,13 @@ namespace CourseService.Controllers
         public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> GetCoursesGroupsByMajorId(Guid majorId)
         {
             var coursesGroups = await _coursesGroupService.GetCoursesGroupsByMajorIdAsync(majorId);
+            return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(coursesGroups);
+        }
+
+        [HttpGet("open-for-all")]
+        public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> GetCoursesGroupsWithAllCoursesOpenForAll()
+        {
+            var coursesGroups = await _coursesGroupService.GetCoursesGroupsWithAllCoursesOpenForAllAsync();
             return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(coursesGroups);
         }
     }

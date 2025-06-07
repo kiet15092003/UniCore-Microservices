@@ -7,6 +7,7 @@
         public bool IsActive { get; set; } = true;
         public int Credit { get; set; }
         public int PracticePeriod { get; set; } = 0;
+        public int TheoryPeriod { get; set; } = 0;
         public bool IsRequired { get; set; } = false;
         public int? MinCreditRequired { get; set; }
         public bool IsOpenForAll { get; set; } = false;

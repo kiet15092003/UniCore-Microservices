@@ -5,7 +5,6 @@
         public string GroupName { get; set; }
         public List<CoursesGroupSemester> CoursesGroupSemesters { get; set; }
         public List<Guid> CourseIds { get; set; }
-        public Guid MajorId { get; set; }
-        public int Credit { get; set; }
+        public Guid? MajorId { get; set; }
     }
 }

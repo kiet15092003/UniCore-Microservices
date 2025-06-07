@@ -8,5 +8,10 @@ namespace EnrollmentService.Business.Services
     {
         Task<EnrollmentReadDto?> GetEnrollmentByIdAsync(Guid id);
         Task<EnrollmentListResponse> GetEnrollmentsByPagination(Pagination pagination, EnrollmentListFilterParams filterParams, Order? order);
+        Task<List<EnrollmentReadDto>> CreateMultipleEnrollmentsAsync(MultipleEnrollmentCreateDto createDto);
+        Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId);
+        Task<bool> CheckEnrollmentExistsAsync(Guid studentId, Guid academicClassId);
+        Task<CheckMultipleEnrollmentsResponse> CheckMultipleEnrollmentsExistAsync(CheckMultipleEnrollmentsRequest request);
+        Task<List<EnrollmentReadDto>> GetEnrollmentsByStudentIdAsync(Guid studentId);
     }
 }

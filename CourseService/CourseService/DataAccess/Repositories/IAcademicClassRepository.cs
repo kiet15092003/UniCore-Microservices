@@ -6,16 +6,18 @@ namespace CourseService.DataAccess.Repositories
 {    public interface IAcademicClassRepository
     {
         Task<AcademicClass> CreateAcademicClassAsync(AcademicClass academicClass);
-        Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id);
+        Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id);        
         Task<List<AcademicClass>> GetAcademicClassesByCourseIdAsync(Guid courseId);
         Task<List<AcademicClass>> GetAcademicClassesBySemesterIdAsync(Guid semesterId);
         Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId);
+        Task<List<AcademicClass>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId);
         Task<PaginationResult<AcademicClass>> GetAllAcademicClassesPaginationAsync(
             Pagination pagination,
             AcademicClassFilterParams? filterParams,
             Order? order);
         Task<AcademicClass> UpdateAcademicClassAsync(AcademicClass academicClass);
         Task<List<AcademicClass>> GetAcademicClassesByIdsAsync(List<Guid> ids);
+        Task<List<AcademicClass>> GetAcademicClassesBySemesterWithSchedulesAsync(Guid semesterId);
         Task SaveChangesAsync();
         IQueryable<AcademicClass> GetQuery();
     }

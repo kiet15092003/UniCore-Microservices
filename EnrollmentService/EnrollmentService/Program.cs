@@ -9,6 +9,7 @@ using System.Security.Claims;
 using CourseService.DataAccess;
 using EnrollmentService.Middleware;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
+using EnrollmentService.CommunicationTypes.Grpc.GrpcServer;
 using EnrollmentService.DataAccess.Repositories;
 using EnrollmentService.Business.Services;
 using EnrollmentService.Business.Mappings;
@@ -143,6 +144,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
+
+// Map GRPC services
+app.MapGrpcService<GrpcEnrollmentServerService>();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

@@ -5,6 +5,6 @@
         public int Status { get; set; }
         public Guid StudentId { get; set; }
         public Guid AcademicClassId { get; set; }
-        public List<StudentResult> studentResults { get; set; }
+        public List<StudentResult> StudentResults { get; set; }
     }
 }

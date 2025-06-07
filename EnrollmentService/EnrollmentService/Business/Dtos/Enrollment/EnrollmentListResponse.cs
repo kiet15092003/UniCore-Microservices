@@ -5,20 +5,18 @@ namespace EnrollmentService.Business.Dtos.Enrollment
     public class EnrollmentListResponse
     {
         public List<EnrollmentReadDto> Data { get; set; } = new();
-        public int Page { get; set; } = 1;
+        public int Total { get; set; } = 0;
         public int PageSize { get; set; } = 10;
-        public int TotalCount { get; set; } = 0;
-        public int TotalPages { get; set; } = 1;
+        public int PageIndex { get; set; } = 0;
 
         public static EnrollmentListResponse FromPaginationResult(PaginationResult<EnrollmentReadDto> paginationResult)
         {
             return new EnrollmentListResponse
             {
-                Data = paginationResult.Items,
-                Page = paginationResult.Page,
+                Data = paginationResult.Data,
+                Total = paginationResult.Total,
                 PageSize = paginationResult.PageSize,
-                TotalCount = paginationResult.TotalCount,
-                TotalPages = paginationResult.TotalPages
+                PageIndex = paginationResult.PageIndex,
             };
         }
     }

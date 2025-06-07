@@ -46,12 +46,19 @@ namespace CourseService.Controllers
             var academicClasses = await _academicClassService.GetAcademicClassesBySemesterIdAsync(semesterId);
 
             return ApiResponse<List<AcademicClassReadDto>>.SuccessResponse(academicClasses);
-        }
-
+        }        
         [HttpGet("major/{majorId}")]
         public async Task<ApiResponse<List<AcademicClassReadDto>>> GetAcademicClassesForMajor(Guid majorId)
         {
             var academicClasses = await _academicClassService.GetAcademicClassesForMajorAsync(majorId);
+
+            return ApiResponse<List<AcademicClassReadDto>>.SuccessResponse(academicClasses);
+        }
+
+        [HttpGet("major/{majorId}/batch/{batchId}")]
+        public async Task<ApiResponse<List<AcademicClassReadDto>>> GetAcademicClassesForMajorAndBatch(Guid majorId, Guid batchId)
+        {
+            var academicClasses = await _academicClassService.GetAcademicClassesForMajorAndBatchAsync(majorId, batchId);
 
             return ApiResponse<List<AcademicClassReadDto>>.SuccessResponse(academicClasses);
         }

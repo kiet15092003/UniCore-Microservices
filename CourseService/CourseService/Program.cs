@@ -1,7 +1,5 @@
 using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +8,6 @@ using CourseService.CommunicationTypes;
 using CourseService.Business;
 using CourseService.Business.Profiles;
 using CourseService.Middleware;
-using System.Security.Claims;
 using CourseService.CommunicationTypes.Grpc.GrpcClient;
 using CourseService.CommunicationTypes.Grpc.GrpcServer;
 using CourseService.Services;
@@ -102,6 +99,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<GrpcMajorClientService>();
 builder.Services.AddSingleton<GrpcRoomClientService>();
 builder.Services.AddSingleton<GrpcBatchClientService>();
+builder.Services.AddSingleton<GrpcEnrollmentClientService>();
 
 //Config DI
 builder.Services.AddRepositories();
