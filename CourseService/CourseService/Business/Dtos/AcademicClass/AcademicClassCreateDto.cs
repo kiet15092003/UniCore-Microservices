@@ -1,13 +1,5 @@
 ﻿namespace CourseService.Business.Dtos.AcademicClass
 {
-    public class ScheduleInDayCreateDto
-    {
-        public string DayOfWeek { get; set; }
-        public Guid RoomId { get; set; }
-        public Guid AcademicClassId { get; set; }
-        public Guid ShiftId { get; set; }
-    }
-
     public class ScheduleInDayCreateForClassDto
     {
         public string DayOfWeek { get; set; }

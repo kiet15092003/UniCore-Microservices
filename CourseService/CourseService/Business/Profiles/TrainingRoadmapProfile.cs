@@ -19,7 +19,6 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.SemesterNumber, opt => opt.MapFrom(src => src.SemesterNumber))
                 .ForMember(dest => dest.CoursesGroupId, opt => opt.MapFrom(src => src.CoursesGroupId))
                 .ForMember(dest => dest.CoursesGroupName, opt => opt.MapFrom(src => src.CoursesGroup != null ? src.CoursesGroup.GroupName : null))
-                .ForMember(dest => dest.Credit, opt => opt.MapFrom(src => src.CoursesGroup != null ? src.CoursesGroup.Credit : 0))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt));
                   CreateMap<TrainingRoadmapCourse, TrainingRoadmapCourseReadDto>()

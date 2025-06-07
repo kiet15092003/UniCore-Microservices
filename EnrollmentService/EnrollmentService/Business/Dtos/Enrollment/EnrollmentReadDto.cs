@@ -9,12 +9,10 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        // Related data from gRPC services
         public GrpcStudentData? Student { get; set; }
         public GrpcAcademicClassData? AcademicClass { get; set; }
     }
 
-    // Mapped from gRPC StudentData
     public class GrpcStudentData
     {
         public Guid Id { get; set; }
@@ -28,7 +26,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public GrpcUserData? User { get; set; }
     }
 
-    // Mapped from gRPC UserData
     public class GrpcUserData
     {
         public Guid Id { get; set; }
@@ -41,7 +38,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public string? ImageUrl { get; set; }
     }
 
-    // Mapped from gRPC AcademicClassData
     public class GrpcAcademicClassData
     {
         public Guid Id { get; set; }
@@ -57,7 +53,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public List<GrpcScheduleInDayData>? ScheduleInDays { get; set; }
     }
 
-    // Mapped from gRPC SemesterData
     public class GrpcSemesterData
     {
         public Guid Id { get; set; }
@@ -69,7 +64,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public int NumberOfWeeks { get; set; }
     }
 
-    // Mapped from gRPC CourseData
     public class GrpcCourseData
     {
         public Guid Id { get; set; }
@@ -83,7 +77,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public double Cost { get; set; }
     }
 
-    // Mapped from gRPC ScheduleInDayData
     public class GrpcScheduleInDayData
     {
         public Guid Id { get; set; }
@@ -94,7 +87,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public GrpcShiftData? Shift { get; set; }
     }
 
-    // Mapped from gRPC RoomData
     public class GrpcRoomData
     {
         public Guid Id { get; set; }
@@ -104,7 +96,6 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public bool IsActive { get; set; }
     }
 
-    // Mapped from gRPC ShiftData
     public class GrpcShiftData
     {
         public Guid Id { get; set; }

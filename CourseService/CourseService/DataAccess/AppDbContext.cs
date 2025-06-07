@@ -22,6 +22,7 @@ namespace CourseService.DataAccess
         public DbSet<TrainingRoadmap> TrainingRoadmaps { get; set; }
         public DbSet<TrainingRoadmapCourse> TrainingRoadmapCourses { get; set; }
         public DbSet<CoursesGroup> CoursesGroups { get; set; }
+        public DbSet<CoursesGroupSemester> CoursesGroupSemesters { get; set; }
         public DbSet<AcademicClass> AcademicClasses { get; set; }
         public DbSet<Semester> Semesters { get; set; }
         public DbSet<Shift> Shifts { get; set; }

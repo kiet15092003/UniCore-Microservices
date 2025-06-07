@@ -19,7 +19,8 @@ namespace CourseService.DataAccess.Repositories
             var newAcademicClass = await _context.AcademicClasses.AddAsync(academicClass);
             await _context.SaveChangesAsync();
             return newAcademicClass.Entity;
-        }        public async Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id)
+        }        
+        public async Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id)
         {
             return await _context.AcademicClasses
                 .Include(ac => ac.Course)
@@ -200,8 +201,7 @@ namespace CourseService.DataAccess.Repositories
                 .Include(ac => ac.Course)
                 .Include(ac => ac.Semester)
                 .ToListAsync();
-        }        
-        public async Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId)
+        }          public async Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId)
         {
             return await _context.AcademicClasses
                 .Where(ac => ac.IsRegistrable && 
@@ -216,6 +216,51 @@ namespace CourseService.DataAccess.Repositories
                 .Include(ac => ac.ChildPracticeAcademicClasses)
                     .ThenInclude(c => c.ScheduleInDays)
                         .ThenInclude(s => s.Shift)
+                .ToListAsync();
+        }
+
+        public async Task<List<AcademicClass>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId)
+        {
+            // Get courses from TrainingRoadmapCourses
+            var trainingRoadmapCourseIds = await _context.TrainingRoadmapCourses
+                .Where(trc => trc.TrainingRoadmap.MajorId == majorId && 
+                             trc.TrainingRoadmap.BatchIds.Contains(batchId) &&
+                             trc.TrainingRoadmap.IsActive)
+                .Select(trc => trc.CourseId)
+                .ToListAsync();
+
+            // Get courses from CoursesGroupSemesters
+            var coursesGroupCourseIds = await _context.CoursesGroupSemesters
+                .Where(cgs => cgs.TrainingRoadmap.MajorId == majorId &&
+                             cgs.TrainingRoadmap.BatchIds.Contains(batchId) &&
+                             cgs.TrainingRoadmap.IsActive)
+                .SelectMany(cgs => cgs.CoursesGroup.CourseIds)
+                .ToListAsync();
+
+            // Combine both lists and get unique course IDs
+            var allCourseIds = trainingRoadmapCourseIds.Concat(coursesGroupCourseIds).Distinct().ToList();
+
+            // Get academic classes for these courses
+            return await _context.AcademicClasses
+                .Where(ac => ac.IsRegistrable && allCourseIds.Contains(ac.CourseId))
+                .Include(ac => ac.Course)
+                .Include(ac => ac.Semester)
+                .Include(ac => ac.ScheduleInDays)
+                    .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .ToListAsync();
+        }
+
+        public async Task<List<AcademicClass>> GetAcademicClassesBySemesterWithSchedulesAsync(Guid semesterId)
+        {
+            return await _context.AcademicClasses
+                .Where(ac => ac.SemesterId == semesterId)
+                .Include(ac => ac.ScheduleInDays)
                 .ToListAsync();
         }
 

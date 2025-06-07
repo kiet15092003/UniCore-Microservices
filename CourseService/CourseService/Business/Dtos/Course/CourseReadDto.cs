@@ -13,6 +13,7 @@ namespace CourseService.Business.Dtos.Course
         public bool IsActive { get; set; }
         public int Credit { get; set; }
         public int PracticePeriod { get; set; }
+        public int TheoryPeriod { get; set; }
         public bool IsRequired { get; set; }
         public bool IsOpenForAll { get; set; }
         public int? MinCreditRequired { get; set; }

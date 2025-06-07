@@ -45,7 +45,7 @@ namespace CourseService.Business.Services
             if (coursesGroupCreateDto.CourseIds != null && coursesGroupCreateDto.CourseIds.Any())
             {
                 // First validate credit consistency
-                await ValidateCourseCreditConsistency(coursesGroupCreateDto.CourseIds, coursesGroupCreateDto.Credit);
+                await ValidateCourseCreditConsistency(coursesGroupCreateDto.CourseIds);
                 
                 var validCourseIds = new List<Guid>();
                 var validCourses = new List<Entities.Course>();
@@ -76,9 +76,8 @@ namespace CourseService.Business.Services
         }
 
         public async Task<IEnumerable<CoursesGroupReadDto>> CreateMultipleCoursesGroupsAsync(IEnumerable<CoursesGroupCreateDto> coursesGroupCreateDtos)
-        {
-            // First validate all group names are unique within their respective majors
-            var groupNamesMajorIds = new Dictionary<(string, Guid), bool>();
+        {            // First validate all group names are unique within their respective majors
+            var groupNamesMajorIds = new Dictionary<(string, Guid?), bool>();
             foreach (var dto in coursesGroupCreateDtos)
             {
                 var key = (dto.GroupName, dto.MajorId);
@@ -129,7 +128,7 @@ namespace CourseService.Business.Services
             {
                 if (dto.CourseIds != null && dto.CourseIds.Any())
                 {
-                    await ValidateCourseCreditConsistency(dto.CourseIds, dto.Credit);
+                    await ValidateCourseCreditConsistency(dto.CourseIds);
                 }
             }
             
@@ -234,8 +233,7 @@ namespace CourseService.Business.Services
                 
             // Create a lookup dictionary for quick access
             var courseLookup = allCourses.ToDictionary(c => c.Id, c => c);
-            
-            // Populate courses for each group
+              // Populate courses for each group
             foreach (var item in response.Data)
             {
                 if (item.CourseIds.Any())
@@ -247,6 +245,12 @@ namespace CourseService.Business.Services
                         {
                             item.Courses.Add(_mapper.Map<Dtos.Course.CourseReadDto>(course));
                         }
+                    }
+                    
+                    // Set Credit to the first course's credit
+                    if (item.Courses.Any())
+                    {
+                        item.Credit = item.Courses.First().Credit;
                     }
                 }
             }
@@ -281,7 +285,54 @@ namespace CourseService.Business.Services
                 
             // Create a lookup dictionary for quick access
             var courseLookup = allCourses.ToDictionary(c => c.Id, c => c);
+              // Populate courses for each group
+            foreach (var item in result)
+            {
+                if (item.CourseIds.Any())
+                {
+                    item.Courses = new List<Dtos.Course.CourseReadDto>();
+                    foreach (var courseId in item.CourseIds)
+                    {
+                        if (courseLookup.TryGetValue(courseId, out var course))
+                        {
+                            item.Courses.Add(_mapper.Map<Dtos.Course.CourseReadDto>(course));
+                        }
+                    }
+                    
+                    // Set Credit to the first course's credit
+                    if (item.Courses.Any())
+                    {
+                        item.Credit = item.Courses.First().Credit;
+                    }
+                }
+            }
             
+            return result;
+        }        public async Task<IEnumerable<CoursesGroupReadDto>> GetCoursesGroupsWithAllCoursesOpenForAllAsync()
+        {
+            var coursesGroups = await _coursesGroupRepository.GetCoursesGroupsWithAllCoursesOpenForAllAsync();
+            var result = _mapper.Map<IEnumerable<CoursesGroupReadDto>>(coursesGroups);
+
+            // Get all unique course IDs from all groups
+            var allCourseIds = coursesGroups
+                .SelectMany(cg => cg.CourseIds)
+                .Distinct()
+                .ToList();
+
+            // Fetch courses sequentially to avoid DbContext threading issues
+            var courseLookup = new Dictionary<Guid, Entities.Course>();
+            if (allCourseIds.Any())
+            {
+                foreach (var courseId in allCourseIds)
+                {
+                    var course = await _courseRepository.GetCourseByIdAsync(courseId);
+                    if (course != null)
+                    {
+                        courseLookup[courseId] = course;
+                    }
+                }
+            }
+
             // Populate courses for each group
             foreach (var item in result)
             {
@@ -295,13 +346,19 @@ namespace CourseService.Business.Services
                             item.Courses.Add(_mapper.Map<Dtos.Course.CourseReadDto>(course));
                         }
                     }
+                    
+                    // Set Credit to the first course's credit
+                    if (item.Courses.Any())
+                    {
+                        item.Credit = item.Courses.First().Credit;
+                    }
                 }
             }
-            
+
             return result;
         }
 
-        private async Task ValidateCourseCreditConsistency(List<Guid> courseIds, int expectedCredit)
+        private async Task ValidateCourseCreditConsistency(List<Guid> courseIds)
         {
             if (courseIds == null || !courseIds.Any())
                 return;
@@ -326,13 +383,6 @@ namespace CourseService.Business.Services
             {
                 var creditList = string.Join(", ", distinctCredits);
                 throw new InvalidOperationException($"All courses in a group must have the same credit. Found courses with credits: {creditList}");
-            }
-
-            // Check if the course credit matches the expected credit from the group
-            var actualCredit = distinctCredits.First();
-            if (actualCredit != expectedCredit)
-            {
-                throw new InvalidOperationException($"Course group credit ({expectedCredit}) does not match the credit of its courses ({actualCredit}). All courses in the group must have credit {expectedCredit}.");
             }
         }
     }

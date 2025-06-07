@@ -11,7 +11,7 @@ namespace EnrollmentService.CommunicationTypes.Grpc.GrpcClient
         public GrpcStudentClientService(IConfiguration configuration)
         {
             _configuration = configuration;
-            var userServiceUrl = _configuration["GrpcServices:UserServiceUrl"];
+            var userServiceUrl = _configuration["GrpcSettings:UserServiceUrl"];
             
             if (!string.IsNullOrEmpty(userServiceUrl))
             {

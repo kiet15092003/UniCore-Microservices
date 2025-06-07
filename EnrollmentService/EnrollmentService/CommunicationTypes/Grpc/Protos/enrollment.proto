@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "EnrollmentService";
+
+service GrpcEnrollment {
+  rpc GetEnrollmentCount (EnrollmentCountRequest) returns (EnrollmentCountResponse);
+}
+
+message EnrollmentCountRequest {
+  string academicClassId = 1;
+}
+
+message EnrollmentCountResponse {
+  bool success = 1;
+  int32 count = 2;
+  repeated string error = 3;
+}
