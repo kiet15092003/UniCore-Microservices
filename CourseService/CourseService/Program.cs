@@ -1,7 +1,5 @@
 using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -10,8 +8,9 @@ using CourseService.CommunicationTypes;
 using CourseService.Business;
 using CourseService.Business.Profiles;
 using CourseService.Middleware;
-using System.Security.Claims;
 using CourseService.CommunicationTypes.Grpc.GrpcClient;
+using CourseService.CommunicationTypes.Grpc.GrpcServer;
+using CourseService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +44,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 */
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Handle circular references in JSON serialization
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    });
 builder.Services.AddHttpContextAccessor();
 
 //Add cors
@@ -93,6 +98,8 @@ builder.Services.AddSwaggerGen(options =>
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
 builder.Services.AddSingleton<GrpcRoomClientService>();
+builder.Services.AddSingleton<GrpcBatchClientService>();
+builder.Services.AddSingleton<GrpcEnrollmentClientService>();
 
 //Config DI
 builder.Services.AddRepositories();
@@ -100,6 +107,9 @@ builder.Services.AddServices();
 builder.Services.AddCommunicationTypes();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+
+// Register background service for automatic registration time checks
+builder.Services.AddHostedService<RegistrationTimeCheckService>();
 
 // Config automapper
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
@@ -151,6 +161,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
+
+// Map gRPC services
+app.MapGrpcService<GrpcAcademicClassService>();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

@@ -29,7 +29,7 @@ namespace CourseService.DataAccess.Repositories
             
             return trainingRoadmap;
         }
-          public async Task<TrainingRoadmap> GetTrainingRoadmapByIdAsync(Guid id)
+        public async Task<TrainingRoadmap> GetTrainingRoadmapByIdAsync(Guid id)
         {
             return await _context.TrainingRoadmaps
                 .Include(t => t.TrainingRoadmapCourses)

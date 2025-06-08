@@ -10,5 +10,6 @@ namespace CourseService.Business.Services
         Task<CoursesGroupListResponse> GetCoursesGroupsByPaginationAsync(Pagination pagination, Order? order);
         Task<CoursesGroupReadDto?> GetCoursesGroupByIdAsync(Guid id);
         Task<IEnumerable<CoursesGroupReadDto>> GetCoursesGroupsByMajorIdAsync(Guid majorId);
+        Task<IEnumerable<CoursesGroupReadDto>> GetCoursesGroupsWithAllCoursesOpenForAllAsync();
     }
 }

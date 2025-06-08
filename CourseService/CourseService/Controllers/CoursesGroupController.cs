@@ -37,26 +37,45 @@ namespace CourseService.Controllers
             var coursesGroup = await _coursesGroupService.GetCoursesGroupByIdAsync(id);
             return ApiResponse<CoursesGroupReadDto>.SuccessResponse(coursesGroup);
         }
-
         [HttpPost]
         public async Task<ApiResponse<CoursesGroupReadDto>> CreateCoursesGroup([FromBody] CoursesGroupCreateDto coursesGroupCreateDto)
-        {          
-            var createdCoursesGroup = await _coursesGroupService.CreateCoursesGroupAsync(coursesGroupCreateDto);
-            return ApiResponse<CoursesGroupReadDto>.SuccessResponse(createdCoursesGroup);
-        }
-
+        {
+            try
+            {
+                var createdCoursesGroup = await _coursesGroupService.CreateCoursesGroupAsync(coursesGroupCreateDto);
+                return ApiResponse<CoursesGroupReadDto>.SuccessResponse(createdCoursesGroup);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<CoursesGroupReadDto>.ErrorResponse([ex.Message]);
+            }
+        }        
         [HttpPost("multiple")]
         public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> CreateMultipleCoursesGroups(
             [FromBody] List<CoursesGroupCreateDto> coursesGroupCreateDtos)
         {
-            var createdCoursesGroups = await _coursesGroupService.CreateMultipleCoursesGroupsAsync(coursesGroupCreateDtos);
-            return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(createdCoursesGroups);
+            try
+            {
+                var createdCoursesGroups = await _coursesGroupService.CreateMultipleCoursesGroupsAsync(coursesGroupCreateDtos);
+                return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(createdCoursesGroups);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<IEnumerable<CoursesGroupReadDto>>.ErrorResponse([ex.Message]);
+            }
         }
 
         [HttpGet("major/{majorId}")]
         public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> GetCoursesGroupsByMajorId(Guid majorId)
         {
             var coursesGroups = await _coursesGroupService.GetCoursesGroupsByMajorIdAsync(majorId);
+            return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(coursesGroups);
+        }
+
+        [HttpGet("open-for-all")]
+        public async Task<ApiResponse<IEnumerable<CoursesGroupReadDto>>> GetCoursesGroupsWithAllCoursesOpenForAll()
+        {
+            var coursesGroups = await _coursesGroupService.GetCoursesGroupsWithAllCoursesOpenForAllAsync();
             return ApiResponse<IEnumerable<CoursesGroupReadDto>>.SuccessResponse(coursesGroups);
         }
     }

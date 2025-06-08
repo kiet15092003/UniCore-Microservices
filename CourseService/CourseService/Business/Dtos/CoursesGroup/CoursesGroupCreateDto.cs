@@ -7,8 +7,7 @@ namespace CourseService.Business.Dtos.CoursesGroup
         [Required]
         public string GroupName { get; set; }     
         [Required]
-        public Guid MajorId { get; set; }
-        public int Credit { get; set; }
+        public Guid? MajorId { get; set; }
         public List<Guid> CourseIds { get; set; } = new List<Guid>();
     }
 }

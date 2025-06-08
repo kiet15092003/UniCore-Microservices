@@ -13,8 +13,7 @@ namespace CourseService.Business.Profiles
             CreateMap<TrainingRoadmap, TrainingRoadmapReadDto>()
                 .ForMember(dest => dest.CoursesGroupSemesters, opt => opt.MapFrom(src => src.CoursesGroupSemesters))
                 .ForMember(dest => dest.TrainingRoadmapCourses, opt => opt.MapFrom(src => src.TrainingRoadmapCourses));
-                
-            // Explicitly handle mappings to avoid circular references
+                  // Explicitly handle mappings to avoid circular references
             CreateMap<CoursesGroupSemester, CoursesGroupSemesterReadDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.SemesterNumber, opt => opt.MapFrom(src => src.SemesterNumber))

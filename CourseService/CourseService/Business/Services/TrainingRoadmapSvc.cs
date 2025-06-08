@@ -5,23 +5,34 @@ using CourseService.DataAccess.Repositories;
 using CourseService.Entities;
 using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
+using System.Collections.Generic;
 
 namespace CourseService.Business.Services
-{
-    public class TrainingRoadmapSvc : ITrainingRoadmapService
+{    public class TrainingRoadmapSvc : ITrainingRoadmapService
     {
         private readonly ITrainingRoadmapRepository _trainingRoadmapRepository;
+        private readonly ICoursesGroupRepository _coursesGroupRepository;
+        private readonly ICourseRepository _courseRepository;
         private readonly IMapper _mapper;
         private readonly GrpcMajorClientService _grpcClient;
-
+        private readonly GrpcBatchClientService _grpcBatchClient;
+        private readonly ILogger<TrainingRoadmapSvc> _logger;        
         public TrainingRoadmapSvc(
             ITrainingRoadmapRepository trainingRoadmapRepository,
+            ICoursesGroupRepository coursesGroupRepository,
+            ICourseRepository courseRepository,
             IMapper mapper,
-            GrpcMajorClientService grpcClient)
+            GrpcMajorClientService grpcClient,
+            GrpcBatchClientService grpcBatchClient,
+            ILogger<TrainingRoadmapSvc> logger)
         {
             _trainingRoadmapRepository = trainingRoadmapRepository;
+            _coursesGroupRepository = coursesGroupRepository;
+            _courseRepository = courseRepository;
             _mapper = mapper;
             _grpcClient = grpcClient;
+            _grpcBatchClient = grpcBatchClient;
+            _logger = logger;
         }
 
         public async Task<TrainingRoadmapReadDto> CreateTrainingRoadmapAsync(TrainingRoadmapCreateDto createDto)
@@ -32,9 +43,11 @@ namespace CourseService.Business.Services
             
             // Call repository to create the roadmap (code will be generated in the repository)
             var result = await _trainingRoadmapRepository.CreateTrainingRoadmapAsync(trainingRoadmap);
-            
-            // Map the result back to DTO
+              // Map the result back to DTO
             var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(result);
+            
+            // Populate course group credits
+            await PopulateCoursesGroupCreditsAsync(roadmapDto);
             
             // Get major information from gRPC service
             if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
@@ -45,9 +58,16 @@ namespace CourseService.Business.Services
                     roadmapDto.MajorData = major.Data;
                 }
             }
+
+            // Get batch information for BatchIds
+            if (roadmapDto.BatchIds != null && roadmapDto.BatchIds.Any())
+            {
+                roadmapDto.BatchDatas = await GetBatchDataForIdsAsync(roadmapDto.BatchIds);
+            }
             
             return roadmapDto;
-        }        public async Task<TrainingRoadmapReadDto> DeactivateTrainingRoadmapAsync(Guid id)
+        }        
+        public async Task<TrainingRoadmapReadDto> DeactivateTrainingRoadmapAsync(Guid id)
         {
             var roadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(id);
             if (roadmap == null)
@@ -69,6 +89,12 @@ namespace CourseService.Business.Services
                 {
                     roadmapDto.MajorData = major.Data;
                 }
+            }
+
+            // Get batch information for BatchIds
+            if (roadmapDto.BatchIds != null && roadmapDto.BatchIds.Any())
+            {
+                roadmapDto.BatchDatas = await GetBatchDataForIdsAsync(roadmapDto.BatchIds);
             }
             
             return roadmapDto;
@@ -97,18 +123,24 @@ namespace CourseService.Business.Services
                     roadmapDto.MajorData = major.Data;
                 }
             }
+
+            // Get batch information for BatchIds
+            if (roadmapDto.BatchIds != null && roadmapDto.BatchIds.Any())
+            {
+                roadmapDto.BatchDatas = await GetBatchDataForIdsAsync(roadmapDto.BatchIds);
+            }
             
             return roadmapDto;
-        }
-
-        public async Task<TrainingRoadmapListResponse> GetTrainingRoadmapsByPagination(Pagination pagination, TrainingRoadmapFilterParams filterParams, Order? order)
+        }        public async Task<TrainingRoadmapListResponse> GetTrainingRoadmapsByPagination(Pagination pagination, TrainingRoadmapFilterParams filterParams, Order? order)
         {
             var result = await _trainingRoadmapRepository.GetAllTrainingRoadmapsPaginationAsync(pagination, filterParams, order);
             var response = _mapper.Map<TrainingRoadmapListResponse>(result);
-            
-            // Populate major data for each roadmap in the list
+              // Populate major data and batch data for each roadmap in the list
             foreach (var roadmap in response.Data)
             {
+                // Populate course group credits
+                await PopulateCoursesGroupCreditsAsync(roadmap);
+                
                 if (roadmap.MajorId.HasValue && roadmap.MajorId.Value != Guid.Empty)
                 {
                     var major = await _grpcClient.GetMajorByIdAsync(roadmap.MajorId.Value.ToString());
@@ -116,6 +148,12 @@ namespace CourseService.Business.Services
                     {
                         roadmap.MajorData = major.Data;
                     }
+                }
+                
+                // Get batch information for BatchIds
+                if (roadmap.BatchIds != null && roadmap.BatchIds.Any())
+                {
+                    roadmap.BatchDatas = await GetBatchDataForIdsAsync(roadmap.BatchIds);
                 }
             }
             
@@ -137,8 +175,16 @@ namespace CourseService.Business.Services
             existingRoadmap.StartYear = updateDto.StartYear;
             existingRoadmap.UpdatedAt = DateTime.Now;
             
-            var result = await _trainingRoadmapRepository.UpdateTrainingRoadmapAsync(existingRoadmap);
+            // Update BatchIds if provided
+            if (updateDto.BatchIds != null)
+            {
+                existingRoadmap.BatchIds = updateDto.BatchIds;
+            }
+              var result = await _trainingRoadmapRepository.UpdateTrainingRoadmapAsync(existingRoadmap);
             var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(result);
+            
+            // Populate course group credits
+            await PopulateCoursesGroupCreditsAsync(roadmapDto);
             
             // Get major information from gRPC service
             if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
@@ -149,11 +195,15 @@ namespace CourseService.Business.Services
                     roadmapDto.MajorData = major.Data;
                 }
             }
+
+            // Get batch information for BatchIds
+            if (roadmapDto.BatchIds != null && roadmapDto.BatchIds.Any())
+            {
+                roadmapDto.BatchDatas = await GetBatchDataForIdsAsync(roadmapDto.BatchIds);
+            }
             
             return roadmapDto;
-        }
-
-        public async Task<TrainingRoadmapReadDto> GetTrainingRoadmapByIdAsync(Guid id)
+        }          public async Task<TrainingRoadmapReadDto> GetTrainingRoadmapByIdAsync(Guid id)
         {
             var trainingRoadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(id);
             if (trainingRoadmap == null)
@@ -163,6 +213,9 @@ namespace CourseService.Business.Services
 
             var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(trainingRoadmap);
             
+            // Populate course group credits
+            await PopulateCoursesGroupCreditsAsync(roadmapDto);
+            
             // Get major information from gRPC service
             if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
             {
@@ -173,9 +226,17 @@ namespace CourseService.Business.Services
                 }
             }
             
+            // Get batch information for BatchIds
+            if (roadmapDto.BatchIds != null && roadmapDto.BatchIds.Any())
+            {
+                roadmapDto.BatchDatas = await GetBatchDataForIdsAsync(roadmapDto.BatchIds);
+            }
+            
             return roadmapDto;
-        }        public async Task<TrainingRoadmapReadDto> AddTrainingRoadmapComponentsAsync(TrainingRoadmapAddComponentsDto componentsDto)
-        {            // Verify that the training roadmap exists
+        }
+        public async Task<TrainingRoadmapReadDto> AddTrainingRoadmapComponentsAsync(TrainingRoadmapAddComponentsDto componentsDto)
+        {
+            // Verify that the training roadmap exists
             var existingRoadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(componentsDto.TrainingRoadmapId);
             if (existingRoadmap == null)
             {
@@ -206,9 +267,11 @@ namespace CourseService.Business.Services
                 componentsDto.TrainingRoadmapId, 
                 coursesGroupSemesters, 
                 trainingRoadmapCourses);
-            
-            // Map the result back to DTO
+              // Map the result back to DTO
             var roadmapDto = _mapper.Map<TrainingRoadmapReadDto>(updatedRoadmap);
+            
+            // Populate course group credits
+            await PopulateCoursesGroupCreditsAsync(roadmapDto);
             
             // Get major information from gRPC service
             if (roadmapDto.MajorId.HasValue && roadmapDto.MajorId.Value != Guid.Empty)
@@ -219,8 +282,63 @@ namespace CourseService.Business.Services
                     roadmapDto.MajorData = major.Data;
                 }
             }
+
+            // Get batch information for BatchIds
+            if (roadmapDto.BatchIds != null && roadmapDto.BatchIds.Any())
+            {
+                roadmapDto.BatchDatas = await GetBatchDataForIdsAsync(roadmapDto.BatchIds);
+            }
             
             return roadmapDto;
+        }
+
+        private async Task<List<BatchData>> GetBatchDataForIdsAsync(List<Guid> batchIds)
+        {
+            if (batchIds == null || !batchIds.Any())
+            {                return new List<BatchData>();
+            }
+
+            try
+            {
+                var stringIds = batchIds.Select(id => id.ToString()).ToList();
+                return await _grpcBatchClient.GetBatchesByIdsAsync(stringIds);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching batch data");
+                return new List<BatchData>();
+            }
+        }
+
+        private async Task PopulateCoursesGroupCreditsAsync(TrainingRoadmapReadDto roadmapDto)
+        {
+            if (roadmapDto.CoursesGroupSemesters == null || !roadmapDto.CoursesGroupSemesters.Any())
+                return;
+
+            // Get all unique course group IDs
+            var courseGroupIds = roadmapDto.CoursesGroupSemesters
+                .Select(cgs => cgs.CoursesGroupId)
+                .Distinct()
+                .ToList();
+
+            // Fetch course groups and their course details
+            foreach (var courseGroupId in courseGroupIds)
+            {
+                var courseGroup = await _coursesGroupRepository.GetCoursesGroupByIdAsync(courseGroupId);
+                if (courseGroup != null && courseGroup.CourseIds.Any())
+                {
+                    // Get the first course to determine the credit
+                    var firstCourse = await _courseRepository.GetCourseByIdAsync(courseGroup.CourseIds.First());
+                    if (firstCourse != null)
+                    {
+                        // Update all CoursesGroupSemesters with this course group ID
+                        foreach (var cgs in roadmapDto.CoursesGroupSemesters.Where(x => x.CoursesGroupId == courseGroupId))
+                        {
+                            cgs.Credit = firstCourse.Credit;
+                        }
+                    }
+                }
+            }
         }
     }
 }

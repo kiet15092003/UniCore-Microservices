@@ -4,3 +4,20 @@ GET {{CourseService_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Test Semester Activation/Deactivation
+@semesterId = 00000000-0000-0000-0000-000000000000
+
+### Activate Semester
+POST {{CourseService_HostAddress}}/api/c/Semesters/{{semesterId}}/activate
+Content-Type: application/json
+
+### Deactivate Semester  
+POST {{CourseService_HostAddress}}/api/c/Semesters/{{semesterId}}/deactivate
+Content-Type: application/json
+
+### Get Semester by ID to verify status
+GET {{CourseService_HostAddress}}/api/c/Semesters/{{semesterId}}
+Accept: application/json
+
+###

@@ -37,12 +37,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CommunicationTypes\Grpc\GrpcClient\Protos\" />
-  </ItemGroup>
-
-	<ItemGroup>
-		<Protobuf Include="CommunicationTypes\Grpc\GrpcClient\Protos\major.proto" GrpcServices="Client" />
-		<Protobuf Include="CommunicationTypes\Grpc\GrpcClient\Protos\room.proto" GrpcServices="Client" />
+    <Folder Include="CommunicationTypes\Grpc\Protos\" />
+  </ItemGroup>	<ItemGroup>
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\major.proto" GrpcServices="Client" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\room.proto" GrpcServices="Client" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\batch.proto" GrpcServices="Client" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\enrollment.proto" GrpcServices="Client" />
+		<Protobuf Include="CommunicationTypes\Grpc\Protos\academicclass.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

@@ -18,7 +18,7 @@ namespace CourseService.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
+        public async Task<  ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
         {
             var result = await _trainingRoadmapService.GetTrainingRoadmapByIdAsync(id);
             if (result == null)
@@ -49,8 +49,9 @@ namespace CourseService.Controllers
         {
             var result = await _trainingRoadmapService.UpdateTrainingRoadmapAsync(id, updateDto);
             return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
-        }        
-          [HttpPost("components")]
+        }
+
+        [HttpPost("components")]
         public async Task<ApiResponse<TrainingRoadmapReadDto>> UpdateTrainingRoadmapComponents([FromBody] TrainingRoadmapAddComponentsDto componentsDto)
         {
             try

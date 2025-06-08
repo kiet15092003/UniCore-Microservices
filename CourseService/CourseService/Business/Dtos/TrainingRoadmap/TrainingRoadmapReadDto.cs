@@ -16,5 +16,7 @@ namespace CourseService.Business.Dtos.TrainingRoadmap
         public bool IsActive { get; set; }
         public List<CoursesGroupSemesterReadDto>? CoursesGroupSemesters { get; set; }
         public List<TrainingRoadmapCourseReadDto>? TrainingRoadmapCourses { get; set; }
+        public List<Guid>? BatchIds { get; set; }
+        public List<BatchData>? BatchDatas { get; set; }
     }
 }
