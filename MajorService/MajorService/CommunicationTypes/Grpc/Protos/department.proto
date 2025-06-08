@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option csharp_namespace = "MajorService";
+
+service GrpcDepartment {
+    rpc GetDepartmentById (DepartmentRequest) returns (DepartmentResponse);
+}
+
+message DepartmentRequest {
+    string id = 1;
+}
+
+message DepartmentData {
+    string id = 1;
+    string name = 2;
+    string code = 3;
+    repeated MajorGroupData majorGroups = 4;
+}
+
+message MajorGroupData {
+    string id = 1;
+    string name = 2;
+}
+
+message DepartmentResponse {
+    bool success = 1;
+    DepartmentData data = 2;
+    repeated string error = 3;
+} 

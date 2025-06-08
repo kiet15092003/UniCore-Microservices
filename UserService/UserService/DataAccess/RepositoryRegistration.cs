@@ -5,6 +5,7 @@ using UserService.DataAccess.Repositories.BatchRepo;
 using UserService.DataAccess.Repositories.StudentRepo;
 using UserService.DataAccess.Repositories.GuardianRepo;
 using UserService.DataAccess.Repositories.AddressRepo;
+using UserService.DataAccess.Repositories.LecturerRepo;
 
 namespace UserService.DataAccess
 {
@@ -19,6 +20,7 @@ namespace UserService.DataAccess
             services.AddScoped<IStudentRepo, StudentRepo>();
             services.AddScoped<IGuardianRepo, GuardianRepo>();
             services.AddScoped<IAddressRepo, AddressRepo>();
+            services.AddScoped<ILecturerRepo, LecturerRepo>();
         }
     }
 }
