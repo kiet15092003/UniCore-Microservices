@@ -12,6 +12,8 @@ using System.Text;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using UserService.Utils;
+using UserService.CommunicationTypes.KafkaService.KafkaProducer;
+using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 
 namespace UserService.Business.Services.LecturerService
 {
@@ -22,19 +24,21 @@ namespace UserService.Business.Services.LecturerService
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly GrpcDepartmentClientService _departmentService;
         private readonly ILogger<LecturerService> _logger;
-
+        private readonly IKafkaProducerService _kafkaProducer;
         public LecturerService(
             ILecturerRepo lecturerRepo,
             IMapper mapper,
             UserManager<ApplicationUser> userManager,
             GrpcDepartmentClientService departmentService,
-            ILogger<LecturerService> logger)
+            ILogger<LecturerService> logger,
+            IKafkaProducerService kafkaProducer)
         {
             _lecturerRepo = lecturerRepo;
             _mapper = mapper;
             _userManager = userManager;
             _departmentService = departmentService;
             _logger = logger;
+            _kafkaProducer = kafkaProducer;
         }
 
 
@@ -174,7 +178,7 @@ namespace UserService.Business.Services.LecturerService
             return _mapper.Map<LecturerDto>(lecturer);
         }
 
-        public async Task<LecturerDto> CreateLecturerAsync(CreateLecturerDto createLecturerDto)
+        public async Task<IActionResult> CreateLecturerAsync(CreateLecturerDto createLecturerDto)
         {
             try
             {
@@ -182,14 +186,14 @@ namespace UserService.Business.Services.LecturerService
                 var departmentResponse = await _departmentService.GetDepartmentByIdAsync(createLecturerDto.DepartmentId.ToString());
                 if (!departmentResponse.Success || departmentResponse.Data == null)
                 {
-                    throw new Exception("Invalid department ID");
+                    return new BadRequestObjectResult("Invalid department ID");
                 }
 
                 // Check if a user with the same PersonId already exists
                 var existingUserWithPersonId = await _userManager.Users.FirstOrDefaultAsync(u => u.PersonId == createLecturerDto.PersonId);
                 if (existingUserWithPersonId != null)
                 {
-                    throw new Exception($"A user with Person ID '{createLecturerDto.PersonId}' already exists");
+                    return new BadRequestObjectResult($"A user with Person ID '{createLecturerDto.PersonId}' already exists");
                 }
 
                 // Generate email from lastname + firstname without accents
@@ -215,7 +219,7 @@ namespace UserService.Business.Services.LecturerService
                 }
                 else
                 {
-                    throw new Exception("Invalid date of birth format");
+                    return new BadRequestObjectResult("Invalid date of birth format");
                 }
 
                 // Create the address if provided
@@ -237,14 +241,13 @@ namespace UserService.Business.Services.LecturerService
                 var lecturer = new Lecturer
                 {
                     Id = Guid.NewGuid(),
-                    LecturerCode = "155555555",
+                    LecturerCode = generatedEmail.Split("@")[0],
                     DepartmentId = createLecturerDto.DepartmentId,
-                    JoinDate = DateTime.UtcNow,
-                    WorkingStatus = 1,
-                    MainMajor = "",
-                    Degree = "",
-                    Salary = 0
+                    JoinDate = DateTime.UtcNow
                 };
+                lecturer.Degree = "";
+                lecturer.Salary = 0;
+                lecturer.MainMajor = "";
 
                 if(createLecturerDto.Degree != null)
                 {
@@ -261,11 +264,12 @@ namespace UserService.Business.Services.LecturerService
 
 
                 // Create user with password
-                var result = await _userManager.CreateAsync(user, PasswordGenerator.GenerateSecurePassword());
+                var password = PasswordGenerator.GenerateSecurePassword();
+                var result = await _userManager.CreateAsync(user, password);
                 if (!result.Succeeded)
                 {
                     var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    throw new Exception($"Failed to create user: {errors}");
+                    return new BadRequestObjectResult($"Failed to create user: {errors}");
                 }
 
                 // Add lecturer role
@@ -278,13 +282,32 @@ namespace UserService.Business.Services.LecturerService
                 // Save the lecturer
                 var createdLecturer = await _lecturerRepo.CreateAsync(lecturer);
 
+                // Publish Kafka event for user import
+                var userImportedEvent = new UserImportedEventDTO
+                {
+                    Data = new UserImportedEventData
+                    {
+                        Users = new List<UserImportedEventDataSingleData>
+                        {
+                            new UserImportedEventDataSingleData
+                            {
+                                UserEmail = user.Email ?? string.Empty,
+                                Password = password,
+                                PrivateEmail = createLecturerDto.PersonEmail ?? string.Empty
+                            }
+                        }
+                    }
+                };
+                
+                await _kafkaProducer.PublishMessageAsync("UserImportedEvent", userImportedEvent);
+
                 // Map to DTO and return
-                return _mapper.Map<LecturerDto>(createdLecturer);
+                return new OkObjectResult(_mapper.Map<LecturerDto>(createdLecturer));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating lecturer");
-                throw;
+                return new BadRequestObjectResult(ex.Message);
             }
         }
 

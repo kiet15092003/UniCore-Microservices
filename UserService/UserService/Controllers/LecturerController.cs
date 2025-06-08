@@ -110,7 +110,16 @@ namespace UserService.Controllers
             try
             {
                 var result = await _lecturerService.CreateLecturerAsync(createLecturerDto);
-                return ApiResponse<LecturerDto>.SuccessResponse(result);
+                if (result is OkObjectResult okResult)
+                {
+                    return ApiResponse<LecturerDto>.SuccessResponse((LecturerDto)okResult.Value);
+                }
+                else if (result is BadRequestObjectResult badRequestResult)
+                {
+                    string errorMessage = badRequestResult.Value?.ToString() ?? "Failed to create lecturer";
+                    return ApiResponse<LecturerDto>.ErrorResponse([errorMessage]);
+                }
+                return ApiResponse<LecturerDto>.ErrorResponse(["Failed to create lecturer"]);
             }
             catch (Exception ex)
             {
