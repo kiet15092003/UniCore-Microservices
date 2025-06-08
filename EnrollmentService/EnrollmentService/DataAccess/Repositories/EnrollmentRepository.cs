@@ -2,6 +2,7 @@ using EnrollmentService.Entities;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using CourseService.DataAccess;
 
 namespace EnrollmentService.DataAccess.Repositories
@@ -100,9 +101,7 @@ namespace EnrollmentService.DataAccess.Repositories
             var newEnrollment = await _context.Enrollments.AddAsync(enrollment);
             await _context.SaveChangesAsync();
             return newEnrollment.Entity;
-        }
-
-        public async Task<List<Enrollment>> CreateMultipleEnrollmentsAsync(List<Enrollment> enrollments)
+        }        public async Task<List<Enrollment>> CreateMultipleEnrollmentsAsync(List<Enrollment> enrollments)
         {
             foreach (var enrollment in enrollments)
             {
@@ -114,25 +113,104 @@ namespace EnrollmentService.DataAccess.Repositories
             await _context.Enrollments.AddRangeAsync(enrollments);
             await _context.SaveChangesAsync();
             return enrollments;
-        }        public async Task<bool> ExistsAsync(Guid studentId, Guid academicClassId)
+        }        public async Task<List<Enrollment>> CreateMultipleEnrollmentsWithTransactionAsync(List<Enrollment> enrollments)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.Id = Guid.NewGuid();
+                    enrollment.CreatedAt = DateTime.UtcNow;
+                    enrollment.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _context.Enrollments.AddRangeAsync(enrollments);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return enrollments;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<List<Enrollment>> CreateMultipleEnrollmentsWithoutTransactionAsync(List<Enrollment> enrollments)
+        {
+            foreach (var enrollment in enrollments)
+            {
+                enrollment.Id = Guid.NewGuid();
+                enrollment.CreatedAt = DateTime.UtcNow;
+                enrollment.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _context.Enrollments.AddRangeAsync(enrollments);
+            await _context.SaveChangesAsync();
+            return enrollments;
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync();
+        }public async Task<bool> ExistsAsync(Guid studentId, Guid academicClassId)
         {
             return await _context.Enrollments
                 .AnyAsync(e => e.StudentId == studentId && e.AcademicClassId == academicClassId);
-        }
-
-        public async Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId)
+        }        public async Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId)
         {
             return await _context.Enrollments
                 .Where(e => e.AcademicClassId == academicClassId)
                 .CountAsync();
         }
 
-        public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId)
+        public async Task<int> GetEnrollmentCountByAcademicClassIdWithLockAsync(Guid academicClassId)
         {
-            return await _context.Enrollments
+            // Use SELECT FOR UPDATE equivalent in SQL Server (WITH (UPDLOCK, HOLDLOCK))
+            //var count = await _context.Database
+            //    .SqlQuery<int>($"SELECT COUNT(*) FROM Enrollments WITH (UPDLOCK, HOLDLOCK) WHERE AcademicClassId = {academicClassId}")
+            //    .FirstAsync();
+
+            //return count;
+            var count = await _context.Database
+               .SqlQuery<int>($"SELECT COUNT(*) AS Value FROM Enrollments WITH (UPDLOCK, HOLDLOCK) WHERE AcademicClassId = {academicClassId}")
+               .FirstAsync();
+
+            return count;
+        }        public async Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId, Guid? semesterId = null)
+        {
+            var query = _context.Enrollments
                 .Include(e => e.StudentResults)
-                .Where(e => e.StudentId == studentId)
-                .ToListAsync();
+                .Where(e => e.StudentId == studentId);
+
+            // Note: Since we're in a microservices architecture and AcademicClass is in a different service,
+            // we can't filter by semesterId at the database level. This filtering will be done at the service level.
+            return await query.ToListAsync();
+        }
+
+        public async Task<bool> DeleteEnrollmentAsync(Guid id)
+        {
+            var enrollment = await _context.Enrollments
+                .Include(e => e.StudentResults)
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (enrollment == null)
+            {
+                return false;
+            }
+
+            // Remove related student results first
+            if (enrollment.StudentResults != null && enrollment.StudentResults.Any())
+            {
+                _context.StudentResults.RemoveRange(enrollment.StudentResults);
+            }
+
+            // Remove the enrollment
+            _context.Enrollments.Remove(enrollment);
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

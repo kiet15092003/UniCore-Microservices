@@ -12,6 +12,7 @@ namespace EnrollmentService.Business.Services
         Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId);
         Task<bool> CheckEnrollmentExistsAsync(Guid studentId, Guid academicClassId);
         Task<CheckMultipleEnrollmentsResponse> CheckMultipleEnrollmentsExistAsync(CheckMultipleEnrollmentsRequest request);
-        Task<List<EnrollmentReadDto>> GetEnrollmentsByStudentIdAsync(Guid studentId);
+        Task<List<EnrollmentReadDto>> GetEnrollmentsByStudentIdAsync(Guid studentId, Guid? semesterId = null);
+        Task<bool> DeleteEnrollmentAsync(Guid id);
     }
 }

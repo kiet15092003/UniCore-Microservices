@@ -56,6 +56,21 @@ namespace CourseService.Business.Services
             return _mapper.Map<SemesterReadDto>(updatedSemester);
         }
 
+        public async Task<SemesterReadDto> ActivateSemesterAsync(Guid id)
+        {
+            var semester = await _semesterRepository.GetSemesterByIdAsync(id);
+            if (semester == null)
+            {
+                throw new KeyNotFoundException("Semester not found");
+            }
+
+            semester.IsActive = true;
+            semester.UpdatedAt = DateTime.Now;
+            
+            var updatedSemester = await _semesterRepository.UpdateSemesterAsync(semester);
+            return _mapper.Map<SemesterReadDto>(updatedSemester);
+        }
+
         public async Task<PaginationResult<SemesterReadDto>> GetByPaginationAsync(Pagination pagination, SemesterFilterParams filter, Order? order)
         {
             var result = await _semesterRepository.GetAllSemestersPaginationAsync(pagination, filter, order);

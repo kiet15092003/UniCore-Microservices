@@ -5,26 +5,35 @@ using EnrollmentService.DataAccess.Repositories;
 using EnrollmentService.Entities;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
+using EnrollmentService.Utils.DistributedLock;
+using EnrollmentService.Utils.Exceptions;
+using EnrollmentService.Utils.DistributedLock;
+using EnrollmentService.Utils.Exceptions;
 
 namespace EnrollmentService.Business.Services
-{
-    public class EnrollmentSvc : IEnrollmentService
+{    public class EnrollmentSvc : IEnrollmentService
     {
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IMapper _mapper;
         private readonly GrpcAcademicClassClientService _academicClassClient;
         private readonly GrpcStudentClientService _studentClient;
+        private readonly IDistributedLockService _distributedLockService;
+        private readonly ILogger<EnrollmentSvc> _logger;
 
         public EnrollmentSvc(
             IEnrollmentRepository enrollmentRepository,
             IMapper mapper,
             GrpcAcademicClassClientService academicClassClient,
-            GrpcStudentClientService studentClient)
+            GrpcStudentClientService studentClient,
+            IDistributedLockService distributedLockService,
+            ILogger<EnrollmentSvc> logger)
         {
             _enrollmentRepository = enrollmentRepository;
             _mapper = mapper;
             _academicClassClient = academicClassClient;
             _studentClient = studentClient;
+            _distributedLockService = distributedLockService;
+            _logger = logger;
         }
 
         public async Task<EnrollmentReadDto?> GetEnrollmentByIdAsync(Guid id)
@@ -72,11 +81,10 @@ namespace EnrollmentService.Business.Services
                 
                 enrollmentDto.AcademicClass = new GrpcAcademicClassData
                 {
-                    Id = Guid.Parse(acClass.Id),
-                    Name = acClass.Name,
+                    Id = Guid.Parse(acClass.Id),                    Name = acClass.Name,
                     GroupNumber = acClass.GroupNumber,
                     Capacity = acClass.Capacity,
-                    ListOfWeeks = acClass.ListOfWeeks?.ToList(),
+                    ListOfWeeks = acClass.ListOfWeeks != null ? new List<int>(acClass.ListOfWeeks) : null,
                     IsRegistrable = acClass.IsRegistrable,
                     SemesterId = !string.IsNullOrEmpty(acClass.SemesterId) ? Guid.Parse(acClass.SemesterId) : Guid.Empty,
                     CourseId = !string.IsNullOrEmpty(acClass.CourseId) ? Guid.Parse(acClass.CourseId) : Guid.Empty,
@@ -134,7 +142,7 @@ namespace EnrollmentService.Business.Services
 
             return enrollmentDto;
         }
-
+        
         public async Task<EnrollmentListResponse> GetEnrollmentsByPagination(Pagination pagination, EnrollmentListFilterParams filterParams, Order? order)
         {
             var enrollmentsResult = await _enrollmentRepository.GetAllEnrollmentsPaginationAsync(pagination, filterParams, order);
@@ -182,7 +190,7 @@ namespace EnrollmentService.Business.Services
                         Name = acClass.Name,
                         GroupNumber = acClass.GroupNumber,
                         Capacity = acClass.Capacity,
-                        ListOfWeeks = acClass.ListOfWeeks?.ToList(),
+                        ListOfWeeks = acClass.ListOfWeeks != null ? new List<int>(acClass.ListOfWeeks) : null,
                         IsRegistrable = acClass.IsRegistrable,
                         CourseId = !string.IsNullOrEmpty(acClass.CourseId) ? Guid.Parse(acClass.CourseId) : Guid.Empty,
                         SemesterId = !string.IsNullOrEmpty(acClass.SemesterId) ? Guid.Parse(acClass.SemesterId) : Guid.Empty,
@@ -244,135 +252,195 @@ namespace EnrollmentService.Business.Services
                 PageSize = enrollmentsResult.PageSize,
                 PageIndex = enrollmentsResult.PageIndex,
             };
-        }        public async Task<List<EnrollmentReadDto>> CreateMultipleEnrollmentsAsync(MultipleEnrollmentCreateDto createDto)
+        }
+          public async Task<List<EnrollmentReadDto>> CreateMultipleEnrollmentsAsync(MultipleEnrollmentCreateDto createDto)
         {
-            var successfulEnrollments = new List<EnrollmentReadDto>();
-            var enrollmentsToCreate = new List<Enrollment>();
-            
-            // Validate student exists
+            _logger.LogInformation("Starting all-or-nothing multiple enrollment creation for student {StudentId} with {Count} academic classes",
+                createDto.StudentId, createDto.AcademicClassIds.Count);
+
+            // Validate student exists first
             var studentResponse = await _studentClient.GetStudentById(createDto.StudentId.ToString());
             if (!studentResponse.Success || studentResponse.Data == null)
             {
-                // If student doesn't exist, return empty list
-                return successfulEnrollments;
+                _logger.LogWarning("Student {StudentId} not found", createDto.StudentId);
+                throw new ArgumentException($"Student with ID {createDto.StudentId} not found");
             }
 
-            // Process each academic class
-            foreach (var academicClassId in createDto.AcademicClassIds)
+            // Acquire distributed locks for ALL academic classes first
+            var distributedLocks = new List<IDistributedLock>();
+            var lockKeys = createDto.AcademicClassIds.Select(id => $"enrollment:capacity:{id}").ToList();
+            var lockExpiration = TimeSpan.FromMinutes(2);
+            var lockTimeout = TimeSpan.FromSeconds(30);
+
+            try
             {
-                try
+                // Try to acquire locks for all classes
+                foreach (var (academicClassId, index) in createDto.AcademicClassIds.Select((id, i) => (id, i)))
                 {
-                    // Check if enrollment already exists
-                    var existingEnrollment = await _enrollmentRepository.ExistsAsync(createDto.StudentId, academicClassId);
-                    if (existingEnrollment)
-                    {
-                        continue; // Skip existing enrollment
-                    }
-
-                    // Validate academic class exists and is registrable
-                    var academicClassResponse = await _academicClassClient.GetAcademicClassById(academicClassId.ToString());
-                    if (!academicClassResponse.Success || academicClassResponse.Data == null || !academicClassResponse.Data.IsRegistrable)
-                    {
-                        continue; // Skip invalid or non-registrable class
-                    }
-
-                    // Create enrollment entity
-                    var enrollment = new Enrollment
-                    {
-                        StudentId = createDto.StudentId,
-                        AcademicClassId = academicClassId,
-                        Status = 1, // Set status to 1 as requested
-                        StudentResults = new List<StudentResult>()
-                    };
-
-                    enrollmentsToCreate.Add(enrollment);
-                }
-                catch
-                {
-                    // Skip on error
-                    continue;
-                }
-            }
-
-            // Create all valid enrollments in batch
-            if (enrollmentsToCreate.Any())
-            {
-                try
-                {
-                    var createdEnrollments = await _enrollmentRepository.CreateMultipleEnrollmentsAsync(enrollmentsToCreate);
+                    var lockKey = lockKeys[index];
+                    var distributedLock = await _distributedLockService.AcquireLockAsync(lockKey, lockExpiration, lockTimeout);
                     
-                    // Convert to DTOs and populate additional data
-                    foreach (var createdEnrollment in createdEnrollments)
+                    if (distributedLock == null)
                     {
-                        var enrollmentDto = _mapper.Map<EnrollmentReadDto>(createdEnrollment);
-                        
-                        // Populate student data
-                        if (studentResponse.Success && studentResponse.Data != null)
-                        {
-                            var userData = studentResponse.Data.User;
-                            enrollmentDto.Student = new GrpcStudentData
-                            {
-                                Id = Guid.Parse(studentResponse.Data.Id),
-                                StudentCode = studentResponse.Data.StudentCode,
-                                AccumulateCredits = studentResponse.Data.AccumulateCredits,
-                                AccumulateScore = studentResponse.Data.AccumulateScore,
-                                AccumulateActivityScore = studentResponse.Data.AccumulateActivityScore,
-                                MajorId = !string.IsNullOrEmpty(studentResponse.Data.MajorId) ? Guid.Parse(studentResponse.Data.MajorId) : Guid.Empty,
-                                BatchId = !string.IsNullOrEmpty(studentResponse.Data.BatchId) ? Guid.Parse(studentResponse.Data.BatchId) : Guid.Empty,
-                                ApplicationUserId = !string.IsNullOrEmpty(studentResponse.Data.ApplicationUserId) ? Guid.Parse(studentResponse.Data.ApplicationUserId) : Guid.Empty,
-                                User = userData != null ? new GrpcUserData
-                                {
-                                    Id = !string.IsNullOrEmpty(userData.Id) ? Guid.Parse(userData.Id) : Guid.Empty,
-                                    FirstName = userData.FirstName,
-                                    LastName = userData.LastName,
-                                    Email = userData.Email,
-                                    PhoneNumber = userData.PhoneNumber,
-                                    PersonId = userData.PersonId,
-                                    ImageUrl = userData.ImageUrl
-                                } : null
-                            };
-                        }
-
-                        // Populate academic class data
-                        var academicClassResponse = await _academicClassClient.GetAcademicClassById(createdEnrollment.AcademicClassId.ToString());
-                        if (academicClassResponse.Success && academicClassResponse.Data != null)
-                        {
-                            var acClass = academicClassResponse.Data;
-                            enrollmentDto.AcademicClass = new GrpcAcademicClassData
-                            {
-                                Id = Guid.Parse(acClass.Id),
-                                Name = acClass.Name,
-                                GroupNumber = acClass.GroupNumber,
-                                Capacity = acClass.Capacity,
-                                ListOfWeeks = acClass.ListOfWeeks?.ToList(),
-                                IsRegistrable = acClass.IsRegistrable,
-                                SemesterId = !string.IsNullOrEmpty(acClass.SemesterId) ? Guid.Parse(acClass.SemesterId) : Guid.Empty,
-                                CourseId = !string.IsNullOrEmpty(acClass.CourseId) ? Guid.Parse(acClass.CourseId) : Guid.Empty,
-                                
-                                Course = acClass.Course != null ? new GrpcCourseData
-                                {
-                                    Id = Guid.Parse(acClass.Course.Id),
-                                    Code = acClass.Course.Code,
-                                    Name = acClass.Course.Name,
-                                    Description = acClass.Course.Description,
-                                    IsActive = acClass.Course.IsActive,
-                                    Credit = acClass.Course.Credit,
-                                    PracticePeriod = acClass.Course.PracticePeriod,
-                                    IsRequired = acClass.Course.IsRequired,
-                                    Cost = acClass.Course.Cost
-                                } : null
-                            };
-                        }
-
-                        successfulEnrollments.Add(enrollmentDto);
+                        _logger.LogWarning("Failed to acquire lock for academic class {AcademicClassId}. Proceeding with database-level locking only.", academicClassId);
+                    }
+                    else
+                    {
+                        distributedLocks.Add(distributedLock);
+                        _logger.LogDebug("Acquired distributed lock for academic class {AcademicClassId}", academicClassId);
                     }
                 }
-                catch
+
+                // Start a single database transaction for ALL enrollments
+                using var transaction = await _enrollmentRepository.BeginTransactionAsync();
+
+                try
                 {
-                    // Return empty list on database error
-                    return new List<EnrollmentReadDto>();
+                    var enrollmentsToCreate = new List<Enrollment>();
+                    var validationResults = new List<(Guid AcademicClassId, dynamic AcademicClassData)>();
+
+                    // Phase 1: Validate ALL academic classes and check capacity
+                    foreach (var academicClassId in createDto.AcademicClassIds)
+                    {
+                        // Check if enrollment already exists
+                        var existingEnrollment = await _enrollmentRepository.ExistsAsync(createDto.StudentId, academicClassId);
+                        if (existingEnrollment)
+                        {
+                            _logger.LogWarning("Enrollment already exists for student {StudentId} and academic class {AcademicClassId}",
+                                createDto.StudentId, academicClassId);
+                            throw new InvalidOperationException($"Student {createDto.StudentId} is already enrolled in academic class {academicClassId}");
+                        }
+
+                        // Validate academic class exists and is registrable
+                        var academicClassResponse = await _academicClassClient.GetAcademicClassById(academicClassId.ToString());
+                        if (!academicClassResponse.Success || academicClassResponse.Data == null)
+                        {
+                            _logger.LogWarning("Academic class {AcademicClassId} not found", academicClassId);
+                            throw new ArgumentException($"Academic class {academicClassId} not found");
+                        }
+
+                        var academicClass = academicClassResponse.Data;
+                        if (!academicClass.IsRegistrable)
+                        {
+                            _logger.LogWarning("Academic class {AcademicClassId} is not registrable", academicClassId);
+                            throw new InvalidOperationException($"Academic class {academicClassId} is not registrable");
+                        }
+
+                        // Check capacity with database lock to ensure consistency
+                        var currentEnrollmentCount = await _enrollmentRepository.GetEnrollmentCountByAcademicClassIdWithLockAsync(academicClassId);
+
+                        if (currentEnrollmentCount >= academicClass.Capacity)
+                        {
+                            _logger.LogWarning("Academic class {AcademicClassId} capacity exceeded. Current: {Current}, Capacity: {Capacity}",
+                                academicClassId, currentEnrollmentCount, academicClass.Capacity);
+                            throw new EnrollmentCapacityExceededException(academicClassId, currentEnrollmentCount, academicClass.Capacity);
+                        }
+
+                        validationResults.Add((academicClassId, academicClass));
+
+                        // Create enrollment entity for later batch insertion
+                        var enrollment = new Enrollment
+                        {
+                            StudentId = createDto.StudentId,
+                            AcademicClassId = academicClassId,
+                            Status = 1,
+                            StudentResults = new List<StudentResult>()
+                        };
+
+                        enrollmentsToCreate.Add(enrollment);
+                        _logger.LogDebug("Validated academic class {AcademicClassId} for enrollment", academicClassId);
+                    }
+
+                    // Phase 2: If all validations pass, create ALL enrollments in batch
+                    var createdEnrollments = await _enrollmentRepository.CreateMultipleEnrollmentsWithoutTransactionAsync(enrollmentsToCreate);
+
+                    // Phase 3: Commit transaction only if all enrollments were created successfully
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("Successfully created {Count} enrollments for student {StudentId}", 
+                        createdEnrollments.Count, createDto.StudentId);
+
+                    // Phase 4: Populate DTOs for response
+                    var result = new List<EnrollmentReadDto>();
+                    foreach (var (enrollment, index) in createdEnrollments.Select((e, i) => (e, i)))
+                    {
+                        var (academicClassId, academicClassData) = validationResults[index];
+                        var enrollmentDto = await PopulateEnrollmentDto(enrollment, studentResponse.Data, academicClassData);
+                        result.Add(enrollmentDto);
+                    }
+
+                    return result;
                 }
-            }            return successfulEnrollments;
+                catch (Exception ex)
+                {
+                    // Rollback transaction on any error
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Rolling back all enrollments due to error for student {StudentId}", createDto.StudentId);
+                    throw; // Re-throw the exception
+                }
+            }            finally
+            {
+                // Release all distributed locks
+                foreach (var distributedLock in distributedLocks)
+                {
+                    distributedLock?.Dispose();
+                }
+                _logger.LogDebug("Released all distributed locks for student {StudentId}", createDto.StudentId);
+            }
+        }        
+        private async Task<EnrollmentReadDto> PopulateEnrollmentDto(Enrollment enrollment, dynamic studentData, dynamic academicClassData)
+        {
+            var enrollmentDto = _mapper.Map<EnrollmentReadDto>(enrollment);
+            
+            // Populate student data
+            var userData = studentData.User;
+            enrollmentDto.Student = new GrpcStudentData
+            {
+                Id = Guid.Parse(studentData.Id),
+                StudentCode = studentData.StudentCode,
+                AccumulateCredits = studentData.AccumulateCredits,
+                AccumulateScore = studentData.AccumulateScore,
+                AccumulateActivityScore = studentData.AccumulateActivityScore,
+                MajorId = !string.IsNullOrEmpty(studentData.MajorId) ? Guid.Parse(studentData.MajorId) : Guid.Empty,
+                BatchId = !string.IsNullOrEmpty(studentData.BatchId) ? Guid.Parse(studentData.BatchId) : Guid.Empty,
+                ApplicationUserId = !string.IsNullOrEmpty(studentData.ApplicationUserId) ? Guid.Parse(studentData.ApplicationUserId) : Guid.Empty,
+                User = userData != null ? new GrpcUserData
+                {
+                    Id = !string.IsNullOrEmpty(userData.Id) ? Guid.Parse(userData.Id) : Guid.Empty,
+                    FirstName = userData.FirstName,
+                    LastName = userData.LastName,
+                    Email = userData.Email,
+                    PhoneNumber = userData.PhoneNumber,
+                    PersonId = userData.PersonId,
+                    ImageUrl = userData.ImageUrl
+                } : null
+            };            // Populate academic class data
+            enrollmentDto.AcademicClass = new GrpcAcademicClassData
+            {
+                Id = Guid.Parse(academicClassData.Id),
+                Name = academicClassData.Name,
+                GroupNumber = academicClassData.GroupNumber,
+                Capacity = academicClassData.Capacity,
+                ListOfWeeks = academicClassData.ListOfWeeks != null ? new List<int>(academicClassData.ListOfWeeks) : null,
+                IsRegistrable = academicClassData.IsRegistrable,
+                SemesterId = !string.IsNullOrEmpty(academicClassData.SemesterId) ? Guid.Parse(academicClassData.SemesterId) : Guid.Empty,
+                CourseId = !string.IsNullOrEmpty(academicClassData.CourseId) ? Guid.Parse(academicClassData.CourseId) : Guid.Empty,
+                
+                Course = academicClassData.Course != null ? new GrpcCourseData
+                {
+                    Id = Guid.Parse(academicClassData.Course.Id),
+                    Code = academicClassData.Course.Code,
+                    Name = academicClassData.Course.Name,
+                    Description = academicClassData.Course.Description,
+                    IsActive = academicClassData.Course.IsActive,
+                    Credit = academicClassData.Course.Credit,
+                    PracticePeriod = academicClassData.Course.PracticePeriod,
+                    IsRequired = academicClassData.Course.IsRequired,
+                    Cost = academicClassData.Course.Cost
+                } : null
+            };
+
+            return enrollmentDto;
         }
 
         public async Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId)
@@ -403,12 +471,12 @@ namespace EnrollmentService.Business.Services
             {
                 Results = results
             };
-        }
-
-        public async Task<List<EnrollmentReadDto>> GetEnrollmentsByStudentIdAsync(Guid studentId)
+        }        
+        public async Task<List<EnrollmentReadDto>> GetEnrollmentsByStudentIdAsync(Guid studentId, Guid? semesterId = null)
         {
-            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId, semesterId);
             var enrollmentDtos = _mapper.Map<List<EnrollmentReadDto>>(enrollments);
+            var filteredEnrollmentDtos = new List<EnrollmentReadDto>();
 
             // Populate student and academic class data for each enrollment
             foreach (var enrollmentDto in enrollmentDtos)
@@ -448,13 +516,23 @@ namespace EnrollmentService.Business.Services
                 {
                     var acClass = academicClassResponse.Data;
                     
+                    // Filter by semesterId if provided
+                    if (semesterId.HasValue)
+                    {
+                        var academicClassSemesterId = !string.IsNullOrEmpty(acClass.SemesterId) ? Guid.Parse(acClass.SemesterId) : Guid.Empty;
+                        if (academicClassSemesterId != semesterId.Value)
+                        {
+                            continue; // Skip this enrollment as it doesn't match the semester filter
+                        }
+                    }
+                    
                     enrollmentDto.AcademicClass = new GrpcAcademicClassData
                     {
                         Id = Guid.Parse(acClass.Id),
                         Name = acClass.Name,
                         GroupNumber = acClass.GroupNumber,
                         Capacity = acClass.Capacity,
-                        ListOfWeeks = acClass.ListOfWeeks?.ToList(),
+                        ListOfWeeks = acClass.ListOfWeeks != null ? new List<int>(acClass.ListOfWeeks) : null,
                         IsRegistrable = acClass.IsRegistrable,
                         CourseId = !string.IsNullOrEmpty(acClass.CourseId) ? Guid.Parse(acClass.CourseId) : Guid.Empty,
                         SemesterId = !string.IsNullOrEmpty(acClass.SemesterId) ? Guid.Parse(acClass.SemesterId) : Guid.Empty,
@@ -494,10 +572,53 @@ namespace EnrollmentService.Business.Services
                             } : null
                         }).ToList()
                     };
+                    
+                    // Add to filtered list if academic class data was populated successfully
+                    filteredEnrollmentDtos.Add(enrollmentDto);
+                }
+                else if (!semesterId.HasValue)
+                {
+                    // If no semester filter and academic class data couldn't be retrieved, 
+                    // still include the enrollment but without academic class data
+                    filteredEnrollmentDtos.Add(enrollmentDto);
                 }
             }
 
-            return enrollmentDtos;
+            return filteredEnrollmentDtos;
+        }
+
+        public async Task<bool> DeleteEnrollmentAsync(Guid id)
+        {
+            try
+            {
+                var enrollment = await _enrollmentRepository.GetEnrollmentByIdAsync(id);
+                if (enrollment == null)
+                {
+                    _logger.LogWarning("Enrollment with ID {EnrollmentId} not found for deletion", id);
+                    return false;
+                }
+
+                _logger.LogInformation("Deleting enrollment with ID {EnrollmentId} for Student {StudentId} and AcademicClass {AcademicClassId}", 
+                    id, enrollment.StudentId, enrollment.AcademicClassId);
+
+                var result = await _enrollmentRepository.DeleteEnrollmentAsync(id);
+                
+                if (result)
+                {
+                    _logger.LogInformation("Successfully deleted enrollment with ID {EnrollmentId}", id);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to delete enrollment with ID {EnrollmentId}", id);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting enrollment with ID {EnrollmentId}", id);
+                throw;
+            }
         }
     }
 }

@@ -18,9 +18,10 @@ namespace CourseService.Business.Dtos.AcademicClass
         public Guid CourseId { get; set; }
         public CourseReadDto? Course { get; set; }
         public Guid SemesterId { get; set; }
-        public SemesterReadDto? Semester { get; set; }        
+        public SemesterReadDto? Semester { get; set; }
         public List<ScheduleInDayReadDto> ScheduleInDays { get; set; } = new List<ScheduleInDayReadDto>();
         public DateTime? RegistrationOpenTime { get; set; }
         public DateTime? RegistrationCloseTime { get; set; }
+        public int EnrollmentCount { get; set; }
     }
 }

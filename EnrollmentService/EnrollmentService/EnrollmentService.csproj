@@ -37,10 +37,11 @@
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-	  </PackageReference>	  
+	  </PackageReference>	 	  
 	  <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
+	  <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
-  </ItemGroup>    
+  </ItemGroup>
 	<ItemGroup>
       <Protobuf Include="CommunicationTypes\Grpc\Protos\academicclass.proto" GrpcServices="Client" />
 	  <Protobuf Include="CommunicationTypes\Grpc\Protos\room.proto" GrpcServices="Client" />

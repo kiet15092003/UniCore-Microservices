@@ -57,6 +57,24 @@ namespace CourseService.Controllers
             var result = await _semesterService.DeactivateSemesterAsync(id);
             return ApiResponse<SemesterReadDto>.SuccessResponse(result);
         }
+
+        [HttpPost("{id}/activate")]
+        public async Task<ApiResponse<SemesterReadDto>> ActivateSemester(Guid id)
+        {
+            try
+            {
+                var result = await _semesterService.ActivateSemesterAsync(id);
+                return ApiResponse<SemesterReadDto>.SuccessResponse(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<SemesterReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<SemesterReadDto>.ErrorResponse(new List<string> { $"Error activating semester: {ex.Message}" });
+            }
+        }
     }
 
     public class GetSemesterByPaginationParam

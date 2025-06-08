@@ -13,6 +13,8 @@ using EnrollmentService.CommunicationTypes.Grpc.GrpcServer;
 using EnrollmentService.DataAccess.Repositories;
 using EnrollmentService.Business.Services;
 using EnrollmentService.Business.Mappings;
+using EnrollmentService.Utils.DistributedLock;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +93,55 @@ builder.Services.AddSwaggerGen(options =>
 // Add grpc
 builder.Services.AddSingleton<GrpcAcademicClassClientService>();
 builder.Services.AddSingleton<GrpcStudentClientService>();
+
+// Add Redis with fallback
+builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+{
+    try
+    {
+        var connectionString = builder.Configuration.GetConnectionString("RedisConnection") ?? "localhost:6379";
+        var configurationOptions = ConfigurationOptions.Parse(connectionString);
+        configurationOptions.AbortOnConnectFail = false;
+        configurationOptions.ConnectRetry = 3;
+        configurationOptions.ConnectTimeout = 5000;
+        configurationOptions.SyncTimeout = 5000;
+        
+        return ConnectionMultiplexer.Connect(configurationOptions);
+    }
+    catch (Exception ex)
+    {
+        var logger = provider.GetService<ILogger<Program>>();
+        logger?.LogError(ex, "Failed to connect to Redis. Fallback lock service will be used.");
+        return null!; // Return null to trigger fallback
+    }
+});
+
+// Add Distributed Lock Service with fallback
+builder.Services.AddScoped<IDistributedLockService>(provider =>
+{
+    try
+    {
+        var redis = provider.GetService<IConnectionMultiplexer>();
+        if (redis != null && redis.IsConnected)
+        {
+            var logger = provider.GetRequiredService<ILogger<RedisDistributedLockService>>();
+            return new RedisDistributedLockService(redis, logger);
+        }
+        else
+        {
+            var logger = provider.GetRequiredService<ILogger<FallbackDistributedLockService>>();
+            logger.LogWarning("Redis not available, using fallback distributed lock service");
+            return new FallbackDistributedLockService(logger);
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = provider.GetService<ILogger<Program>>();
+        logger?.LogError(ex, "Error setting up distributed lock service, using fallback");
+        var fallbackLogger = provider.GetRequiredService<ILogger<FallbackDistributedLockService>>();
+        return new FallbackDistributedLockService(fallbackLogger);
+    }
+});
 
 //Config DI
 //Register repositories
