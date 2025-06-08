@@ -116,19 +116,21 @@ namespace CourseService.Business.Services
             }
 
             return academicClassDto;
-        }
-        public async Task<AcademicClassReadDto> GetAcademicClassByIdAsync(Guid id)
+        }        public async Task<AcademicClassReadDto> GetAcademicClassByIdAsync(Guid id)
         {
             var academicClass = await _academicClassRepository.GetAcademicClassByIdAsync(id);
 
             if (academicClass == null)
             {
                 throw new Exception($"Academic class with ID {id} not found");
-            }
+            }            var academicClassDto = _mapper.Map<AcademicClassReadDto>(academicClass);
 
-            var academicClassDto = _mapper.Map<AcademicClassReadDto>(academicClass);
+            // Filter out child practice classes where IsRegistrable = false
+            academicClassDto.ChildPracticeAcademicClasses = academicClassDto.ChildPracticeAcademicClasses
+                .Where(child => child.IsRegistrable)
+                .ToList();
 
-            // Populate room data for each schedule
+            // Populate room data for the main academic class schedules
             if (academicClassDto.ScheduleInDays != null && academicClassDto.ScheduleInDays.Count > 0)
             {
                 foreach (var schedule in academicClassDto.ScheduleInDays)
@@ -148,7 +150,34 @@ namespace CourseService.Business.Services
                 }
             }
 
-            // Get enrollment count from EnrollmentService
+            // Populate room data for child practice classes
+            if (academicClassDto.ChildPracticeAcademicClasses != null && academicClassDto.ChildPracticeAcademicClasses.Count > 0)
+            {
+                foreach (var childClass in academicClassDto.ChildPracticeAcademicClasses)
+                {
+                    if (childClass.ScheduleInDays != null && childClass.ScheduleInDays.Count > 0)
+                    {
+                        foreach (var schedule in childClass.ScheduleInDays)
+                        {
+                            try
+                            {
+                                var roomResponse = await _roomClientService.GetRoomByIdAsync(schedule.RoomId.ToString());
+                                if (roomResponse != null && roomResponse.Success)
+                                {
+                                    schedule.Room = roomResponse.Data;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log the error but continue with other schedules
+                                Console.WriteLine($"Error fetching room data for child class {childClass.Id}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Get enrollment count for the main academic class
             try
             {
                 var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(id.ToString());
@@ -168,13 +197,46 @@ namespace CourseService.Business.Services
                 academicClassDto.EnrollmentCount = 0;
             }
 
+            // Get enrollment count for child practice classes
+            if (academicClassDto.ChildPracticeAcademicClasses != null && academicClassDto.ChildPracticeAcademicClasses.Count > 0)
+            {
+                foreach (var childClass in academicClassDto.ChildPracticeAcademicClasses)
+                {
+                    try
+                    {
+                        var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(childClass.Id.ToString());
+                        if (enrollmentCountResponse != null && enrollmentCountResponse.Success)
+                        {
+                            childClass.EnrollmentCount = enrollmentCountResponse.Count;
+                        }
+                        else
+                        {
+                            childClass.EnrollmentCount = 0;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the error but continue with enrollment count as 0
+                        _logger.LogError(ex, "Error fetching enrollment count for child academic class {ChildAcademicClassId}", childClass.Id);
+                        childClass.EnrollmentCount = 0;
+                    }
+                }
+            }
+
             return academicClassDto;
-        }
-        public async Task<List<AcademicClassReadDto>> GetAcademicClassesByCourseIdAsync(Guid courseId)
+        }        public async Task<List<AcademicClassReadDto>> GetAcademicClassesByCourseIdAsync(Guid courseId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesByCourseIdAsync(courseId);
             var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
 
+            // Filter out child practice classes where IsRegistrable = false
+            foreach (var academicClass in academicClassDtos)
+            {
+                academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
+                    .Where(child => child.IsRegistrable)
+                    .ToList();
+            }
+
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
 
@@ -182,12 +244,19 @@ namespace CourseService.Business.Services
             await PopulateEnrollmentCountForClasses(academicClassDtos);
 
             return academicClassDtos;
-        }
-        public async Task<List<AcademicClassReadDto>> GetAcademicClassesBySemesterIdAsync(Guid semesterId)
+        }        public async Task<List<AcademicClassReadDto>> GetAcademicClassesBySemesterIdAsync(Guid semesterId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesBySemesterIdAsync(semesterId);
             var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
 
+            // Filter out child practice classes where IsRegistrable = false
+            foreach (var academicClass in academicClassDtos)
+            {
+                academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
+                    .Where(child => child.IsRegistrable)
+                    .ToList();
+            }
+
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
 
@@ -195,12 +264,19 @@ namespace CourseService.Business.Services
             await PopulateEnrollmentCountForClasses(academicClassDtos);
 
             return academicClassDtos;
-        }
-        public async Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAsync(Guid majorId)
+        }public async Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAsync(Guid majorId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesForMajorAsync(majorId);
             var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
 
+            // Filter out child practice classes where IsRegistrable = false
+            foreach (var academicClass in academicClassDtos)
+            {
+                academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
+                    .Where(child => child.IsRegistrable)
+                    .ToList();
+            }
+
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
 
@@ -208,11 +284,18 @@ namespace CourseService.Business.Services
             await PopulateEnrollmentCountForClasses(academicClassDtos);
 
             return academicClassDtos;
-        }        
-        public async Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId)
+        }          public async Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId)
         {
             var academicClasses = await _academicClassRepository.GetAcademicClassesForMajorAndBatchAsync(majorId, batchId);
             var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(academicClasses);
+            
+            // Filter out child practice classes where IsRegistrable = false
+            foreach (var academicClass in academicClassDtos)
+            {
+                academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
+                    .Where(child => child.IsRegistrable)
+                    .ToList();
+            }
             
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);
@@ -222,12 +305,12 @@ namespace CourseService.Business.Services
             
             return academicClassDtos;
         }
-        
-        // Helper method to populate room data for a list of academic classes
+          // Helper method to populate room data for a list of academic classes
         private async Task PopulateRoomDataForClasses(List<AcademicClassReadDto> academicClasses)
         {
             foreach (var academicClass in academicClasses)
             {
+                // Populate room data for the main academic class schedules
                 if (academicClass.ScheduleInDays != null && academicClass.ScheduleInDays.Count > 0)
                 {
                     foreach (var schedule in academicClass.ScheduleInDays)
@@ -247,13 +330,39 @@ namespace CourseService.Business.Services
                         }
                     }
                 }
-            }
-        }
 
-        private async Task PopulateEnrollmentCountForClasses(List<AcademicClassReadDto> academicClasses)
+                // Populate room data for child practice classes
+                if (academicClass.ChildPracticeAcademicClasses != null && academicClass.ChildPracticeAcademicClasses.Count > 0)
+                {
+                    foreach (var childClass in academicClass.ChildPracticeAcademicClasses)
+                    {
+                        if (childClass.ScheduleInDays != null && childClass.ScheduleInDays.Count > 0)
+                        {
+                            foreach (var schedule in childClass.ScheduleInDays)
+                            {
+                                try
+                                {
+                                    var roomResponse = await _roomClientService.GetRoomByIdAsync(schedule.RoomId.ToString());
+                                    if (roomResponse != null && roomResponse.Success)
+                                    {
+                                        schedule.Room = roomResponse.Data;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Log the error but continue with other schedules
+                                    Console.WriteLine($"Error fetching room data for child class {childClass.Id}: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }        private async Task PopulateEnrollmentCountForClasses(List<AcademicClassReadDto> academicClasses)
         {
             foreach (var academicClass in academicClasses)
             {
+                // Populate enrollment count for the main academic class
                 try
                 {
                     var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(academicClass.Id.ToString());
@@ -272,6 +381,32 @@ namespace CourseService.Business.Services
                     _logger.LogError(ex, "Error fetching enrollment count for academic class {AcademicClassId}", academicClass.Id);
                     academicClass.EnrollmentCount = 0;
                 }
+
+                // Populate enrollment count for child practice classes
+                if (academicClass.ChildPracticeAcademicClasses != null && academicClass.ChildPracticeAcademicClasses.Count > 0)
+                {
+                    foreach (var childClass in academicClass.ChildPracticeAcademicClasses)
+                    {
+                        try
+                        {
+                            var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(childClass.Id.ToString());
+                            if (enrollmentCountResponse != null && enrollmentCountResponse.Success)
+                            {
+                                childClass.EnrollmentCount = enrollmentCountResponse.Count;
+                            }
+                            else
+                            {
+                                childClass.EnrollmentCount = 0;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the error but continue with enrollment count as 0
+                            _logger.LogError(ex, "Error fetching enrollment count for child academic class {ChildAcademicClassId}", childClass.Id);
+                            childClass.EnrollmentCount = 0;
+                        }
+                    }
+                }
             }
         }
 
@@ -279,8 +414,15 @@ namespace CourseService.Business.Services
             Pagination pagination,
             AcademicClassFilterParams? filterParams,
             Order? order)
-        {
-            var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);            var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
+        {            var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);            var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
+
+            // Filter out child practice classes where IsRegistrable = false
+            foreach (var academicClass in academicClassDtos)
+            {
+                academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
+                    .Where(child => child.IsRegistrable)
+                    .ToList();
+            }
 
             // Populate room data for each academic class
             await PopulateRoomDataForClasses(academicClassDtos);

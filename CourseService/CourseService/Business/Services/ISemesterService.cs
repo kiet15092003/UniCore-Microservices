@@ -10,6 +10,7 @@ namespace CourseService.Business.Services
         Task<PaginationResult<SemesterReadDto>> GetByPaginationAsync(Pagination pagination, SemesterFilterParams filter, Order? order);
         Task<SemesterReadDto> UpdateSemesterAsync(Guid id, SemesterUpdateDto semesterUpdateDto);
         Task<SemesterReadDto> DeactivateSemesterAsync(Guid id);
+        Task<SemesterReadDto> ActivateSemesterAsync(Guid id);
         Task<SemesterReadDto> GetSemesterByIdAsync(Guid id);
     }
 }
