@@ -8,7 +8,6 @@ public class LecturerProfile : Profile
 {
     public LecturerProfile()
     {
-        CreateMap<ApplicationUser, ApplicationUserDto>();
         CreateMap<ApplicationUser, ApplicationUserDto>()
             .ForMember(dest => dest.Dob, opt => opt.MapFrom(src => src.Dob.ToString("yyyy-MM-dd")));
 

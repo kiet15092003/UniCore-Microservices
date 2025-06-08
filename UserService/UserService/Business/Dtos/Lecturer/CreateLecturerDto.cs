@@ -12,10 +12,7 @@ namespace UserService.Business.Dtos.Lecturer
         public string LastName { get; set; }
         
         [Required]
-        public string Email { get; set; }
-        
-        [Required]
-        public string Password { get; set; }
+        public string PersonEmail { get; set; }
         
         [Required]
         public string PersonId { get; set; }
@@ -26,26 +23,18 @@ namespace UserService.Business.Dtos.Lecturer
         [RegularExpression(@"^\d{10}$", ErrorMessage = "Phone number must contain exactly 10 digits")]
         public string PhoneNumber { get; set; }
         
-        [Required]
-        public string Dob { get; set; }
-        
-        [Required]
-        public string LecturerCode { get; set; }
-        
-        [Required]
-        public string Degree { get; set; }
-        
-        [Required]
-        public decimal Salary { get; set; }
+
+        public string? Dob { get; set; }
+
+        public string? Degree { get; set; }
+
+        public decimal? Salary { get; set; }
         
         [Required]
         public Guid DepartmentId { get; set; }
         
-        [Required]
-        public int WorkingStatus { get; set; }
+        public string? MainMajor { get; set; }
         
-        public string MainMajor { get; set; }
-        
-        public AddressDto Address { get; set; }
+        public AddressDto? Address { get; set; }
     }
 } 

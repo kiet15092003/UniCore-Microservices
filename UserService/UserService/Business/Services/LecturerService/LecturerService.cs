@@ -8,6 +8,10 @@ using UserService.Utils.Filter;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Identity;
 using UserService.CommunicationTypes.Grpc.GrpcClient;
+using System.Text;
+using System.Globalization;
+using Microsoft.EntityFrameworkCore;
+using UserService.Utils;
 
 namespace UserService.Business.Services.LecturerService
 {
@@ -181,11 +185,21 @@ namespace UserService.Business.Services.LecturerService
                     throw new Exception("Invalid department ID");
                 }
 
+                // Check if a user with the same PersonId already exists
+                var existingUserWithPersonId = await _userManager.Users.FirstOrDefaultAsync(u => u.PersonId == createLecturerDto.PersonId);
+                if (existingUserWithPersonId != null)
+                {
+                    throw new Exception($"A user with Person ID '{createLecturerDto.PersonId}' already exists");
+                }
+
+                // Generate email from lastname + firstname without accents
+                string generatedEmail = await GenerateEmailFromName(createLecturerDto.LastName, createLecturerDto.FirstName);
+
                 // Create user
                 var user = new ApplicationUser
                 {
-                    UserName = createLecturerDto.Email,
-                    Email = createLecturerDto.Email,
+                    UserName = generatedEmail,
+                    Email = generatedEmail,
                     FirstName = createLecturerDto.FirstName,
                     LastName = createLecturerDto.LastName,
                     PhoneNumber = createLecturerDto.PhoneNumber,
@@ -223,17 +237,31 @@ namespace UserService.Business.Services.LecturerService
                 var lecturer = new Lecturer
                 {
                     Id = Guid.NewGuid(),
-                    LecturerCode = createLecturerDto.LecturerCode,
-                    Degree = createLecturerDto.Degree,
-                    Salary = createLecturerDto.Salary,
+                    LecturerCode = "155555555",
                     DepartmentId = createLecturerDto.DepartmentId,
-                    WorkingStatus = createLecturerDto.WorkingStatus,
                     JoinDate = DateTime.UtcNow,
-                    MainMajor = createLecturerDto.MainMajor
+                    WorkingStatus = 1,
+                    MainMajor = "",
+                    Degree = "",
+                    Salary = 0
                 };
 
+                if(createLecturerDto.Degree != null)
+                {
+                    lecturer.Degree = createLecturerDto.Degree;
+                }
+                if(createLecturerDto.Salary != null)
+                {
+                    lecturer.Salary = createLecturerDto.Salary.Value; 
+                }
+                if(createLecturerDto.MainMajor != null)
+                {
+                    lecturer.MainMajor = createLecturerDto.MainMajor;
+                }
+
+
                 // Create user with password
-                var result = await _userManager.CreateAsync(user, createLecturerDto.Password);
+                var result = await _userManager.CreateAsync(user, PasswordGenerator.GenerateSecurePassword());
                 if (!result.Succeeded)
                 {
                     var errors = string.Join(", ", result.Errors.Select(e => e.Description));
@@ -258,6 +286,54 @@ namespace UserService.Business.Services.LecturerService
                 _logger.LogError(ex, "Error creating lecturer");
                 throw;
             }
+        }
+
+        private async Task<string> GenerateEmailFromName(string lastName, string firstName)
+        {
+            // Remove accents and convert to lowercase
+            string normalizedLastName = RemoveAccents(lastName).ToLower();
+            string normalizedFirstName = RemoveAccents(firstName).ToLower();
+            
+            // Create base email
+            string baseEmail = $"{normalizedLastName}{normalizedFirstName}@unicore.edu.vn";
+            
+            // Check if email already exists
+            var existingUser = await _userManager.FindByEmailAsync(baseEmail);
+            if (existingUser == null)
+            {
+                return baseEmail;
+            }
+            
+            // If email exists, add a sequential number
+            int counter = 1;
+            string newEmail;
+            do
+            {
+                newEmail = $"{normalizedLastName}{normalizedFirstName}{counter}@unicore.edu.vn";
+                existingUser = await _userManager.FindByEmailAsync(newEmail);
+                counter++;
+            } while (existingUser != null);
+            
+            return newEmail;
+        }
+
+        private string RemoveAccents(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+            
+            string normalizedString = text.Normalize(NormalizationForm.FormD);
+            StringBuilder stringBuilder = new StringBuilder();
+            
+            foreach (char c in normalizedString)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+            
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
     }
 } 
