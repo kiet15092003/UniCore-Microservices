@@ -56,7 +56,6 @@ builder.Services
 // Add grpc
 builder.Services.AddSingleton<GrpcMajorClientService>();
 builder.Services.AddSingleton<GrpcDepartmentClientService>();
-builder.Services.AddSingleton<SmtpClientService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
