@@ -46,11 +46,14 @@ namespace UserService.Business.Services.LecturerService
         {
             try
             {
-                // Check if department exists
-                var departmentResponse = await _departmentService.GetDepartmentByIdAsync(updateLecturerDto.DepartmentId.ToString());
-                if (!departmentResponse.Success || departmentResponse.Data == null)
+                // Check if department exists, only if provided
+                if (updateLecturerDto.DepartmentId.HasValue)
                 {
-                    throw new Exception("Invalid department ID");
+                    var departmentResponse = await _departmentService.GetDepartmentByIdAsync(updateLecturerDto.DepartmentId.ToString());
+                    if (!departmentResponse.Success || departmentResponse.Data == null)
+                    {
+                        throw new Exception("Invalid department ID");
+                    }
                 }
 
                 var lecturer = await _lecturerRepo.GetLecturerByIdAsync(id);
@@ -59,21 +62,37 @@ namespace UserService.Business.Services.LecturerService
                     return null;
                 }
 
-                // Update lecturer properties
-                lecturer.Degree = updateLecturerDto.Degree;
-                lecturer.Salary = updateLecturerDto.Salary;
-                lecturer.DepartmentId = updateLecturerDto.DepartmentId;
-                lecturer.WorkingStatus = updateLecturerDto.WorkingStatus;
-                lecturer.MainMajor = updateLecturerDto.MainMajor;
-
-                // Update user properties
-                var user = lecturer.ApplicationUser;
-                user.FirstName = updateLecturerDto.FirstName;
-                user.LastName = updateLecturerDto.LastName;
-                user.PhoneNumber = updateLecturerDto.PhoneNumber;
-                user.PersonId = updateLecturerDto.PersonId;
+                // Update lecturer properties only if provided
+                if (!string.IsNullOrEmpty(updateLecturerDto.Degree))
+                    lecturer.Degree = updateLecturerDto.Degree;
                 
-                if (DateTime.TryParse(updateLecturerDto.Dob, out DateTime dob))
+                if (updateLecturerDto.Salary.HasValue)
+                    lecturer.Salary = updateLecturerDto.Salary.Value;
+                
+                if (updateLecturerDto.DepartmentId.HasValue)
+                    lecturer.DepartmentId = updateLecturerDto.DepartmentId.Value;
+                
+                if (updateLecturerDto.WorkingStatus.HasValue)
+                    lecturer.WorkingStatus = updateLecturerDto.WorkingStatus.Value;
+                
+                if (!string.IsNullOrEmpty(updateLecturerDto.MainMajor))
+                    lecturer.MainMajor = updateLecturerDto.MainMajor;
+
+                // Update user properties only if provided
+                var user = lecturer.ApplicationUser;
+                if (!string.IsNullOrEmpty(updateLecturerDto.FirstName))
+                    user.FirstName = updateLecturerDto.FirstName;
+                
+                if (!string.IsNullOrEmpty(updateLecturerDto.LastName))
+                    user.LastName = updateLecturerDto.LastName;
+                
+                if (!string.IsNullOrEmpty(updateLecturerDto.PhoneNumber))
+                    user.PhoneNumber = updateLecturerDto.PhoneNumber;
+                
+                if (!string.IsNullOrEmpty(updateLecturerDto.PersonId))
+                    user.PersonId = updateLecturerDto.PersonId;
+                
+                if (!string.IsNullOrEmpty(updateLecturerDto.Dob) && DateTime.TryParse(updateLecturerDto.Dob, out DateTime dob))
                 {
                     user.Dob = dob;
                 }
@@ -97,12 +116,21 @@ namespace UserService.Business.Services.LecturerService
                     }
                     else
                     {
-                        // Update existing address
-                        user.Address.Country = updateLecturerDto.Address.Country;
-                        user.Address.City = updateLecturerDto.Address.City;
-                        user.Address.District = updateLecturerDto.Address.District;
-                        user.Address.Ward = updateLecturerDto.Address.Ward;
-                        user.Address.AddressDetail = updateLecturerDto.Address.AddressDetail;
+                        // Update existing address properties only if provided
+                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.Country))
+                            user.Address.Country = updateLecturerDto.Address.Country;
+                            
+                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.City))
+                            user.Address.City = updateLecturerDto.Address.City;
+                            
+                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.District))
+                            user.Address.District = updateLecturerDto.Address.District;
+                            
+                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.Ward))
+                            user.Address.Ward = updateLecturerDto.Address.Ward;
+                            
+                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.AddressDetail))
+                            user.Address.AddressDetail = updateLecturerDto.Address.AddressDetail;
                     }
                 }
 
