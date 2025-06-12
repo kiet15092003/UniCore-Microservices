@@ -1,6 +1,8 @@
 using CourseService.DataAccess;
 using CourseService.DataAccess.Repositories;
 using CourseService.Entities;
+using CourseService.CommunicationTypes.KafkaService.KafkaProducer;
+using CourseService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseService.Services
@@ -41,7 +43,8 @@ namespace CourseService.Services
                 Console.WriteLine($"[DEBUG] Waiting {_checkInterval.TotalSeconds} seconds before next check...");
                 await Task.Delay(_checkInterval, stoppingToken);
             }
-        }        private async Task CheckAndUpdateRegistrableClasses(CancellationToken stoppingToken)
+        }
+        private async Task CheckAndUpdateRegistrableClasses(CancellationToken stoppingToken)
         {
             using var scope = _scopeFactory.CreateScope();
             var academicClassRepository = scope.ServiceProvider.GetRequiredService<IAcademicClassRepository>();
@@ -51,19 +54,19 @@ namespace CourseService.Services
             Console.WriteLine($"[DEBUG] Current UTC time: {currentTime:yyyy-MM-dd HH:mm:ss}");            // Find classes to open: IsRegistrable is false AND RegistrationOpenTime has passed AND RegistrationOpenTime is valid
             // AND current time is still before close time (or no close time set)
             var classesToOpen = await academicClassRepository.GetQuery()
-                .Where(ac => !ac.IsRegistrable && 
-                           ac.RegistrationOpenTime.HasValue && 
+                .Where(ac => !ac.IsRegistrable &&
+                           ac.RegistrationOpenTime.HasValue &&
                            ac.RegistrationOpenTime.Value <= currentTime &&
                            ac.RegistrationOpenTime.Value != DateTime.MinValue &&
                            (!ac.RegistrationCloseTime.HasValue || ac.RegistrationCloseTime.Value > currentTime)) // Don't open if already past close time
                 .ToListAsync(stoppingToken);
 
             Console.WriteLine($"[DEBUG] Found {classesToOpen.Count} classes to open registration");
-            
+
             // Find classes to close: IsRegistrable is true AND RegistrationCloseTime has passed AND RegistrationCloseTime is valid
             var classesToClose = await academicClassRepository.GetQuery()
-                .Where(ac => ac.IsRegistrable && 
-                           ac.RegistrationCloseTime.HasValue && 
+                .Where(ac => ac.IsRegistrable &&
+                           ac.RegistrationCloseTime.HasValue &&
                            ac.RegistrationCloseTime.Value <= currentTime &&
                            ac.RegistrationCloseTime.Value != DateTime.MinValue) // Ensure valid close time
                 .ToListAsync(stoppingToken);
@@ -91,9 +94,7 @@ namespace CourseService.Services
                         Console.WriteLine($"[DEBUG] Class {academicClass.Name} (ID: {academicClass.Id}) is already open, skipping");
                     }
                 }
-            }
-
-            // Close registrations for classes that reached their closing time
+            }            // Close registrations for classes that reached their closing time
             if (classesToClose.Any())
             {
                 foreach (var academicClass in classesToClose)
@@ -111,9 +112,36 @@ namespace CourseService.Services
                     {
                         Console.WriteLine($"[DEBUG] Class {academicClass.Name} (ID: {academicClass.Id}) is already closed, skipping");
                     }
+                }                // Send Kafka message to EnrollmentService about closed classes
+                try
+                {
+                    using var kafkaScope = _scopeFactory.CreateScope();
+                    var kafkaProducer = kafkaScope.ServiceProvider.GetRequiredService<IKafkaProducerService>();
+                    
+                    var classIds = classesToClose.Where(c => c.IsRegistrable == false).Select(c => c.Id).ToList();
+                    
+                    if (classIds.Any())
+                    {
+                        var classClosureEvent = new ClassClosureEventDTO
+                        {
+                            Data = new ClassClosureEventData
+                            {
+                                ClassIds = classIds
+                            }
+                        };
+
+                        await kafkaProducer.PublishMessageAsync("ClassClosureEvent", classClosureEvent);
+                        _logger.LogInformation("Sent Kafka message for {Count} closed classes to EnrollmentService", classIds.Count);
+                        Console.WriteLine($"[DEBUG] Sent Kafka message for {classIds.Count} closed classes");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send Kafka message for class closures");
+                    Console.WriteLine($"[DEBUG ERROR] Failed to send Kafka message: {ex.Message}");
                 }
             }
-            
+
             if (actualChanges > 0)
             {
                 // Save all changes at once

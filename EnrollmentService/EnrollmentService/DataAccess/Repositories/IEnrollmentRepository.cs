@@ -20,6 +20,7 @@ namespace EnrollmentService.DataAccess.Repositories
         Task<int> GetEnrollmentCountByAcademicClassIdWithLockAsync(Guid academicClassId);
         Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId, Guid? semesterId = null);
         Task<bool> DeleteEnrollmentAsync(Guid id);
+        Task<int> UpdateEnrollmentStatusByClassIdsAsync(List<Guid> classIds, int fromStatus, int toStatus);
         Task<IDbContextTransaction> BeginTransactionAsync();
     }
 }
