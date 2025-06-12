@@ -530,5 +530,31 @@ namespace CourseService.Business.Services
                 }
             }
         }
+
+        public async Task<bool> DeleteAcademicClassAsync(Guid id)
+        {
+            // Check if academic class exists
+            var academicClass = await _academicClassRepository.GetAcademicClassByIdAsync(id);
+            if (academicClass == null)
+            {
+                throw new KeyNotFoundException("Academic class not found");
+            }
+
+            // Check if academic class has any enrollments using gRPC call
+            var enrollmentResponse = await _enrollmentClientService.GetEnrollmentCountAsync(id.ToString());
+            if (!enrollmentResponse.Success)
+            {
+                throw new InvalidOperationException($"Failed to check enrollments: {string.Join(", ", enrollmentResponse.Error)}");
+            }
+
+            if (enrollmentResponse.Count > 0)
+            {
+                throw new InvalidOperationException($"Cannot delete academic class '{academicClass.Name}' because it has {enrollmentResponse.Count} student enrollment(s). Please remove all enrollments before deleting the academic class.");
+            }
+
+            // If no enrollments, proceed with deletion
+            var result = await _academicClassRepository.DeleteAcademicClassAsync(id);
+            return result;
+        }
     }
 }

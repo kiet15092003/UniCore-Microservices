@@ -86,5 +86,27 @@ namespace CourseService.Controllers
             }
             return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse<bool>> DeleteTrainingRoadmap(Guid id)
+        {
+            try
+            {
+                var result = await _trainingRoadmapService.DeleteTrainingRoadmapAsync(id);
+                return ApiResponse<bool>.SuccessResponse(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { $"An error occurred while deleting the training roadmap: {ex.Message}" });
+            }
+        }
     }
 }

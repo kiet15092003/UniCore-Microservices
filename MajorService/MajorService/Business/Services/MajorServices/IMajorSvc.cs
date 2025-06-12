@@ -13,5 +13,6 @@ namespace MajorService.Business.Services.MajorServices
         Task<bool> DeactivateMajorAsync(DeactivateDto deactivateDto);
         Task<bool> ActivateMajorAsync(ActivateDto activateDto);
         Task<MajorListResponse> GetMajorsByPaginationAsync(Pagination pagination, MajorListFilterParams majorListFilterParams, Order? order);
+        Task<bool> DeleteMajorAsync(Guid id);
     }
 }

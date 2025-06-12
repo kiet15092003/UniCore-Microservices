@@ -164,5 +164,25 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             
             return code;
         }
+
+        public async Task<bool> DeleteMajorGroupAsync(Guid id)
+        {
+            var majorGroup = await _context.MajorGroups.FindAsync(id);
+            if (majorGroup == null)
+            {
+                return false;
+            }
+
+            _context.MajorGroups.Remove(majorGroup);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<Major>> GetMajorsByMajorGroupIdAsync(Guid majorGroupId)
+        {
+            return await _context.Majors
+                .Where(m => m.MajorGroupId == majorGroupId)
+                .ToListAsync();
+        }
     }
 }

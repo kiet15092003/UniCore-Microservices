@@ -12,5 +12,6 @@ namespace CourseService.Business.Services
         Task<TrainingRoadmapReadDto> AddTrainingRoadmapComponentsAsync(TrainingRoadmapAddComponentsDto componentsDto);
         Task<TrainingRoadmapReadDto> DeactivateTrainingRoadmapAsync(Guid id);
         Task<TrainingRoadmapReadDto> ActivateTrainingRoadmapAsync(Guid id);
+        Task<bool> DeleteTrainingRoadmapAsync(Guid id);
     }
 }

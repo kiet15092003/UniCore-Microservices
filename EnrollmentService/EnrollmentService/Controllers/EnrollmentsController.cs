@@ -61,7 +61,8 @@ namespace EnrollmentService.Controllers
 
             var result = await _enrollmentService.CheckMultipleEnrollmentsExistAsync(request);
             return Ok(ApiResponse<CheckMultipleEnrollmentsResponse>.SuccessResponse(result));
-        }        
+        }    
+        
         [HttpGet("student/{studentId}")]
         public async Task<ActionResult<ApiResponse<List<EnrollmentReadDto>>>> GetEnrollmentsByStudentId(Guid studentId, [FromQuery] Guid? semesterId = null)
         {

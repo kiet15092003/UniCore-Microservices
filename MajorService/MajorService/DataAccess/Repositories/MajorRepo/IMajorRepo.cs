@@ -18,5 +18,6 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             Order? order);
         Task<bool> IsMajorNameExistsAsync(string name);
         Task<string> GenerateUniqueCodeAsync();
+        Task<bool> DeleteMajorAsync(Guid id);
     }
 }

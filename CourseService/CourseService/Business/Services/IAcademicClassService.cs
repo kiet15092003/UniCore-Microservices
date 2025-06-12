@@ -18,5 +18,6 @@ namespace CourseService.Business.Services
             AcademicClassFilterParams? filterParams,
             Order? order);
         Task<bool> ScheduleRegistrationAsync(ClassRegistrationScheduleDto scheduleDto);
+        Task<bool> DeleteAcademicClassAsync(Guid id);
     }
 }

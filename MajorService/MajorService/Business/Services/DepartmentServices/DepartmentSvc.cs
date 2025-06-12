@@ -81,5 +81,29 @@ namespace MajorService.Business.Services.DepartmentServices
             
             return response;
         }
+
+        public async Task<bool> DeleteDepartmentAsync(Guid id)
+        {
+            // Check if department exists
+            try
+            {
+                var department = await _departmentRepo.GetDepartmentByIdAsync(id);
+                
+                // Check if department has any major groups
+                var majorGroups = await _departmentRepo.GetMajorGroupsByDepartmentIdAsync(id);
+                if (majorGroups.Any())
+                {
+                    throw new InvalidOperationException($"Cannot delete department '{department.Name}' because it has {majorGroups.Count} associated major group(s). Please remove all major groups before deleting the department.");
+                }
+
+                // If no major groups, proceed with deletion
+                var result = await _departmentRepo.DeleteDepartmentAsync(id);
+                return result;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw new KeyNotFoundException("Department not found");
+            }
+        }
     }
 }

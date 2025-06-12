@@ -17,5 +17,6 @@ namespace MajorService.Business.Services.MajorGroupServices
             Pagination pagination, 
             MajorGroupListFilterParams majorGroupListFilterParams, 
             Order? order);
+        Task<bool> DeleteMajorGroupAsync(Guid id);
     }
 }

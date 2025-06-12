@@ -95,5 +95,29 @@ namespace MajorService.Business.Services.MajorGroupServices
             
             return response;
         }
+
+        public async Task<bool> DeleteMajorGroupAsync(Guid id)
+        {
+            // Check if major group exists
+            try
+            {
+                var majorGroup = await _majorGroupRepo.GetMajorGroupByIdAsync(id);
+                
+                // Check if major group has any majors
+                var majors = await _majorGroupRepo.GetMajorsByMajorGroupIdAsync(id);
+                if (majors.Any())
+                {
+                    throw new InvalidOperationException($"Cannot delete major group '{majorGroup.Name}' because it has {majors.Count} associated major(s). Please remove all majors before deleting the major group.");
+                }
+
+                // If no majors, proceed with deletion
+                var result = await _majorGroupRepo.DeleteMajorGroupAsync(id);
+                return result;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw new KeyNotFoundException("Major group not found");
+            }
+        }
     }
 }

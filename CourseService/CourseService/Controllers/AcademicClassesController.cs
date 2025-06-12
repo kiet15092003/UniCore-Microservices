@@ -90,5 +90,27 @@ namespace CourseService.Controllers
             
             return ApiResponse<string>.SuccessResponse(message);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse<bool>> DeleteAcademicClass(Guid id)
+        {
+            try
+            {
+                var result = await _academicClassService.DeleteAcademicClassAsync(id);
+                return ApiResponse<bool>.SuccessResponse(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { $"An error occurred while deleting the academic class: {ex.Message}" });
+            }
+        }
     }
 }

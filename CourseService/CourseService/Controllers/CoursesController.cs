@@ -51,5 +51,22 @@ namespace CourseService.Controllers
             var result = await _courseService.GetCoursesByMajorIdAsync(majorId);
             return ApiResponse<List<CourseReadDto>>.SuccessResponse(result);
         }
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse<bool>> DeleteCourse(Guid id)
+        {
+            try
+            {
+                var result = await _courseService.DeleteCourseAsync(id);
+                return ApiResponse<bool>.SuccessResponse(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse([ex.Message]);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse([ex.Message]);
+            }
+        }
     }
 }

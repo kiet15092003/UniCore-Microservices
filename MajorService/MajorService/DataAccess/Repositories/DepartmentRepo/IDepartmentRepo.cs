@@ -17,5 +17,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             Order? order);
         Task<bool> IsDepartmentNameExistsAsync(string name);
         Task<string> GenerateUniqueCodeAsync();
+        Task<bool> DeleteDepartmentAsync(Guid id);
+        Task<List<MajorGroup>> GetMajorGroupsByDepartmentIdAsync(Guid departmentId);
     }
 }
