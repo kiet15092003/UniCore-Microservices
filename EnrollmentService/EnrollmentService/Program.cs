@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using CourseService.DataAccess;
 using EnrollmentService.Middleware;
+using EnrollmentService.CommunicationTypes;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcServer;
 using EnrollmentService.DataAccess.Repositories;
@@ -15,6 +16,7 @@ using EnrollmentService.Business.Services;
 using EnrollmentService.Business.Mappings;
 using EnrollmentService.Utils.DistributedLock;
 using StackExchange.Redis;
+using EnrollmentService.CommunicationTypes.KafkaService.KafkaConsumer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -148,6 +150,10 @@ builder.Services.AddScoped<IDistributedLockService>(provider =>
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 //Register services
 builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
+
+// Add Communication Types (Kafka, etc.)
+builder.Services.AddHostedService<KafkaConsumerService>();
+builder.Services.AddCommunicationTypes();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();

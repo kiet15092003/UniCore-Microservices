@@ -16,8 +16,6 @@ spec:
         - name: enrollmentservice
           image: kiet2003/enrollmentservice:latest
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
           env:
             - name: KAFKA_BOOTSTRAP_SERVERS
               value: "kafka:9092"
