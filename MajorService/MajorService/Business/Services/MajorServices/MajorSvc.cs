@@ -85,5 +85,21 @@ namespace MajorService.Business.Services.MajorServices
             
             return response;
         }
+
+        public async Task<bool> DeleteMajorAsync(Guid id)
+        {
+            // Check if major exists
+            try
+            {
+                var major = await _majorRepo.GetMajorByIdAsync(id);
+                // Major can always be deleted according to requirements
+                var result = await _majorRepo.DeleteMajorAsync(id);
+                return result;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw new KeyNotFoundException("Major not found");
+            }
+        }
     }
 }

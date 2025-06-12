@@ -172,7 +172,6 @@ namespace CourseService.Business.Services
             existingRoadmap.Name = updateDto.Name;
             existingRoadmap.Description = updateDto.Description;
             existingRoadmap.MajorId = updateDto.MajorId ?? existingRoadmap.MajorId;
-            existingRoadmap.StartYear = updateDto.StartYear;
             existingRoadmap.UpdatedAt = DateTime.Now;
             
             // Update BatchIds if provided
@@ -339,6 +338,26 @@ namespace CourseService.Business.Services
                     }
                 }
             }
+        }
+
+        public async Task<bool> DeleteTrainingRoadmapAsync(Guid id)
+        {
+            // Check if training roadmap exists
+            var trainingRoadmap = await _trainingRoadmapRepository.GetTrainingRoadmapByIdAsync(id);
+            if (trainingRoadmap == null)
+            {
+                throw new KeyNotFoundException("Training roadmap not found");
+            }
+
+            // Check if training roadmap has been applied to any batches
+            if (trainingRoadmap.BatchIds != null && trainingRoadmap.BatchIds.Any())
+            {
+                throw new InvalidOperationException($"Cannot delete training roadmap '{trainingRoadmap.Name}' because it has been applied to {trainingRoadmap.BatchIds.Count} batch(es). Please remove all batch assignments before deleting the training roadmap.");
+            }
+
+            // If no batches are assigned, proceed with deletion
+            var result = await _trainingRoadmapRepository.DeleteTrainingRoadmapAsync(id);
+            return result;
         }
     }
 }

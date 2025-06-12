@@ -20,5 +20,6 @@ namespace CourseService.DataAccess.Repositories
         Task<List<AcademicClass>> GetAcademicClassesBySemesterWithSchedulesAsync(Guid semesterId);
         Task SaveChangesAsync();
         IQueryable<AcademicClass> GetQuery();
+        Task<bool> DeleteAcademicClassAsync(Guid id);
     }
 }

@@ -273,5 +273,18 @@ namespace CourseService.DataAccess.Repositories
         {
             return _context.AcademicClasses.AsQueryable();
         }
+
+        public async Task<bool> DeleteAcademicClassAsync(Guid id)
+        {
+            var academicClass = await GetAcademicClassByIdAsync(id);
+            if (academicClass == null)
+            {
+                return false;
+            }
+
+            _context.AcademicClasses.Remove(academicClass);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

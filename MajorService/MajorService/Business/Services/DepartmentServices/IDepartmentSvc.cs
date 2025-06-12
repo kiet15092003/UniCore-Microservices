@@ -15,5 +15,6 @@ namespace MajorService.Business.Services.DepartmentServices
             Pagination pagination, 
             DepartmentListFilterParams departmentListFilterParams, 
             Order? order);
+        Task<bool> DeleteDepartmentAsync(Guid id);
     }
 }

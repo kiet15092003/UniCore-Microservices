@@ -9,20 +9,22 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace CourseService.Business.Services
-{
-    public class CourseSvc : ICourseService
+{    public class CourseSvc : ICourseService
     {
         private readonly ICourseRepository _courseRepository;
+        private readonly IAcademicClassRepository _academicClassRepository;
         private readonly IMapper _mapper;
         private readonly GrpcMajorClientService _grpcClient;
         private const double DEFAULT_COST_PER_CREDIT = 500000; // Default cost per credit if Major service doesn't provide one
 
         public CourseSvc(
-            ICourseRepository courseRepository, 
+            ICourseRepository courseRepository,
+            IAcademicClassRepository academicClassRepository,
             IMapper mapper,
             GrpcMajorClientService grpcClient)
         {
             _courseRepository = courseRepository;
+            _academicClassRepository = academicClassRepository;
             _mapper = mapper;
             _grpcClient = grpcClient;
         }
@@ -274,6 +276,27 @@ namespace CourseService.Business.Services
             }
             
             return courseReadDtos;
+        }
+
+        public async Task<bool> DeleteCourseAsync(Guid id)
+        {
+            // Check if course exists
+            var course = await _courseRepository.GetCourseByIdAsync(id);
+            if (course == null)
+            {
+                throw new KeyNotFoundException("Course not found");
+            }
+
+            // Check if course has any associated academic classes
+            var academicClasses = await _academicClassRepository.GetAcademicClassesByCourseIdAsync(id);
+            if (academicClasses.Any())
+            {
+                throw new InvalidOperationException($"Cannot delete course '{course.Name}' because it has {academicClasses.Count} associated academic class(es). Please remove all academic classes before deleting the course.");
+            }
+
+            // If no academic classes are associated, proceed with deletion
+            var result = await _courseRepository.DeleteCourseAsync(id);
+            return result;
         }
     }
 }

@@ -70,5 +70,23 @@ namespace MajorService.Controller
             var result = await _majorSvc.GetMajorsByPaginationAsync(param.Pagination, param.Filter, param.Order);
             return ApiResponse<MajorListResponse>.SuccessResponse(result);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse<bool>> DeleteMajor(Guid id)
+        {
+            try
+            {
+                var result = await _majorSvc.DeleteMajorAsync(id);
+                return ApiResponse<bool>.SuccessResponse(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse(new List<string> { $"An error occurred while deleting the major: {ex.Message}" });
+            }
+        }
     }
 }

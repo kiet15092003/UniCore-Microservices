@@ -9,7 +9,6 @@ namespace CourseService.Business.Dtos.TrainingRoadmap
         public string Name { get; set; }
         public string Description { get; set; }
         public string Code { get; set; }
-        public int StartYear { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public dynamic? MajorData { get; set; }

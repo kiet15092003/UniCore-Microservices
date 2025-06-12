@@ -17,5 +17,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             Order? order);
         Task<bool> IsMajorGroupNameExistsAsync(string name);
         Task<string> GenerateUniqueCodeAsync();
+        Task<bool> DeleteMajorGroupAsync(Guid id);
+        Task<List<Major>> GetMajorsByMajorGroupIdAsync(Guid majorGroupId);
     }
 }

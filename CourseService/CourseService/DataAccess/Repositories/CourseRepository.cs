@@ -167,5 +167,18 @@ namespace CourseService.DataAccess.Repositories
                 .Where(c => ids.Contains(c.Id))
                 .ToListAsync();
         }
+
+        public async Task<bool> DeleteCourseAsync(Guid id)
+        {
+            var course = await GetCourseByIdAsync(id);
+            if (course == null)
+            {
+                return false;
+            }
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

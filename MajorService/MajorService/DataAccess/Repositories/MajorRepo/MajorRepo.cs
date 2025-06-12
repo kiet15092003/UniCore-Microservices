@@ -173,5 +173,18 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             
             return code;
         }
+
+        public async Task<bool> DeleteMajorAsync(Guid id)
+        {
+            var major = await _context.Majors.FindAsync(id);
+            if (major == null)
+            {
+                return false;
+            }
+
+            _context.Majors.Remove(major);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

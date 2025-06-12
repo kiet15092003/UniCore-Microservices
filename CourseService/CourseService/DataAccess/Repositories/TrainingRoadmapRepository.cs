@@ -52,7 +52,6 @@ namespace CourseService.DataAccess.Repositories
             existingRoadmap.Name = trainingRoadmap.Name;
             existingRoadmap.Description = trainingRoadmap.Description;
             existingRoadmap.MajorId = trainingRoadmap.MajorId;
-            existingRoadmap.StartYear = trainingRoadmap.StartYear;
             existingRoadmap.UpdatedAt = DateTime.Now;
             
             await _context.SaveChangesAsync();
@@ -182,11 +181,6 @@ namespace CourseService.DataAccess.Repositories
                 queryable = queryable.Where(t => t.Name.Contains(filterParams.SearchQuery));
             }
 
-            if (filterParams.StartYear.HasValue)
-            {
-                queryable = queryable.Where(t => t.StartYear == filterParams.StartYear.Value);
-            }
-
             if (!string.IsNullOrWhiteSpace(filterParams.Code))
             {
                 queryable = queryable.Where(t => t.Code.Contains(filterParams.Code));
@@ -272,6 +266,19 @@ namespace CourseService.DataAccess.Repositories
             // Generate a random 6-digit code
             int code = _random.Next(100000, 1000000); // 100000 to 999999
             return code.ToString();
+        }
+
+        public async Task<bool> DeleteTrainingRoadmapAsync(Guid id)
+        {
+            var trainingRoadmap = await GetTrainingRoadmapByIdAsync(id);
+            if (trainingRoadmap == null)
+            {
+                return false;
+            }
+
+            _context.TrainingRoadmaps.Remove(trainingRoadmap);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

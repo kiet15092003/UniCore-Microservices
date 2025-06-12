@@ -162,5 +162,25 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             
             return code;
         }
+
+        public async Task<bool> DeleteDepartmentAsync(Guid id)
+        {
+            var department = await _context.Departments.FindAsync(id);
+            if (department == null)
+            {
+                return false;
+            }
+
+            _context.Departments.Remove(department);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<MajorGroup>> GetMajorGroupsByDepartmentIdAsync(Guid departmentId)
+        {
+            return await _context.MajorGroups
+                .Where(mg => mg.DepartmentId == departmentId)
+                .ToListAsync();
+        }
     }
 }
