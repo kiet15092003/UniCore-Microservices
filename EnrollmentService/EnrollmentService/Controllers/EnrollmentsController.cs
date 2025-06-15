@@ -87,5 +87,93 @@ namespace EnrollmentService.Controllers
                 return ApiResponse<bool>.ErrorResponse([$"Error deleting enrollment: {ex.Message}"]);
             }
         }
+
+        [HttpPut("approve-by-class/{classId}")]
+        public async Task<ApiResponse<bool>> ApproveEnrollmentsByAcademicClassId(Guid classId)
+        {
+            try
+            {
+                var result = await _enrollmentService.ApproveEnrollmentsByAcademicClassIdAsync(classId);
+                return ApiResponse<bool>.SuccessResponse(result > 0);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse([$"Error approving enrollments: {ex.Message}"]);
+            }
+        }
+
+        [HttpPut("reject-by-class/{classId}")]
+        public async Task<ApiResponse<bool>> RejectEnrollmentsByAcademicClassId(Guid classId)
+        {
+            try
+            {
+                var result = await _enrollmentService.RejectEnrollmentsByAcademicClassIdAsync(classId);
+                return ApiResponse<bool>.SuccessResponse(result > 0);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse([$"Error rejecting enrollments: {ex.Message}"]);
+            }
+        }
+
+        [HttpGet("class/{classId}")]
+        public async Task<ActionResult<ApiResponse<List<EnrollmentReadDto>>>> GetEnrollmentsByClassId(Guid classId)
+        {
+            try
+            {
+                var enrollments = await _enrollmentService.GetEnrollmentsByAcademicClassIdAsync(classId);
+                return Ok(ApiResponse<List<EnrollmentReadDto>>.SuccessResponse(enrollments));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<List<EnrollmentReadDto>>.ErrorResponse([$"Error retrieving enrollments: {ex.Message}"]));
+            }        
+        }        
+        [HttpPut("move-to-class")]
+        public async Task<ApiResponse<int>> MoveEnrollmentsToNewClass([FromBody] MoveEnrollmentsDto moveDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return ApiResponse<int>.ErrorResponse(["Invalid request data"]);
+                }
+
+                if (moveDto.EnrollmentIds == null || !moveDto.EnrollmentIds.Any())
+                {
+                    return ApiResponse<int>.ErrorResponse(["At least one enrollment ID is required"]);
+                }
+
+                var result = await _enrollmentService.MoveEnrollmentsToNewClassAsync(moveDto.EnrollmentIds, moveDto.ToClassId);
+                return ApiResponse<int>.SuccessResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<int>.ErrorResponse([$"Error moving enrollments: {ex.Message}"]);
+            }
+        }        
+        [HttpPost("check-class-conflict")]
+        public async Task<ApiResponse<CheckClassConflictResponse>> CheckClassConflict([FromBody] CheckClassConflictRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return ApiResponse<CheckClassConflictResponse>.ErrorResponse(["Invalid request data"]);
+                }
+
+                if (request.EnrollmentIds == null || !request.EnrollmentIds.Any())
+                {
+                    return ApiResponse<CheckClassConflictResponse>.ErrorResponse(["At least one enrollment ID is required"]);
+                }
+
+                var result = await _enrollmentService.CheckClassConflictAsync(request);
+                return ApiResponse<CheckClassConflictResponse>.SuccessResponse(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<CheckClassConflictResponse>.ErrorResponse([$"Error checking class conflicts: {ex.Message}"]);
+            }
+        }
     }
 }

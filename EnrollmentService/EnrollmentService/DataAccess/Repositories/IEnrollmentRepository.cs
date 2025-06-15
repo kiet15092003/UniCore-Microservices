@@ -17,10 +17,14 @@ namespace EnrollmentService.DataAccess.Repositories
         Task<List<Enrollment>> CreateMultipleEnrollmentsWithoutTransactionAsync(List<Enrollment> enrollments);
         Task<bool> ExistsAsync(Guid studentId, Guid academicClassId);
         Task<int> GetEnrollmentCountByAcademicClassIdAsync(Guid academicClassId);
-        Task<int> GetEnrollmentCountByAcademicClassIdWithLockAsync(Guid academicClassId);
-        Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId, Guid? semesterId = null);
+        Task<List<Enrollment>> GetEnrollmentsByAcademicClassIdAsync(Guid academicClassId);
+        Task<int> GetEnrollmentCountByAcademicClassIdWithLockAsync(Guid academicClassId);        Task<List<Enrollment>> GetEnrollmentsByStudentIdAsync(Guid studentId, Guid? semesterId = null);
+        Task<List<Enrollment>> GetEnrollmentsByIdsAsync(List<Guid> enrollmentIds);
         Task<bool> DeleteEnrollmentAsync(Guid id);
-        Task<int> UpdateEnrollmentStatusByClassIdsAsync(List<Guid> classIds, int fromStatus, int toStatus);
+        Task<int> UpdateEnrollmentStatusByClassIdsAsync(List<Guid> classIds, int fromStatus, int toStatus);        Task<int> ApproveEnrollmentsByAcademicClassIdAsync(Guid classId);
+        Task<int> RejectEnrollmentsByAcademicClassIdAsync(Guid classId);
+        Task<int> MoveEnrollmentsToNewClassAsync(List<Guid> enrollmentIds, Guid toClassId);
         Task<IDbContextTransaction> BeginTransactionAsync();
+        Task<int?> GetFirstEnrollmentStatusByAcademicClassIdAsync(Guid academicClassId);
     }
 }

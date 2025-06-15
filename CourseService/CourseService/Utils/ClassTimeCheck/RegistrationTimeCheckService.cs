@@ -112,34 +112,35 @@ namespace CourseService.Services
                     {
                         Console.WriteLine($"[DEBUG] Class {academicClass.Name} (ID: {academicClass.Id}) is already closed, skipping");
                     }
-                }                // Send Kafka message to EnrollmentService about closed classes
-                try
-                {
-                    using var kafkaScope = _scopeFactory.CreateScope();
-                    var kafkaProducer = kafkaScope.ServiceProvider.GetRequiredService<IKafkaProducerService>();
-                    
-                    var classIds = classesToClose.Where(c => c.IsRegistrable == false).Select(c => c.Id).ToList();
-                    
-                    if (classIds.Any())
-                    {
-                        var classClosureEvent = new ClassClosureEventDTO
-                        {
-                            Data = new ClassClosureEventData
-                            {
-                                ClassIds = classIds
-                            }
-                        };
+                }
+                // Send Kafka message to EnrollmentService about closed classes
+                // try
+                // {
+                //     using var kafkaScope = _scopeFactory.CreateScope();
+                //     var kafkaProducer = kafkaScope.ServiceProvider.GetRequiredService<IKafkaProducerService>();
 
-                        await kafkaProducer.PublishMessageAsync("ClassClosureEvent", classClosureEvent);
-                        _logger.LogInformation("Sent Kafka message for {Count} closed classes to EnrollmentService", classIds.Count);
-                        Console.WriteLine($"[DEBUG] Sent Kafka message for {classIds.Count} closed classes");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to send Kafka message for class closures");
-                    Console.WriteLine($"[DEBUG ERROR] Failed to send Kafka message: {ex.Message}");
-                }
+                //     var classIds = classesToClose.Where(c => c.IsRegistrable == false).Select(c => c.Id).ToList();
+
+                //     if (classIds.Any())
+                //     {
+                //         var classClosureEvent = new ClassClosureEventDTO
+                //         {
+                //             Data = new ClassClosureEventData
+                //             {
+                //                 ClassIds = classIds
+                //             }
+                //         };
+
+                //         await kafkaProducer.PublishMessageAsync("ClassClosureEvent", classClosureEvent);
+                //         _logger.LogInformation("Sent Kafka message for {Count} closed classes to EnrollmentService", classIds.Count);
+                //         Console.WriteLine($"[DEBUG] Sent Kafka message for {classIds.Count} closed classes");
+                //     }
+                // }
+                // catch (Exception ex)
+                // {
+                //     _logger.LogError(ex, "Failed to send Kafka message for class closures");
+                //     Console.WriteLine($"[DEBUG ERROR] Failed to send Kafka message: {ex.Message}");
+                // }
             }
 
             if (actualChanges > 0)

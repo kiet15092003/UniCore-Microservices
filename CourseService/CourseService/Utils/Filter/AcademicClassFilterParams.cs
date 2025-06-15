@@ -12,6 +12,7 @@ namespace CourseService.Utils.Filter
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool? IsRegistrable { get; set; }
+        public int? EnrollmentStatus { get; set; }
         public Guid? CourseId { get; set; }
         public Guid? SemesterId { get; set; }
         public Guid? RoomId { get; set; }

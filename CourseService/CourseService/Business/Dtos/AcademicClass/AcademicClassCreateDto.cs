@@ -14,6 +14,7 @@
         public int Capacity { get; set; }
         public List<int> ListOfWeeks { get; set; } = new List<int>();
         public bool IsRegistrable { get; set; }
+        public int MinEnrollmentRequired { get; set; }
         public Guid CourseId { get; set; }
         public Guid SemesterId { get; set; }
         public Guid? ParentTheoryAcademicClassId { get; set; }

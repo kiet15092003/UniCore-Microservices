@@ -9,6 +9,7 @@ namespace CourseService.DataAccess.Repositories
         Task<AcademicClass?> GetAcademicClassByIdAsync(Guid id);        
         Task<List<AcademicClass>> GetAcademicClassesByCourseIdAsync(Guid courseId);
         Task<List<AcademicClass>> GetAcademicClassesBySemesterIdAsync(Guid semesterId);
+        Task<List<AcademicClass>> GetAcademicClassesBySemesterAndCourseIdAsync(Guid semesterId, Guid courseId);
         Task<List<AcademicClass>> GetAcademicClassesForMajorAsync(Guid majorId);
         Task<List<AcademicClass>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId);
         Task<PaginationResult<AcademicClass>> GetAllAcademicClassesPaginationAsync(
@@ -17,9 +18,9 @@ namespace CourseService.DataAccess.Repositories
             Order? order);
         Task<AcademicClass> UpdateAcademicClassAsync(AcademicClass academicClass);
         Task<List<AcademicClass>> GetAcademicClassesByIdsAsync(List<Guid> ids);
-        Task<List<AcademicClass>> GetAcademicClassesBySemesterWithSchedulesAsync(Guid semesterId);
-        Task SaveChangesAsync();
-        IQueryable<AcademicClass> GetQuery();
+        Task<List<AcademicClass>> GetAcademicClassesBySemesterWithSchedulesAsync(Guid semesterId);        Task SaveChangesAsync();        IQueryable<AcademicClass> GetQuery();
+        IQueryable<AcademicClass> GetQueryWithIncludes();
+        IQueryable<AcademicClass> ApplyFiltersToQuery(IQueryable<AcademicClass> query, AcademicClassFilterParams? filterParams);
         Task<bool> DeleteAcademicClassAsync(Guid id);
     }
 }

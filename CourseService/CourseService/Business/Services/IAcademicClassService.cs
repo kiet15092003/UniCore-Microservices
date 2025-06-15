@@ -11,6 +11,7 @@ namespace CourseService.Business.Services
         Task<AcademicClassReadDto> GetAcademicClassByIdAsync(Guid id);        
         Task<List<AcademicClassReadDto>> GetAcademicClassesByCourseIdAsync(Guid courseId);
         Task<List<AcademicClassReadDto>> GetAcademicClassesBySemesterIdAsync(Guid semesterId);
+        Task<List<AcademicClassReadDto>> GetAcademicClassesBySemesterAndCourseIdAsync(Guid semesterId, Guid courseId);
         Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAsync(Guid majorId);
         Task<List<AcademicClassReadDto>> GetAcademicClassesForMajorAndBatchAsync(Guid majorId, Guid batchId);
         Task<AcademicClassListResponse> GetAllAcademicClassesPaginationAsync(

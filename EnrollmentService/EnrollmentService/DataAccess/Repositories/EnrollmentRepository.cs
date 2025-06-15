@@ -7,7 +7,8 @@ using CourseService.DataAccess;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
 
 namespace EnrollmentService.DataAccess.Repositories
-{    public class EnrollmentRepository : IEnrollmentRepository
+{    
+    public class EnrollmentRepository : IEnrollmentRepository
     {
         private readonly AppDbContext _context;
         private readonly GrpcAcademicClassClientService _grpcAcademicClassClient;
@@ -247,6 +248,13 @@ namespace EnrollmentService.DataAccess.Repositories
                 .CountAsync();
         }
 
+        public async Task<List<Enrollment>> GetEnrollmentsByAcademicClassIdAsync(Guid academicClassId)
+        {
+            return await _context.Enrollments
+                .Where(e => e.AcademicClassId == academicClassId)
+                .ToListAsync();
+        }
+
         public async Task<int> GetEnrollmentCountByAcademicClassIdWithLockAsync(Guid academicClassId)
         {
             // Use SELECT FOR UPDATE equivalent in SQL Server (WITH (UPDLOCK, HOLDLOCK))
@@ -302,6 +310,61 @@ namespace EnrollmentService.DataAccess.Repositories
                 foreach (var enrollment in enrollments)
                 {
                     enrollment.Status = toStatus;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return enrollments.Count;
+        }
+
+        public async Task<int> ApproveEnrollmentsByAcademicClassIdAsync(Guid classId)
+        {
+            var enrollments = await _context.Enrollments
+                .Where(e => e.AcademicClassId == classId && e.Status != 3 && e.Status != 4 && e.Status != 5)
+                .ToListAsync();
+
+            if (enrollments.Any())
+            {
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.Status = 2;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return enrollments.Count;
+        }
+
+        public async Task<int> RejectEnrollmentsByAcademicClassIdAsync(Guid classId)
+        {
+            var enrollments = await _context.Enrollments
+                .Where(e => e.AcademicClassId == classId && e.Status != 3 && e.Status != 4 && e.Status != 5)
+                .ToListAsync();
+
+            if (enrollments.Any())
+            {
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.Status = 6;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return enrollments.Count;
+        }        public async Task<int> MoveEnrollmentsToNewClassAsync(List<Guid> enrollmentIds, Guid toClassId)
+        {
+            var enrollments = await _context.Enrollments
+                .Where(e => enrollmentIds.Contains(e.Id))
+                .ToListAsync();
+
+            if (enrollments.Any())
+            {
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.AcademicClassId = toClassId;
                 }
 
                 await _context.SaveChangesAsync();
@@ -516,6 +579,22 @@ namespace EnrollmentService.DataAccess.Repositories
             public string CourseName { get; set; }
             public string ClassName { get; set; }
             public string SemesterInfo { get; set; }
+        }        public async Task<int?> GetFirstEnrollmentStatusByAcademicClassIdAsync(Guid academicClassId)
+        {
+            var firstEnrollment = await _context.Enrollments
+                .Where(e => e.AcademicClassId == academicClassId)
+                .Select(e => e.Status)
+                .FirstOrDefaultAsync();
+
+            // If no enrollments found, return null
+            return firstEnrollment == 0 ? (int?)null : firstEnrollment;
+        }
+
+        public async Task<List<Enrollment>> GetEnrollmentsByIdsAsync(List<Guid> enrollmentIds)
+        {
+            return await _context.Enrollments
+                .Where(e => enrollmentIds.Contains(e.Id))
+                .ToListAsync();
         }
     }
 }
