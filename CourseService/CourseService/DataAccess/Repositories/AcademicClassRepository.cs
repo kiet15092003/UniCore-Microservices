@@ -267,11 +267,32 @@ namespace CourseService.DataAccess.Repositories
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
-        }
-
-        public IQueryable<AcademicClass> GetQuery()
+        }        public IQueryable<AcademicClass> GetQuery()
         {
             return _context.AcademicClasses.AsQueryable();
+        }        public IQueryable<AcademicClass> GetQueryWithIncludes()
+        {
+            return _context.AcademicClasses
+                .Include(ac => ac.Course)
+                .Include(ac => ac.Semester)
+                .Include(ac => ac.ScheduleInDays)
+                    .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .AsQueryable();
+        }
+
+        public IQueryable<AcademicClass> ApplyFiltersToQuery(IQueryable<AcademicClass> query, AcademicClassFilterParams? filterParams)
+        {
+            if (filterParams != null)
+            {
+                return ApplyFilters(query, filterParams);
+            }
+            return query;
         }
 
         public async Task<bool> DeleteAcademicClassAsync(Guid id)
@@ -285,6 +306,22 @@ namespace CourseService.DataAccess.Repositories
             _context.AcademicClasses.Remove(academicClass);
             await _context.SaveChangesAsync();
             return true;
+        }        
+        public async Task<List<AcademicClass>> GetAcademicClassesBySemesterAndCourseIdAsync(Guid semesterId, Guid courseId)
+        {
+            return await _context.AcademicClasses
+                .Where(ac => ac.SemesterId == semesterId && ac.CourseId == courseId)
+                .Include(ac => ac.Course)
+                .Include(ac => ac.Semester)
+                .Include(ac => ac.ScheduleInDays)
+                    .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ParentTheoryAcademicClass)
+                    .ThenInclude(p => p.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .Include(ac => ac.ChildPracticeAcademicClasses)
+                    .ThenInclude(c => c.ScheduleInDays)
+                        .ThenInclude(s => s.Shift)
+                .ToListAsync();
         }
     }
 }

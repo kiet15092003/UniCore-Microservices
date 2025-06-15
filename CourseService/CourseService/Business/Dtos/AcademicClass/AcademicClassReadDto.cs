@@ -22,6 +22,7 @@ namespace CourseService.Business.Dtos.AcademicClass
         public int Capacity { get; set; }
         public List<int> ListOfWeeks { get; set; } = new List<int>();
         public bool IsRegistrable { get; set; }
+        public int MinEnrollmentRequired { get; set; }
         public Guid CourseId { get; set; }
         public CourseReadDto? Course { get; set; }
         public Guid SemesterId { get; set; }
@@ -34,5 +35,6 @@ namespace CourseService.Business.Dtos.AcademicClass
         public DateTime? RegistrationOpenTime { get; set; }
         public DateTime? RegistrationCloseTime { get; set; }
         public int EnrollmentCount { get; set; }
+        public int? EnrollmentStatus { get; set; }
     }
 }

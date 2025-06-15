@@ -16,7 +16,6 @@ using EnrollmentService.Business.Services;
 using EnrollmentService.Business.Mappings;
 using EnrollmentService.Utils.DistributedLock;
 using StackExchange.Redis;
-using EnrollmentService.CommunicationTypes.KafkaService.KafkaConsumer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -152,7 +151,7 @@ builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
 
 // Add Communication Types (Kafka, etc.)
-builder.Services.AddHostedService<KafkaConsumerService>();
+//builder.Services.AddHostedService<KafkaConsumerService>();
 builder.Services.AddCommunicationTypes();
 
 builder.Logging.ClearProviders();

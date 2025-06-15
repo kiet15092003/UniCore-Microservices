@@ -4,6 +4,8 @@ option csharp_namespace = "EnrollmentService";
 
 service GrpcEnrollment {
   rpc GetEnrollmentCount (EnrollmentCountRequest) returns (EnrollmentCountResponse);
+  rpc GetEnrollmentsByClassId (GetEnrollmentsByClassIdRequest) returns (GetEnrollmentsByClassIdResponse);
+  rpc GetFirstEnrollmentStatus (GetFirstEnrollmentStatusRequest) returns (GetFirstEnrollmentStatusResponse);
 }
 
 message EnrollmentCountRequest {
@@ -14,4 +16,32 @@ message EnrollmentCountResponse {
   bool success = 1;
   int32 count = 2;
   repeated string error = 3;
+}
+
+message GetEnrollmentsByClassIdRequest {
+  string academicClassId = 1;
+}
+
+message GetEnrollmentsByClassIdResponse {
+  bool success = 1;
+  repeated EnrollmentDto enrollments = 2;
+  repeated string error = 3;
+}
+
+message EnrollmentDto {
+  string id = 1;
+  int32 status = 2;
+  string studentId = 3;
+  string academicClassId = 4;
+}
+
+message GetFirstEnrollmentStatusRequest {
+  string academicClassId = 1;
+}
+
+message GetFirstEnrollmentStatusResponse {
+  bool success = 1;
+  int32 status = 2;
+  bool hasStatus = 3;
+  repeated string error = 4;
 }

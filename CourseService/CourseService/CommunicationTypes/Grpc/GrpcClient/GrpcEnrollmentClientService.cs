@@ -10,8 +10,7 @@ namespace CourseService.CommunicationTypes.Grpc.GrpcClient
         public GrpcEnrollmentClientService(IConfiguration configuration)
         {
             _configuration = configuration;
-        }
-
+        }      
         public async Task<EnrollmentCountResponse> GetEnrollmentCountAsync(string academicClassId)
         {
             var grpcUrl = _configuration["GrpcSettings:EnrollmentServiceUrl"];
@@ -32,6 +31,25 @@ namespace CourseService.CommunicationTypes.Grpc.GrpcClient
                     Count = 0,
                     Error = { $"gRPC call failed: {ex.Message}" }
                 };
+            }
+        }          
+        public async Task<int> GetFirstEnrollmentStatusAsync(string academicClassId)
+        {
+            var grpcUrl = _configuration["GrpcSettings:EnrollmentServiceUrl"];
+
+            using var channel = GrpcChannel.ForAddress(grpcUrl);
+            var client = new GrpcEnrollment.GrpcEnrollmentClient(channel);
+
+            try
+            {
+                var request = new GetFirstEnrollmentStatusRequest { AcademicClassId = academicClassId };
+                var response = await client.GetFirstEnrollmentStatusAsync(request);
+
+                return response.Status;
+            }
+            catch (Exception ex)
+            {
+                return 0;
             }
         }
     }

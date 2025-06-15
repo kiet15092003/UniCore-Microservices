@@ -112,5 +112,12 @@ namespace CourseService.Controllers
                 return ApiResponse<bool>.ErrorResponse(new List<string> { $"An error occurred while deleting the academic class: {ex.Message}" });
             }
         }
+        [HttpGet("semester/{semesterId}/course/{courseId}")]
+        public async Task<ApiResponse<List<AcademicClassReadDto>>> GetAcademicClassesBySemesterAndCourse(Guid semesterId, Guid courseId)
+        {
+            var academicClasses = await _academicClassService.GetAcademicClassesBySemesterAndCourseIdAsync(semesterId, courseId);
+
+            return ApiResponse<List<AcademicClassReadDto>>.SuccessResponse(academicClasses);
+        }
     }
 }

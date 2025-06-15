@@ -42,8 +42,7 @@
 		<Protobuf Include="CommunicationTypes\Grpc\Protos\major.proto" GrpcServices="Client" />
 		<Protobuf Include="CommunicationTypes\Grpc\Protos\room.proto" GrpcServices="Client" />
 		<Protobuf Include="CommunicationTypes\Grpc\Protos\batch.proto" GrpcServices="Client" />
-		<Protobuf Include="CommunicationTypes\Grpc\Protos\enrollment.proto" GrpcServices="Client" />
-		<Protobuf Include="CommunicationTypes\Grpc\Protos\academicclass.proto" GrpcServices="Server" />
+	    <Protobuf Include="CommunicationTypes\Grpc\Protos\enrollment.proto" GrpcServices="Client" />
+	    <Protobuf Include="CommunicationTypes\Grpc\Protos\academicclass.proto" GrpcServices="Server" />
   </ItemGroup>
-
 </Project>
