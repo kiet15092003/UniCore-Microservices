@@ -5,11 +5,11 @@ using CourseService.DataAccess.Repositories;
 using CourseService.Entities;
 using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
-using MajorService;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseService.Business.Services
-{    public class AcademicClassService : IAcademicClassService
+{    
+    public class AcademicClassService : IAcademicClassService
     {        
         private readonly IAcademicClassRepository _academicClassRepository;
         private readonly IScheduleInDayRepository _scheduleInDayRepository;
@@ -25,7 +25,8 @@ namespace CourseService.Business.Services
             GrpcEnrollmentClientService enrollmentClientService,
             IMapper mapper,
             ILogger<AcademicClassService> logger)
-        {            _academicClassRepository = academicClassRepository;
+        {            
+            _academicClassRepository = academicClassRepository;
             _scheduleInDayRepository = scheduleInDayRepository;
             _roomClientService = roomClientService;
             _enrollmentClientService = enrollmentClientService;
