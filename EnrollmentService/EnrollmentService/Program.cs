@@ -206,4 +206,10 @@ app.MapGrpcService<GrpcEnrollmentServerService>();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    await DbInitializer.InitializeAsync(scope.ServiceProvider);
+}
+
 app.Run();
