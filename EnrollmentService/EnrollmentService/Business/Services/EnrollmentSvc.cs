@@ -7,11 +7,10 @@ using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
 using EnrollmentService.Utils.DistributedLock;
 using EnrollmentService.Utils.Exceptions;
-using EnrollmentService.Utils.DistributedLock;
-using EnrollmentService.Utils.Exceptions;
 
 namespace EnrollmentService.Business.Services
-{    public class EnrollmentSvc : IEnrollmentService
+{    
+    public class EnrollmentSvc : IEnrollmentService
     {
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IMapper _mapper;
@@ -781,7 +780,8 @@ namespace EnrollmentService.Business.Services
                     enrollmentIds.Count, toClassId);
                 throw;
             }
-        }        public async Task<int?> GetFirstEnrollmentStatusByAcademicClassIdAsync(Guid academicClassId)
+        }        
+        public async Task<int?> GetFirstEnrollmentStatusByAcademicClassIdAsync(Guid academicClassId)
         {
             return await _enrollmentRepository.GetFirstEnrollmentStatusByAcademicClassIdAsync(academicClassId);
         }        
@@ -952,7 +952,8 @@ namespace EnrollmentService.Business.Services
                     request.ClassToCheckId);
                 throw;
             }
-        }        private bool HasScheduleConflict(List<GrpcScheduleInDayData> schedule1, List<GrpcScheduleInDayData> schedule2, List<int> weeks1, List<int> weeks2)
+        }        
+        private bool HasScheduleConflict(List<GrpcScheduleInDayData> schedule1, List<GrpcScheduleInDayData> schedule2, List<int> weeks1, List<int> weeks2)
         {
             // First condition: Check if the weeks have intersection
             if (!weeks1.Intersect(weeks2).Any())
@@ -1077,5 +1078,26 @@ namespace EnrollmentService.Business.Services
         private bool IsEveningShift(string shiftName)
         {
             return shiftName.Contains("evening") || shiftName.Contains("tối");
-        }}
+        }        public async Task<int> BulkChangeEnrollmentStatusAsync(BulkStatusChangeDto bulkStatusChangeDto)
+        {
+            try
+            {
+                if (bulkStatusChangeDto == null || !bulkStatusChangeDto.ClassIds.Any())
+                {
+                    return 0;
+                }
+
+                var updatedCount = await _enrollmentRepository.BulkUpdateEnrollmentStatusByClassIdsAsync(
+                    bulkStatusChangeDto.ClassIds, 
+                    bulkStatusChangeDto.Status);
+
+                return updatedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while bulk updating enrollment status by class IDs");
+                throw;
+            }
+        }
+    }
 }

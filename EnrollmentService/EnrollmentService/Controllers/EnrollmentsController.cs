@@ -188,5 +188,28 @@ namespace EnrollmentService.Controllers
         //         return ApiResponse<bool>.ErrorResponse([$"Error starting enrollments: {ex.Message}"]);
         //     }
         // }
+        [HttpPut("bulk-change-status")]
+        public async Task<ApiResponse<int>> BulkChangeEnrollmentStatus([FromBody] BulkStatusChangeDto bulkStatusChangeDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return ApiResponse<int>.ErrorResponse(["Invalid request data"]);
+                }
+
+                if (bulkStatusChangeDto.ClassIds == null || !bulkStatusChangeDto.ClassIds.Any())
+                {
+                    return ApiResponse<int>.ErrorResponse(["At least one class ID is required"]);
+                }
+
+                var updatedCount = await _enrollmentService.BulkChangeEnrollmentStatusAsync(bulkStatusChangeDto);
+                return ApiResponse<int>.SuccessResponse(updatedCount);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<int>.ErrorResponse([$"Error changing enrollment status: {ex.Message}"]);
+            }
+        }
     }
 }

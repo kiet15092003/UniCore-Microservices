@@ -595,6 +595,24 @@ namespace EnrollmentService.DataAccess.Repositories
             return await _context.Enrollments
                 .Where(e => enrollmentIds.Contains(e.Id))
                 .ToListAsync();
+        }        public async Task<int> BulkUpdateEnrollmentStatusByClassIdsAsync(List<Guid> classIds, int newStatus)
+        {
+            var enrollments = await _context.Enrollments
+                .Where(e => classIds.Contains(e.AcademicClassId))
+                .ToListAsync();
+
+            if (enrollments.Any())
+            {
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.Status = newStatus;
+                    enrollment.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return enrollments.Count;
         }
     }
 }
