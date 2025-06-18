@@ -1,4 +1,4 @@
-using EnrollmentService.Data;
+using CourseService.DataAccess;
 using EnrollmentService.Entities;
 using Microsoft.EntityFrameworkCore;
 

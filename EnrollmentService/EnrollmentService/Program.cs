@@ -15,6 +15,7 @@ using EnrollmentService.DataAccess.Repositories;
 using EnrollmentService.Business.Services;
 using EnrollmentService.Business.Mappings;
 using EnrollmentService.Utils.DistributedLock;
+using EnrollmentService.DataAccess;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -207,9 +208,7 @@ app.MapGrpcService<GrpcEnrollmentServerService>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Initialize database
-using (var scope = app.Services.CreateScope())
-{
-    await DbInitializer.InitializeAsync(scope.ServiceProvider);
-}
+
+await DbInitializer.InitializeAsync(app.Services);
 
 app.Run();

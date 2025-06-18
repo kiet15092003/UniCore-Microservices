@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using CourseService.DataAccess;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace EnrollmentService.DataAccess.Repositories
 {    
@@ -13,12 +15,13 @@ namespace EnrollmentService.DataAccess.Repositories
         private readonly AppDbContext _context;
         private readonly GrpcAcademicClassClientService _grpcAcademicClassClient;
         private readonly GrpcStudentClientService _grpcStudentClient;
-
-        public EnrollmentRepository(AppDbContext context, GrpcAcademicClassClientService grpcAcademicClassClient, GrpcStudentClientService grpcStudentClient)
+        private readonly ILogger<EnrollmentRepository> _logger;
+        public EnrollmentRepository(AppDbContext context, GrpcAcademicClassClientService grpcAcademicClassClient, GrpcStudentClientService grpcStudentClient, ILogger<EnrollmentRepository> logger)
         {
             _context = context;
             _grpcAcademicClassClient = grpcAcademicClassClient;
             _grpcStudentClient = grpcStudentClient;
+            _logger = logger;
         }
 
         public async Task<Enrollment?> GetEnrollmentByIdAsync(Guid id)
@@ -329,6 +332,102 @@ namespace EnrollmentService.DataAccess.Repositories
                 foreach (var enrollment in enrollments)
                 {
                     enrollment.Status = 2;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return enrollments.Count;
+        }
+
+        public async Task<int> StartEnrollmentsByAcademicClassIdAsync(Guid classId)
+        {
+            var academicClass = await _grpcAcademicClassClient.GetAcademicClassById(classId.ToString());
+            if (academicClass?.Data == null)
+            {
+                throw new Exception("Academic class not found");
+            }
+
+            var enrollments = await _context.Enrollments
+                .Where(e => e.AcademicClassId == classId && e.Status == 2)
+                .ToListAsync();
+
+            if (enrollments.Any())
+            {
+                foreach (var enrollment in enrollments)
+                {
+                    enrollment.Status = 7;
+                    
+                    // Get all score types
+                    var scoreTypes = await _context.ScoreTypes.ToListAsync();
+                    
+                    // Create StudentResults based on course conditions
+                    if (academicClass.Data.Course.PracticePeriod == academicClass.Data.Course.Credit)
+                    {
+                        // Create 2 StudentResults for Type 2 and 3
+                        var studentResults = new List<StudentResult>
+                        {
+                            new StudentResult
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = -1,
+                                EnrollmentId = enrollment.Id,
+                                ScoreTypeId = scoreTypes.First(st => st.Type == 2).Id,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            },
+                            new StudentResult
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = -1,
+                                EnrollmentId = enrollment.Id,
+                                ScoreTypeId = scoreTypes.First(st => st.Type == 3).Id,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            }
+                        };
+                        await _context.StudentResults.AddRangeAsync(studentResults);
+                    }
+                    else if (academicClass.Data.Course.PracticePeriod == 0)
+                    {
+                        // Create 4 StudentResults for all types
+                        var studentResults = scoreTypes.Select(st => new StudentResult
+                        {
+                            Id = Guid.NewGuid(),
+                            Score = -1,
+                            EnrollmentId = enrollment.Id,
+                            ScoreTypeId = st.Id,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }).ToList();
+                        await _context.StudentResults.AddRangeAsync(studentResults);
+                    }
+                    else
+                    {
+                        // Create 2 StudentResults for Type 1 and 4
+                        var studentResults = new List<StudentResult>
+                        {
+                            new StudentResult
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = -1,
+                                EnrollmentId = enrollment.Id,
+                                ScoreTypeId = scoreTypes.First(st => st.Type == 1).Id,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            },
+                            new StudentResult
+                            {
+                                Id = Guid.NewGuid(),
+                                Score = -1,
+                                EnrollmentId = enrollment.Id,
+                                ScoreTypeId = scoreTypes.First(st => st.Type == 4).Id,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            }
+                        };
+                        await _context.StudentResults.AddRangeAsync(studentResults);
+                    }
                 }
 
                 await _context.SaveChangesAsync();

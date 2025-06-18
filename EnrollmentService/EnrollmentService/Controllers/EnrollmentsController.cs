@@ -175,19 +175,19 @@ namespace EnrollmentService.Controllers
                 return ApiResponse<CheckClassConflictResponse>.ErrorResponse([$"Error checking class conflicts: {ex.Message}"]);
             }
         }
-        // [HttpPost("start-by-class/{classId}")]
-        // public async Task<ApiResponse<bool>> StartEnrollmentsByAcademicClassId(Guid classId)
-        // {
-        //     try
-        //     {
-        //         var result = await _enrollmentService.StartEnrollmentsByAcademicClassIdAsync(classId);
-        //         return ApiResponse<bool>.SuccessResponse(result);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         return ApiResponse<bool>.ErrorResponse([$"Error starting enrollments: {ex.Message}"]);
-        //     }
-        // }
+        [HttpPost("start-by-class/{classId}")]
+        public async Task<ApiResponse<bool>> StartEnrollmentsByAcademicClassId(Guid classId)
+        {
+            try
+            {
+                var result = await _enrollmentService.StartEnrollmentsByAcademicClassIdAsync(classId);
+                return ApiResponse<bool>.SuccessResponse(result > 0);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.ErrorResponse([$"Error starting enrollments: {ex.Message}"]);
+            }
+        }
         [HttpPut("bulk-change-status")]
         public async Task<ApiResponse<int>> BulkChangeEnrollmentStatus([FromBody] BulkStatusChangeDto bulkStatusChangeDto)
         {
