@@ -13,6 +13,7 @@
         public Guid SemesterId { get; set; }
         public Semester Semester { get; set; }
         public Guid CourseId { get; set; }
+        public Guid LecturerId { get; set; }
         public Course Course { get; set; }
         public Guid? ParentTheoryAcademicClassId { get; set; }
         public AcademicClass? ParentTheoryAcademicClass { get; set; }
