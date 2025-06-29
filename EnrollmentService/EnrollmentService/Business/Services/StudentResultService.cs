@@ -1,6 +1,6 @@
 using AutoMapper;
 using EnrollmentService.DataAccess.Repositories;
-using EnrollmentService.DTOs.StudentResult;
+using EnrollmentService.Business.Dtos.StudentResult;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
 using Microsoft.Extensions.Logging;

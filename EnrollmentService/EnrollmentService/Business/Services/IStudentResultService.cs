@@ -1,4 +1,4 @@
-using EnrollmentService.DTOs.StudentResult;
+using EnrollmentService.Business.Dtos.StudentResult;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
 

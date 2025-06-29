@@ -1,8 +1,8 @@
 using AutoMapper;
-using EnrollmentService.DTOs.StudentResult;
+using EnrollmentService.Business.Dtos.StudentResult;
 using EnrollmentService.Entities;
 
-namespace EnrollmentService.Mappings
+namespace EnrollmentService.Business.Mappings
 {
     public class StudentResultMappingProfile : Profile
     {

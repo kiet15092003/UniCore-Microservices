@@ -1,4 +1,4 @@
-namespace EnrollmentService.DTOs.StudentResult
+namespace EnrollmentService.Business.Dtos.StudentResult
 {
     public class StudentResultDto
     {

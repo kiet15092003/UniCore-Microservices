@@ -1,5 +1,5 @@
 using EnrollmentService.Business.Services;
-using EnrollmentService.DTOs.StudentResult;
+using EnrollmentService.Business.Dtos.StudentResult;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
 using Microsoft.AspNetCore.Mvc;
