@@ -123,5 +123,19 @@ namespace EnrollmentService.Business.Services
                 throw;
             }
         }
+
+        public async Task<List<StudentResultDto>> GetStudentResultsByClassIdAsync(Guid classId)
+        {
+            try
+            {
+                var results = await _studentResultRepository.GetStudentResultsByClassIdAsync(classId);
+                return _mapper.Map<List<StudentResultDto>>(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting student results for class ID {ClassId}", classId);
+                throw;
+            }
+        }
     }
 } 

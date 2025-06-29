@@ -15,5 +15,6 @@ namespace EnrollmentService.Business.Services
         Task<bool> DeleteStudentResultAsync(Guid id);
         Task<List<StudentResultDto>> GetStudentResultsByEnrollmentIdAsync(Guid enrollmentId);
         Task<List<StudentResultDto>> GetStudentResultsByEnrollmentIdsAsync(List<Guid> enrollmentIds);
+        Task<List<StudentResultDto>> GetStudentResultsByClassIdAsync(Guid classId);
     }
 } 

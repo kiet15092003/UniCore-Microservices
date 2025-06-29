@@ -172,5 +172,25 @@ namespace EnrollmentService.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        /// <summary>
+        /// Get student results by class ID
+        /// </summary>
+        /// <param name="classId">Academic class ID</param>
+        /// <returns>List of student results for the class</returns>
+        [HttpGet("class/{classId}")]
+        public async Task<ActionResult<List<StudentResultDto>>> GetStudentResultsByClassId(Guid classId)
+        {
+            try
+            {
+                var results = await _studentResultService.GetStudentResultsByClassIdAsync(classId);
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting student results for class ID {ClassId}", classId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 } 

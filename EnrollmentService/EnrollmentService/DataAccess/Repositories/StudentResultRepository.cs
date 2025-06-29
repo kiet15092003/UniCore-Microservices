@@ -161,5 +161,14 @@ namespace EnrollmentService.DataAccess.Repositories
                 .Where(sr => enrollmentIds.Contains(sr.EnrollmentId))
                 .ToListAsync();
         }
+
+        public async Task<List<StudentResult>> GetStudentResultsByClassIdAsync(Guid classId)
+        {
+            return await _context.StudentResults
+                .Include(sr => sr.ScoreType)
+                .Include(sr => sr.Enrollment)
+                .Where(sr => sr.Enrollment.AcademicClassId == classId)
+                .ToListAsync();
+        }
     }
 } 
