@@ -4,6 +4,11 @@ using EnrollmentService.Business.Dtos.StudentResult;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
 using Microsoft.Extensions.Logging;
+using EnrollmentService.Entities;
+using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
+using ClosedXML.Excel;
+using System.Data;
+using Microsoft.AspNetCore.Http;
 
 namespace EnrollmentService.Business.Services
 {
@@ -12,15 +17,18 @@ namespace EnrollmentService.Business.Services
         private readonly IStudentResultRepository _studentResultRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<StudentResultService> _logger;
+        private readonly GrpcStudentClientService _studentClient;
 
         public StudentResultService(
             IStudentResultRepository studentResultRepository,
             IMapper mapper,
-            ILogger<StudentResultService> logger)
+            ILogger<StudentResultService> logger,
+            GrpcStudentClientService studentClient)
         {
             _studentResultRepository = studentResultRepository;
             _mapper = mapper;
             _logger = logger;
+            _studentClient = studentClient;
         }
 
         public async Task<StudentResultDto?> GetStudentResultByIdAsync(Guid id)
@@ -135,6 +143,280 @@ namespace EnrollmentService.Business.Services
             {
                 _logger.LogError(ex, "Error occurred while getting student results for class ID {ClassId}", classId);
                 throw;
+            }
+        }
+
+        public async Task<ImportScoreResultDto> ImportScoresFromExcelAsync(Guid classId, IFormFile excelFile)
+        {
+            var result = new ImportScoreResultDto();
+            var errors = new List<ImportScoreError>();
+            var successes = new List<ImportScoreSuccess>();
+            var studentResultsToUpdate = new List<StudentResult>();
+
+            try
+            {
+                // Validate file
+                if (excelFile == null || excelFile.Length == 0)
+                {
+                    throw new ArgumentException("Excel file is required");
+                }
+
+                if (!excelFile.FileName.EndsWith(".xlsx") && !excelFile.FileName.EndsWith(".xls"))
+                {
+                    throw new ArgumentException("File must be an Excel file (.xlsx or .xls)");
+                }
+
+                // Read Excel file
+                var excelRows = await ReadExcelFileAsync(excelFile);
+                result.TotalRows = excelRows.Count;
+
+                // Get existing student results for the class
+                var existingStudentResults = await _studentResultRepository.GetStudentResultsByClassIdWithEnrollmentAsync(classId);
+
+                // Process each row
+                for (int i = 0; i < excelRows.Count; i++)
+                {
+                    var row = excelRows[i];
+                    var rowNumber = i + 2; // Excel rows start from 1, and we skip header
+
+                    try
+                    {
+                        // Validate student code
+                        if (string.IsNullOrWhiteSpace(row.StudentCode))
+                        {
+                            errors.Add(new ImportScoreError
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = "N/A",
+                                ErrorMessage = "Student code is required"
+                            });
+                            continue;
+                        }
+
+                        // Find student by code
+                        var studentId = await GetStudentIdByCodeAsync(row.StudentCode, classId);
+                        if (!studentId.HasValue)
+                        {
+                            errors.Add(new ImportScoreError
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = "N/A",
+                                ErrorMessage = "Student not found"
+                            });
+                            continue;
+                        }
+
+                        // Find enrollment for this student and class
+                        var enrollment = existingStudentResults
+                            .FirstOrDefault(sr => sr.Enrollment.StudentId == studentId.Value)
+                            ?.Enrollment;
+
+                        if (enrollment == null)
+                        {
+                            errors.Add(new ImportScoreError
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = "N/A",
+                                ErrorMessage = "Student is not enrolled in this class"
+                            });
+                            continue;
+                        }
+
+                        // Process each score type
+                        var scoreTypes = new[]
+                        {
+                            new { Score = row.TheoryScore, TypeName = "1", DisplayName = "Theory" },
+                            new { Score = row.PracticeScore, TypeName = "2", DisplayName = "Practice" },
+                            new { Score = row.MidtermScore, TypeName = "3", DisplayName = "Midterm" },
+                            new { Score = row.FinalScore, TypeName = "4", DisplayName = "Final" }
+                        };
+
+                        foreach (var scoreType in scoreTypes)
+                        {
+                            if (!scoreType.Score.HasValue)
+                                continue;
+
+                            var score = scoreType.Score.Value;
+
+                            // Validate score range
+                            if (score < 0 || score > 10)
+                            {
+                                errors.Add(new ImportScoreError
+                                {
+                                    RowNumber = rowNumber,
+                                    StudentCode = row.StudentCode,
+                                    ScoreTypeName = scoreType.DisplayName,
+                                    ErrorMessage = "Score must be between 0 and 10"
+                                });
+                                continue;
+                            }
+
+                            // Find score type by name
+                            var scoreTypeEntity = existingStudentResults
+                                .FirstOrDefault(sr => sr.ScoreType.Type.ToString() == scoreType.TypeName)
+                                ?.ScoreType;
+
+                            if (scoreTypeEntity == null)
+                            {
+                                errors.Add(new ImportScoreError
+                                {
+                                    RowNumber = rowNumber,
+                                    StudentCode = row.StudentCode,
+                                    ScoreTypeName = scoreType.DisplayName,
+                                    ErrorMessage = "Score type not found"
+                                });
+                                continue;
+                            }
+
+                            // Find existing student result
+                            var studentResult = existingStudentResults
+                                .FirstOrDefault(sr => sr.EnrollmentId == enrollment.Id && sr.ScoreTypeId == scoreTypeEntity.Id);
+
+                            if (studentResult == null)
+                            {
+                                errors.Add(new ImportScoreError
+                                {
+                                    RowNumber = rowNumber,
+                                    StudentCode = row.StudentCode,
+                                    ScoreTypeName = scoreType.DisplayName,
+                                    ErrorMessage = "Student result record not found"
+                                });
+                                continue;
+                            }
+
+                            // Update score
+                            studentResult.Score = score;
+                            studentResult.UpdatedAt = DateTime.UtcNow;
+                            studentResultsToUpdate.Add(studentResult);
+
+                            successes.Add(new ImportScoreSuccess
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = scoreType.DisplayName,
+                                Score = score,
+                                StudentResultId = studentResult.Id
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(new ImportScoreError
+                        {
+                            RowNumber = rowNumber,
+                            StudentCode = row.StudentCode,
+                            ScoreTypeName = "N/A",
+                            ErrorMessage = $"Error processing row: {ex.Message}"
+                        });
+                    }
+                }
+
+                // Bulk update scores
+                if (studentResultsToUpdate.Any())
+                {
+                    await _studentResultRepository.BulkUpdateScoresAsync(studentResultsToUpdate);
+                }
+
+                result.SuccessCount = successes.Count;
+                result.FailureCount = errors.Count;
+                result.Errors = errors;
+                result.Successes = successes;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while importing scores from Excel for class ID {ClassId}", classId);
+                throw;
+            }
+        }
+
+        private async Task<List<ExcelScoreRow>> ReadExcelFileAsync(IFormFile file)
+        {
+            var rows = new List<ExcelScoreRow>();
+
+            using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1); // First worksheet
+
+            var usedRange = worksheet.RangeUsed();
+            if (usedRange == null) return rows;
+
+            // Skip header row, start from row 2
+            for (int row = 2; row <= usedRange.RowCount(); row++)
+            {
+                var studentCode = worksheet.Cell(row, 1).GetValue<string>()?.Trim();
+                var theoryScore = worksheet.Cell(row, 2).GetValue<string>()?.Trim();
+                var practiceScore = worksheet.Cell(row, 3).GetValue<string>()?.Trim();
+                var midtermScore = worksheet.Cell(row, 4).GetValue<string>()?.Trim();
+                var finalScore = worksheet.Cell(row, 5).GetValue<string>()?.Trim();
+
+                // Skip empty rows (no student code)
+                if (string.IsNullOrWhiteSpace(studentCode))
+                    continue;
+
+                var excelRow = new ExcelScoreRow
+                {
+                    StudentCode = studentCode ?? ""
+                };
+
+                // Parse scores if they exist
+                if (double.TryParse(theoryScore, out double theory))
+                    excelRow.TheoryScore = theory;
+                
+                if (double.TryParse(practiceScore, out double practice))
+                    excelRow.PracticeScore = practice;
+                
+                if (double.TryParse(midtermScore, out double midterm))
+                    excelRow.MidtermScore = midterm;
+                
+                if (double.TryParse(finalScore, out double final))
+                    excelRow.FinalScore = final;
+
+                rows.Add(excelRow);
+            }
+
+            return rows;
+        }
+
+        private async Task<Guid?> GetStudentIdByCodeAsync(string studentCode, Guid classId)
+        {
+            try
+            {
+                // Get all unique student IDs from enrollments for this class
+                var studentResults = await _studentResultRepository.GetStudentResultsByClassIdWithEnrollmentAsync(classId);
+                var uniqueStudentIds = studentResults.Select(sr => sr.Enrollment.StudentId).Distinct().ToList();
+
+                // For each student ID, check if it matches the student code
+                foreach (var studentId in uniqueStudentIds)
+                {
+                    try
+                    {
+                        var studentResponse = await _studentClient.GetStudentById(studentId.ToString());
+                        
+                        if (studentResponse?.Success == true && 
+                            studentResponse.Data != null && 
+                            studentResponse.Data.StudentCode.Equals(studentCode, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return studentId;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // If gRPC call fails, skip this student
+                        continue;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception)
+            {
+                // If any error occurs, return null
+                return null;
             }
         }
     }

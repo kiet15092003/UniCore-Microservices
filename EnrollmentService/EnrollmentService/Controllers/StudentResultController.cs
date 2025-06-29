@@ -192,5 +192,40 @@ namespace EnrollmentService.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        /// <summary>
+        /// Import student scores from Excel file for a specific class
+        /// </summary>
+        /// <param name="classId">Academic class ID</param>
+        /// <param name="excelFile">Excel file containing student scores</param>
+        /// <returns>Import result with success and error details</returns>
+        [HttpPost("import-scores/{classId}")]
+        public async Task<ActionResult<ImportScoreResultDto>> ImportScoresFromExcel(Guid classId, IFormFile excelFile)
+        {
+            try
+            {
+                if (excelFile == null || excelFile.Length == 0)
+                {
+                    return BadRequest("Excel file is required");
+                }
+
+                if (!excelFile.FileName.EndsWith(".xlsx") && !excelFile.FileName.EndsWith(".xls"))
+                {
+                    return BadRequest("File must be an Excel file (.xlsx or .xls)");
+                }
+
+                var result = await _studentResultService.ImportScoresFromExcelAsync(classId, excelFile);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while importing scores from Excel for class ID {ClassId}", classId);
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 } 

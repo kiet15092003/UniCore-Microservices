@@ -1,6 +1,7 @@
 using EnrollmentService.Business.Dtos.StudentResult;
 using EnrollmentService.Utils.Filter;
 using EnrollmentService.Utils.Pagination;
+using Microsoft.AspNetCore.Http;
 
 namespace EnrollmentService.Business.Services
 {
@@ -16,5 +17,6 @@ namespace EnrollmentService.Business.Services
         Task<List<StudentResultDto>> GetStudentResultsByEnrollmentIdAsync(Guid enrollmentId);
         Task<List<StudentResultDto>> GetStudentResultsByEnrollmentIdsAsync(List<Guid> enrollmentIds);
         Task<List<StudentResultDto>> GetStudentResultsByClassIdAsync(Guid classId);
+        Task<ImportScoreResultDto> ImportScoresFromExcelAsync(Guid classId, IFormFile excelFile);
     }
 } 

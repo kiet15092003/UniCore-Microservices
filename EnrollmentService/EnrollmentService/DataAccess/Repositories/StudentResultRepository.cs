@@ -170,5 +170,20 @@ namespace EnrollmentService.DataAccess.Repositories
                 .Where(sr => sr.Enrollment.AcademicClassId == classId)
                 .ToListAsync();
         }
+
+        public async Task<int> BulkUpdateScoresAsync(List<StudentResult> studentResults)
+        {
+            _context.StudentResults.UpdateRange(studentResults);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<StudentResult>> GetStudentResultsByClassIdWithEnrollmentAsync(Guid classId)
+        {
+            return await _context.StudentResults
+                .Include(sr => sr.ScoreType)
+                .Include(sr => sr.Enrollment)
+                .Where(sr => sr.Enrollment.AcademicClassId == classId)
+                .ToListAsync();
+        }
     }
 } 
