@@ -132,12 +132,48 @@ namespace EnrollmentService.Business.Services
             }
         }
 
-        public async Task<List<StudentResultDto>> GetStudentResultsByClassIdAsync(Guid classId)
+        public async Task<List<StudentResultByStudentDto>> GetStudentResultsByClassIdAsync(Guid classId)
         {
             try
             {
                 var results = await _studentResultRepository.GetStudentResultsByClassIdAsync(classId);
-                return _mapper.Map<List<StudentResultDto>>(results);
+                // Group by studentId
+                var groups = results.GroupBy(r => r.Enrollment.StudentId).ToList();
+                var dtos = new List<StudentResultByStudentDto>();
+                foreach (var group in groups)
+                {
+                    var studentId = group.Key;
+                    string studentCode = string.Empty;
+                    string studentName = string.Empty;
+                    // Call gRPC to get student info
+                    try
+                    {
+                        var studentResponse = await _studentClient.GetStudentById(studentId.ToString());
+                        if (studentResponse?.Success == true && studentResponse.Data != null)
+                        {
+                            studentCode = studentResponse.Data.StudentCode;
+                            var user = studentResponse.Data.User;
+                            if (user != null)
+                                studentName = $"{user.LastName} {user.FirstName}".Trim();
+                        }
+                    }
+                    catch { }
+                    // Map results for this student
+                    var resultDtos = group.Select(sr => {
+                        var dto = _mapper.Map<StudentResultDto>(sr);
+                        dto.StudentCode = studentCode;
+                        dto.StudentName = studentName;
+                        return dto;
+                    }).ToList();
+                    dtos.Add(new StudentResultByStudentDto
+                    {
+                        StudentId = studentId,
+                        StudentCode = studentCode,
+                        StudentName = studentName,
+                        Results = resultDtos
+                    });
+                }
+                return dtos;
             }
             catch (Exception ex)
             {

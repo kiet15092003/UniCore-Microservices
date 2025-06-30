@@ -10,5 +10,7 @@ namespace EnrollmentService.Business.Dtos.StudentResult
         public int ScoreTypePercentage { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public string StudentCode { get; set; }
+        public string StudentName { get; set; }
     }
 } 

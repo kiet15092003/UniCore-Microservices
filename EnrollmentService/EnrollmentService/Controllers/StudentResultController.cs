@@ -178,19 +178,19 @@ namespace EnrollmentService.Controllers
         /// Get student results by class ID
         /// </summary>
         /// <param name="classId">Academic class ID</param>
-        /// <returns>List of student results for the class</returns>
+        /// <returns>List of student results for the class, grouped by student</returns>
         [HttpGet("class/{classId}")]
-        public async Task<ActionResult<ApiResponse<List<StudentResultDto>>>> GetStudentResultsByClassId(Guid classId)
+        public async Task<ActionResult<ApiResponse<List<StudentResultByStudentDto>>>> GetStudentResultsByClassId(Guid classId)
         {
             try
             {
                 var results = await _studentResultService.GetStudentResultsByClassIdAsync(classId);
-                return ApiResponse<List<StudentResultDto>>.SuccessResponse(results);
+                return ApiResponse<List<StudentResultByStudentDto>>.SuccessResponse(results);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while getting student results for class ID {ClassId}", classId);
-                return StatusCode(500, ApiResponse<List<StudentResultDto>>.ErrorResponse(["Internal server error"]));
+                return StatusCode(500, ApiResponse<List<StudentResultByStudentDto>>.ErrorResponse(["Internal server error"]));
             }
         }
 
