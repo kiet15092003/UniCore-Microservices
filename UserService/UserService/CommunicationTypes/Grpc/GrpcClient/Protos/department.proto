@@ -4,6 +4,7 @@ option csharp_namespace = "UserService";
 
 service GrpcDepartment {
     rpc GetDepartmentById (DepartmentRequest) returns (DepartmentResponse);
+    rpc GetDepartmentByMajorId (GetDepartmentByMajorIdRequest) returns (DepartmentResponse);
 }
 
 message DepartmentRequest {
@@ -26,4 +27,8 @@ message DepartmentResponse {
     bool success = 1;
     DepartmentData data = 2;
     repeated string error = 3;
+}
+
+message GetDepartmentByMajorIdRequest {
+    string majorId = 1;
 } 
