@@ -25,5 +25,6 @@ namespace CourseService.Business.Dtos.AcademicClass
         public DateTime? RegistrationCloseTime { get; set; }
         public int EnrollmentCount { get; set; }
         public int? EnrollmentStatus { get; set; }
+        public Guid LecturerId { get; set; }
     }
 }

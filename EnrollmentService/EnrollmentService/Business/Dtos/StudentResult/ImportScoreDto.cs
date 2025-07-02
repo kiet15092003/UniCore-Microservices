@@ -45,4 +45,19 @@ namespace EnrollmentService.Business.Dtos.StudentResult
         public double? MidtermScore { get; set; }     // Score Type 3
         public double? FinalScore { get; set; }       // Score Type 4
     }
+
+    public class UpdateScoreBatchDto
+    {
+        public Guid ClassId { get; set; }
+        public List<UpdateScoreItemDto> Scores { get; set; } = new List<UpdateScoreItemDto>();
+    }
+
+    public class UpdateScoreItemDto
+    {
+        public string StudentCode { get; set; } = string.Empty;
+        public double? TheoryScore { get; set; }      // Score Type 1
+        public double? PracticeScore { get; set; }    // Score Type 2
+        public double? MidtermScore { get; set; }     // Score Type 3
+        public double? FinalScore { get; set; }       // Score Type 4
+    }
 } 

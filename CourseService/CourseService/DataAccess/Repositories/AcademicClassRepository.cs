@@ -164,6 +164,12 @@ namespace CourseService.DataAccess.Repositories
                 queryable = queryable.Where(ac => ac.ScheduleInDays.Any(s => filterParams.ScheduleInDayIds.Contains(s.Id)));
             }
 
+            // Filter by lecturer ID
+            if (filterParams.LecturerId.HasValue && filterParams.LecturerId != Guid.Empty)
+            {
+                queryable = queryable.Where(ac => ac.LecturerId == filterParams.LecturerId.Value);
+            }
+
             return queryable;
         }
 

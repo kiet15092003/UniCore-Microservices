@@ -231,5 +231,35 @@ namespace EnrollmentService.Controllers
                 return ApiResponse<bool>.ErrorResponse(["Internal server error"]);
             }
         }
+
+        /// <summary>
+        /// Update student scores in batch for a class
+        /// </summary>
+        /// <param name="classId">Academic class ID</param>
+        /// <param name="batchDto">Batch score update data</param>
+        /// <returns>Import result with success and error details</returns>
+        [HttpPost("update-scores/{classId}")]
+        public async Task<ActionResult<ApiResponse<ImportScoreResultDto>>> UpdateScoresBatch(Guid classId, [FromBody] UpdateScoreBatchDto batchDto)
+        {
+            try
+            {
+                if (batchDto == null || batchDto.Scores == null || !batchDto.Scores.Any())
+                {
+                    return BadRequest(ApiResponse<ImportScoreResultDto>.ErrorResponse(["Score list cannot be empty"]));
+                }
+                batchDto.ClassId = classId;
+                var result = await _studentResultService.UpdateScoresBatchAsync(batchDto);
+                return ApiResponse<ImportScoreResultDto>.SuccessResponse(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<ImportScoreResultDto>.ErrorResponse([ex.Message]));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while batch updating scores for class ID {ClassId}", classId);
+                return StatusCode(500, ApiResponse<ImportScoreResultDto>.ErrorResponse(["Internal server error"]));
+            }
+        }
     }
 } 

@@ -455,5 +455,173 @@ namespace EnrollmentService.Business.Services
                 return null;
             }
         }
+
+        public async Task<ImportScoreResultDto> UpdateScoresBatchAsync(UpdateScoreBatchDto batchDto)
+        {
+            var result = new ImportScoreResultDto();
+            var errors = new List<ImportScoreError>();
+            var successes = new List<ImportScoreSuccess>();
+            var studentResultsToUpdate = new List<StudentResult>();
+
+            try
+            {
+                if (batchDto == null || batchDto.Scores == null || !batchDto.Scores.Any())
+                {
+                    throw new ArgumentException("Score list is required");
+                }
+
+                // Lấy tất cả StudentResult của class này
+                var existingStudentResults = await _studentResultRepository.GetStudentResultsByClassIdAsync(batchDto.ClassId);
+
+                for (int i = 0; i < batchDto.Scores.Count; i++)
+                {
+                    var row = batchDto.Scores[i];
+                    var rowNumber = i + 1;
+
+                    try
+                    {
+                        // Validate student code
+                        if (string.IsNullOrWhiteSpace(row.StudentCode))
+                        {
+                            errors.Add(new ImportScoreError
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = "N/A",
+                                ErrorMessage = "Student code is required"
+                            });
+                            continue;
+                        }
+
+                        var studentId = await GetStudentIdByCodeAsync(row.StudentCode, batchDto.ClassId);
+                        if (!studentId.HasValue)
+                        {
+                            errors.Add(new ImportScoreError
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = "N/A",
+                                ErrorMessage = "Student not found"
+                            });
+                            continue;
+                        }
+
+                        // Tìm enrollment cho studentId này trong class
+                        var enrollment = existingStudentResults
+                            .FirstOrDefault(sr => sr.Enrollment.StudentId == studentId.Value)?.Enrollment;
+                        if (enrollment == null)
+                        {
+                            errors.Add(new ImportScoreError
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = "N/A",
+                                ErrorMessage = "Student is not enrolled in this class"
+                            });
+                            continue;
+                        }
+
+                        // Xử lý từng loại điểm
+                        var scoreTypes = new[]
+                        {
+                            new { Score = row.TheoryScore, Type = 1, DisplayName = "Theory" },
+                            new { Score = row.PracticeScore, Type = 2, DisplayName = "Practice" },
+                            new { Score = row.MidtermScore, Type = 3, DisplayName = "Midterm" },
+                            new { Score = row.FinalScore, Type = 4, DisplayName = "Final" }
+                        };
+
+                        foreach (var scoreType in scoreTypes)
+                        {
+                            if (!scoreType.Score.HasValue)
+                                continue;
+
+                            var score = scoreType.Score.Value;
+                            if (score < 0 || score > 10)
+                            {
+                                errors.Add(new ImportScoreError
+                                {
+                                    RowNumber = rowNumber,
+                                    StudentCode = row.StudentCode,
+                                    ScoreTypeName = scoreType.DisplayName,
+                                    ErrorMessage = "Score must be between 0 and 10"
+                                });
+                                continue;
+                            }
+
+                            // Tìm scoreTypeEntity phù hợp
+                            var scoreTypeEntity = existingStudentResults
+                                .FirstOrDefault(sr => sr.ScoreType.Type == scoreType.Type)?.ScoreType;
+                            if (scoreTypeEntity == null)
+                            {
+                                errors.Add(new ImportScoreError
+                                {
+                                    RowNumber = rowNumber,
+                                    StudentCode = row.StudentCode,
+                                    ScoreTypeName = scoreType.DisplayName,
+                                    ErrorMessage = "Score type not found for this class"
+                                });
+                                continue;
+                            }
+
+                            // Tìm studentResult
+                            var studentResult = existingStudentResults
+                                .FirstOrDefault(sr => sr.EnrollmentId == enrollment.Id && sr.ScoreTypeId == scoreTypeEntity.Id);
+                            if (studentResult == null)
+                            {
+                                errors.Add(new ImportScoreError
+                                {
+                                    RowNumber = rowNumber,
+                                    StudentCode = row.StudentCode,
+                                    ScoreTypeName = scoreType.DisplayName,
+                                    ErrorMessage = "Student result record not found"
+                                });
+                                continue;
+                            }
+
+                            studentResult.Score = score;
+                            studentResult.UpdatedAt = DateTime.UtcNow;
+                            studentResultsToUpdate.Add(studentResult);
+
+                            successes.Add(new ImportScoreSuccess
+                            {
+                                RowNumber = rowNumber,
+                                StudentCode = row.StudentCode,
+                                ScoreTypeName = scoreType.DisplayName,
+                                Score = score,
+                                StudentResultId = studentResult.Id
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(new ImportScoreError
+                        {
+                            RowNumber = rowNumber,
+                            StudentCode = row.StudentCode,
+                            ScoreTypeName = "N/A",
+                            ErrorMessage = $"Error processing row: {ex.Message}"
+                        });
+                    }
+                }
+
+                // Bulk update
+                if (studentResultsToUpdate.Any())
+                {
+                    await _studentResultRepository.BulkUpdateScoresAsync(studentResultsToUpdate);
+                }
+
+                result.SuccessCount = successes.Count;
+                result.FailureCount = errors.Count;
+                result.Errors = errors;
+                result.Successes = successes;
+                result.TotalRows = batchDto.Scores.Count;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while batch updating scores for class {ClassId}", batchDto?.ClassId);
+                throw;
+            }
+        }
     }
 } 
