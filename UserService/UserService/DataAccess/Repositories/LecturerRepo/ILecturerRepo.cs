@@ -19,5 +19,6 @@ namespace UserService.DataAccess.Repositories.LecturerRepo
         Task<string> UpdateLecturerImageAsync(Guid id, string imageUrl);
         Task<Lecturer> GetLecturerDetailByIdAsync(Guid id);
         Task<Lecturer> GetLecturerByEmailAsync(string email);
+        Task<List<Lecturer>> GetLecturersByDepartmentIdsAsync(List<Guid> departmentIds);
     }
 } 

@@ -253,5 +253,13 @@ namespace UserService.DataAccess.Repositories.LecturerRepo
                 .Include(l => l.ApplicationUser)
                 .FirstOrDefaultAsync(l => l.ApplicationUser.Email == email);
         }
+
+        public async Task<List<Lecturer>> GetLecturersByDepartmentIdsAsync(List<Guid> departmentIds)
+        {
+            return await _context.Lecturers
+                .Include(l => l.ApplicationUser)
+                .Where(l => departmentIds.Contains(l.DepartmentId))
+                .ToListAsync();
+        }
     }
 } 

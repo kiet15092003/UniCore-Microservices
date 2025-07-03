@@ -18,5 +18,6 @@ namespace CourseService.Utils.Filter
         public Guid? RoomId { get; set; }
         public Guid? ShiftId { get; set; }
         public List<Guid>? ScheduleInDayIds { get; set; }
+        public Guid? LecturerId { get; set; }
     }
 }

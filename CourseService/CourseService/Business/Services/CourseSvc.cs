@@ -298,5 +298,16 @@ namespace CourseService.Business.Services
             var result = await _courseRepository.DeleteCourseAsync(id);
             return result;
         }
+
+        public async Task<CourseReadDto> GetCourseByIdAsync(Guid id)
+        {
+            var course = await _courseRepository.GetCourseByIdAsync(id);
+            if (course == null)
+            {
+                return null;
+            }
+            var courseReadDto = _mapper.Map<CourseReadDto>(course);
+            return courseReadDto;
+        }
     }
 }

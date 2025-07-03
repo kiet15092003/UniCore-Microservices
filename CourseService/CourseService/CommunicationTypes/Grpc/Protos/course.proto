@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option csharp_namespace = "CourseService";
+
+package course;
+
+service GrpcCourse {
+  rpc GetCourseById (GetCourseRequest) returns (GetCourseResponse);
+}
+
+message GetCourseRequest {
+  string id = 1;
+}
+
+message CourseInfo {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  string description = 4;
+  bool isActive = 5;
+  int32 credit = 6;
+  int32 practicePeriod = 7;
+  int32 theoryPeriod = 8;
+  bool isRequired = 9;
+  bool isOpenForAll = 10;
+  int32 minCreditRequired = 11;
+  repeated string majorIds = 12;
+  repeated string preCourseIds = 13;
+  repeated string parallelCourseIds = 14;
+}
+
+message GetCourseResponse {
+  bool success = 1;
+  CourseInfo data = 2;
+  repeated string error = 3;
+}

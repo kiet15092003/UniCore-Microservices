@@ -386,5 +386,22 @@ namespace UserService.Business.Services.LecturerService
             
             return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
+
+        public async Task<List<LecturerDto>> GetLecturersByMajorsDepartmentAsync(List<string> majorIds)
+        {
+            var departmentIds = new HashSet<Guid>();
+            foreach (var majorId in majorIds)
+            {
+                var majorResponse = await _departmentService.GetDepartmentByMajorIdAsync(majorId);
+                if (majorResponse.Success && majorResponse.Data != null)
+                {
+                    if (Guid.TryParse(majorResponse.Data.Id, out var depId))
+                        departmentIds.Add(depId);
+                }
+            }
+
+            var lecturers = await _lecturerRepo.GetLecturersByDepartmentIdsAsync(departmentIds.ToList());
+            return _mapper.Map<List<LecturerDto>>(lecturers);
+        }
     }
 } 

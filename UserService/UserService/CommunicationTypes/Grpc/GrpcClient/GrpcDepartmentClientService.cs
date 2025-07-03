@@ -32,5 +32,23 @@ namespace UserService.CommunicationTypes.Grpc.GrpcClient
                 };
             }
         }
+
+        public async Task<DepartmentResponse> GetDepartmentByMajorIdAsync(string majorId)
+        {
+            var grpcUrl = _configuration["GrpcSettings:DepartmentServiceUrl"];
+
+            using var channel = GrpcChannel.ForAddress(grpcUrl);
+            var client = new GrpcDepartment.GrpcDepartmentClient(channel);
+
+            try
+            {
+                var request = new GetDepartmentByMajorIdRequest { MajorId = majorId };
+                return await client.GetDepartmentByMajorIdAsync(request);
+            }
+            catch (Exception ex)
+            {
+                return new DepartmentResponse { Success = false, Error = { $"gRPC call failed: {ex.Message}" } };
+            }
+        }
     }
 } 

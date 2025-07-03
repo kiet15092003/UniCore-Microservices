@@ -15,6 +15,7 @@ using EnrollmentService.DataAccess.Repositories;
 using EnrollmentService.Business.Services;
 using EnrollmentService.Business.Mappings;
 using EnrollmentService.Utils.DistributedLock;
+using EnrollmentService.DataAccess;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -147,8 +148,10 @@ builder.Services.AddScoped<IDistributedLockService>(provider =>
 //Config DI
 //Register repositories
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IStudentResultRepository, StudentResultRepository>();
 //Register services
 builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
+builder.Services.AddScoped<IStudentResultService, StudentResultService>();
 
 // Add Communication Types (Kafka, etc.)
 //builder.Services.AddHostedService<KafkaConsumerService>();
@@ -161,6 +164,7 @@ builder.Logging.AddConsole();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<EnrollmentMappingProfile>();
+    cfg.AddProfile<StudentResultMappingProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 
@@ -205,5 +209,9 @@ app.MapControllers();
 app.MapGrpcService<GrpcEnrollmentServerService>();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Initialize database
+
+await DbInitializer.InitializeAsync(app.Services);
 
 app.Run();

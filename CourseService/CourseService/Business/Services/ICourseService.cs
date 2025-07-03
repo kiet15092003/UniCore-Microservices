@@ -12,5 +12,6 @@ namespace CourseService.Business.Services
         Task<CourseReadDto> DeactivateCourseAsync(Guid id);
         Task<List<CourseReadDto>> GetCoursesByMajorIdAsync(Guid majorId);
         Task<bool> DeleteCourseAsync(Guid id);
+        Task<CourseReadDto> GetCourseByIdAsync(Guid id);
     }
 }
