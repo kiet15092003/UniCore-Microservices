@@ -623,5 +623,69 @@ namespace EnrollmentService.Business.Services
                 throw;
             }
         }
+
+        public async Task<bool> UpdateScoresBatchSimpleAsync(Guid classId, UpdateScoreBatchSimpleDto batchDto)
+        {
+            if (batchDto == null || batchDto.Scores == null || !batchDto.Scores.Any())
+                return false;
+
+            var studentResultsToUpdate = new List<StudentResult>();
+            var existingStudentResults = await _studentResultRepository.GetStudentResultsByClassIdAsync(classId);
+
+            for (int i = 0; i < batchDto.Scores.Count; i++)
+            {
+                var row = batchDto.Scores[i];
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(row.StudentCode))
+                        continue;
+
+                    var studentId = await GetStudentIdByCodeAsync(row.StudentCode, classId);
+                    if (!studentId.HasValue)
+                        continue;
+
+                    var enrollment = existingStudentResults
+                        .FirstOrDefault(sr => sr.Enrollment.StudentId == studentId.Value)?.Enrollment;
+                    if (enrollment == null)
+                        continue;
+
+                    var scoreTypes = new[]
+                    {
+                        new { Score = row.TheoryScore, Type = 1 },
+                        new { Score = row.PracticeScore, Type = 2 },
+                        new { Score = row.MidtermScore, Type = 3 },
+                        new { Score = row.FinalScore, Type = 4 }
+                    };
+
+                    foreach (var scoreType in scoreTypes)
+                    {
+                        if (!scoreType.Score.HasValue)
+                            continue;
+                        var score = scoreType.Score.Value;
+                        if (score < 0 || score > 10)
+                            continue;
+                        var scoreTypeEntity = existingStudentResults
+                            .FirstOrDefault(sr => sr.ScoreType.Type == scoreType.Type)?.ScoreType;
+                        if (scoreTypeEntity == null)
+                            continue;
+                        var studentResult = existingStudentResults
+                            .FirstOrDefault(sr => sr.EnrollmentId == enrollment.Id && sr.ScoreTypeId == scoreTypeEntity.Id);
+                        if (studentResult == null)
+                            continue;
+                        studentResult.Score = score;
+                        studentResult.UpdatedAt = DateTime.UtcNow;
+                        studentResultsToUpdate.Add(studentResult);
+                    }
+                }
+                catch { }
+            }
+
+            if (studentResultsToUpdate.Any())
+            {
+                await _studentResultRepository.BulkUpdateScoresAsync(studentResultsToUpdate);
+                return true;
+            }
+            return false;
+        }
     }
 } 

@@ -233,32 +233,27 @@ namespace EnrollmentService.Controllers
         }
 
         /// <summary>
-        /// Update student scores in batch for a class
+        /// Update student scores in batch for a class (simple version)
         /// </summary>
         /// <param name="classId">Academic class ID</param>
-        /// <param name="batchDto">Batch score update data</param>
-        /// <returns>Import result with success and error details</returns>
+        /// <param name="batchDto">Batch score update data (no classId in body)</param>
+        /// <returns>True if at least one score updated, false otherwise</returns>
         [HttpPost("update-scores/{classId}")]
-        public async Task<ActionResult<ApiResponse<ImportScoreResultDto>>> UpdateScoresBatch(Guid classId, [FromBody] UpdateScoreBatchDto batchDto)
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateScoresBatch(Guid classId, [FromBody] UpdateScoreBatchSimpleDto batchDto)
         {
             try
             {
                 if (batchDto == null || batchDto.Scores == null || !batchDto.Scores.Any())
                 {
-                    return BadRequest(ApiResponse<ImportScoreResultDto>.ErrorResponse(["Score list cannot be empty"]));
+                    return BadRequest(ApiResponse<bool>.ErrorResponse(["Score list cannot be empty"]));
                 }
-                batchDto.ClassId = classId;
-                var result = await _studentResultService.UpdateScoresBatchAsync(batchDto);
-                return ApiResponse<ImportScoreResultDto>.SuccessResponse(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ApiResponse<ImportScoreResultDto>.ErrorResponse([ex.Message]));
+                var result = await _studentResultService.UpdateScoresBatchSimpleAsync(classId, batchDto);
+                return ApiResponse<bool>.SuccessResponse(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while batch updating scores for class ID {ClassId}", classId);
-                return StatusCode(500, ApiResponse<ImportScoreResultDto>.ErrorResponse(["Internal server error"]));
+                return StatusCode(500, ApiResponse<bool>.ErrorResponse(["Internal server error"]));
             }
         }
     }

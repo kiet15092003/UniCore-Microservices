@@ -19,5 +19,6 @@ namespace EnrollmentService.Business.Services
         Task<List<StudentResultByStudentDto>> GetStudentResultsByClassIdAsync(Guid classId);
         Task<ImportScoreResultDto> ImportScoresFromExcelAsync(Guid classId, IFormFile excelFile);
         Task<ImportScoreResultDto> UpdateScoresBatchAsync(UpdateScoreBatchDto batchDto);
+        Task<bool> UpdateScoresBatchSimpleAsync(Guid classId, UpdateScoreBatchSimpleDto batchDto);
     }
 } 

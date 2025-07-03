@@ -60,4 +60,9 @@ namespace EnrollmentService.Business.Dtos.StudentResult
         public double? MidtermScore { get; set; }     // Score Type 3
         public double? FinalScore { get; set; }       // Score Type 4
     }
+
+    public class UpdateScoreBatchSimpleDto
+    {
+        public List<UpdateScoreItemDto> Scores { get; set; } = new List<UpdateScoreItemDto>();
+    }
 } 

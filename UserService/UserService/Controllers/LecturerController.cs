@@ -127,5 +127,12 @@ namespace UserService.Controllers
                 return ApiResponse<LecturerDto>.ErrorResponse([$"Error creating lecturer: {ex.Message}"]);
             }
         }
+
+        [HttpPost("by-majors-department")]
+        public async Task<ApiResponse<List<LecturerDto>>> GetLecturersByMajorsDepartment([FromBody] List<string> majorIds)
+        {
+            var result = await _lecturerService.GetLecturersByMajorsDepartmentAsync(majorIds);
+            return ApiResponse<List<LecturerDto>>.SuccessResponse(result);
+        }
     }
 } 
