@@ -16,5 +16,6 @@ namespace UserService.Business.Services.LecturerService
         Task<LecturerDetailDto> GetLecturerDetailByIdAsync(Guid id);
         Task<string> UpdateUserImageAsync(UpdateUserImageDto updateUserImageDto);
         Task<LecturerDto> GetLecturerByEmailAsync(string email);
+        Task<List<LecturerDto>> GetLecturersByMajorsDepartmentAsync(List<string> majorIds);
     }
 } 

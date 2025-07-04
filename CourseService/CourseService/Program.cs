@@ -164,6 +164,7 @@ app.MapControllers();
 
 // Map gRPC services
 app.MapGrpcService<GrpcAcademicClassService>();
+app.MapGrpcService<GrpcCourseService>();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

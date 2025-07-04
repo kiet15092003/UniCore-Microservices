@@ -752,6 +752,20 @@ namespace EnrollmentService.Business.Services
                 throw;
             }
         }
+
+        public async Task<int> StartEnrollmentsByAcademicClassIdAsync(Guid classId)
+        {
+            try
+            {
+                var result = await _enrollmentRepository.StartEnrollmentsByAcademicClassIdAsync(classId);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while starting enrollments for Academic Class ID {ClassId}", classId);
+                throw;
+            }
+        }
         public async Task<int> RejectEnrollmentsByAcademicClassIdAsync(Guid classId)
         {
             try
@@ -1007,8 +1021,12 @@ namespace EnrollmentService.Business.Services
             return false;
         }
 
-        private bool HasTimeOverlap(string startTime1, string endTime1, string startTime2, string endTime2)
+        private bool HasTimeOverlap(string? startTime1, string? endTime1, string? startTime2, string? endTime2)
         {
+            if (string.IsNullOrEmpty(startTime1) || string.IsNullOrEmpty(endTime1) || 
+                string.IsNullOrEmpty(startTime2) || string.IsNullOrEmpty(endTime2))
+                return false;
+            
             // Parse time strings (assuming format like "08:00" or "08:00:00")
             if (!TimeSpan.TryParse(startTime1, out var start1) ||
                 !TimeSpan.TryParse(endTime1, out var end1) ||
@@ -1024,7 +1042,7 @@ namespace EnrollmentService.Business.Services
             return start1 < end2 && start2 < end1;
         }
 
-        private bool HasShiftPatternConflict(string shiftName1, string shiftName2)
+        private bool HasShiftPatternConflict(string? shiftName1, string? shiftName2)
         {
             if (string.IsNullOrEmpty(shiftName1) || string.IsNullOrEmpty(shiftName2))
                 return false;

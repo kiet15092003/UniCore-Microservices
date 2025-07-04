@@ -26,5 +26,6 @@ namespace EnrollmentService.DataAccess.Repositories
         Task<int> MoveEnrollmentsToNewClassAsync(List<Guid> enrollmentIds, Guid toClassId);
         Task<IDbContextTransaction> BeginTransactionAsync();        Task<int?> GetFirstEnrollmentStatusByAcademicClassIdAsync(Guid academicClassId);
         Task<int> BulkUpdateEnrollmentStatusByClassIdsAsync(List<Guid> classIds, int newStatus);
+        Task<int> StartEnrollmentsByAcademicClassIdAsync(Guid classId);
     }
 }

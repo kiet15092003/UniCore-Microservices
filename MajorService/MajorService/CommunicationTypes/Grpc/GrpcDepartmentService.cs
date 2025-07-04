@@ -76,5 +76,70 @@ namespace MajorService.CommunicationTypes.Grpc
                 }
             };
         }
+
+        public override async Task<DepartmentResponse> GetDepartmentByMajorId(GetDepartmentByMajorIdRequest request, ServerCallContext context)
+        {
+            var errors = new List<string>();
+
+            // Validate GUID format
+            if (!Guid.TryParse(request.MajorId, out Guid majorId))
+            {
+                errors.Add("Invalid Major ID format.");
+            }
+
+            Department? department = null;
+            if (errors.Count == 0)
+            {
+                // Truy vấn Major, bao gồm MajorGroup và Department
+                var major = await _context.Majors
+                    .Include(m => m.MajorGroup)
+                        .ThenInclude(mg => mg.Department)
+                    .FirstOrDefaultAsync(m => m.Id == majorId);
+
+                if (major == null || major.MajorGroup == null || major.MajorGroup.Department == null)
+                {
+                    errors.Add("Department not found for the given Major ID.");
+                }
+                else
+                {
+                    department = major.MajorGroup.Department;
+                }
+            }
+
+            if (errors.Count > 0)
+            {
+                return new DepartmentResponse
+                {
+                    Success = false,
+                    Error = { errors }
+                };
+            }
+
+            // Map major groups
+            var majorGroupsData = new List<MajorGroupData>();
+            if (department!.MajorGroups != null)
+            {
+                foreach (var majorGroup in department.MajorGroups)
+                {
+                    majorGroupsData.Add(new MajorGroupData
+                    {
+                        Id = majorGroup.Id.ToString(),
+                        Name = majorGroup.Name
+                    });
+                }
+            }
+
+            return new DepartmentResponse
+            {
+                Success = true,
+                Data = new DepartmentData
+                {
+                    Id = department.Id.ToString(),
+                    Name = department.Name,
+                    Code = department.Code,
+                    MajorGroups = { majorGroupsData }
+                }
+            };
+        }
     }
 } 

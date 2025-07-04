@@ -18,5 +18,6 @@ namespace EnrollmentService.Business.Services
         Task<int> RejectEnrollmentsByAcademicClassIdAsync(Guid classId);        Task<int> MoveEnrollmentsToNewClassAsync(List<Guid> enrollmentIds, Guid toClassId);        Task<int?> GetFirstEnrollmentStatusByAcademicClassIdAsync(Guid academicClassId);
         Task<CheckClassConflictResponse> CheckClassConflictAsync(CheckClassConflictRequest request);
         Task<int> BulkChangeEnrollmentStatusAsync(BulkStatusChangeDto bulkStatusChangeDto);
+        Task<int> StartEnrollmentsByAcademicClassIdAsync(Guid classId);
     }
 }
