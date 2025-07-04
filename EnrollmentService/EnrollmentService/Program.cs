@@ -147,8 +147,10 @@ builder.Services.AddScoped<IDistributedLockService>(provider =>
 //Config DI
 //Register repositories
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IExamRepository, ExamRepository>();
 //Register services
 builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
+builder.Services.AddScoped<IExamService, ExamService>();
 
 // Add Communication Types (Kafka, etc.)
 //builder.Services.AddHostedService<KafkaConsumerService>();
@@ -161,6 +163,7 @@ builder.Logging.AddConsole();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<EnrollmentMappingProfile>();
+    cfg.AddProfile<ExamMappingProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();
 

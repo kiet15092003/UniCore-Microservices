@@ -175,6 +175,7 @@ namespace EnrollmentService.Controllers
                 return ApiResponse<CheckClassConflictResponse>.ErrorResponse([$"Error checking class conflicts: {ex.Message}"]);
             }
         }
+
         [HttpPut("bulk-change-status")]
         public async Task<ApiResponse<int>> BulkChangeEnrollmentStatus([FromBody] BulkStatusChangeDto bulkStatusChangeDto)
         {

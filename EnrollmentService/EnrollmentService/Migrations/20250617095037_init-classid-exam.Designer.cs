@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EnrollmentService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617095037_init-classid-exam")]
+    partial class initclassidexam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,10 +106,10 @@ namespace EnrollmentService.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("EnrollmentId")
+                    b.Property<Guid?>("EnrollmentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ExamId")
+                    b.Property<Guid?>("ExamId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
@@ -261,21 +264,13 @@ namespace EnrollmentService.Migrations
 
             modelBuilder.Entity("EnrollmentService.Entities.EnrollmentExam", b =>
                 {
-                    b.HasOne("EnrollmentService.Entities.Enrollment", "Enrollment")
+                    b.HasOne("EnrollmentService.Entities.Enrollment", null)
                         .WithMany("EnrollmentExams")
-                        .HasForeignKey("EnrollmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("EnrollmentId");
 
-                    b.HasOne("EnrollmentService.Entities.Exam", "Exam")
+                    b.HasOne("EnrollmentService.Entities.Exam", null)
                         .WithMany("EnrollmentExams")
-                        .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Enrollment");
-
-                    b.Navigation("Exam");
+                        .HasForeignKey("ExamId");
                 });
 
             modelBuilder.Entity("EnrollmentService.Entities.StudentResult", b =>
