@@ -20,5 +20,6 @@ namespace CourseService.Business.Services
             Order? order);
         Task<bool> ScheduleRegistrationAsync(ClassRegistrationScheduleDto scheduleDto);
         Task<bool> DeleteAcademicClassAsync(Guid id);
+        Task<bool> AssignLecturerToClassesAsync(AssignLecturerToClassesDto assignLecturerDto);
     }
 }

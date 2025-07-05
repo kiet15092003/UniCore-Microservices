@@ -119,5 +119,31 @@ namespace CourseService.Controllers
 
             return ApiResponse<List<AcademicClassReadDto>>.SuccessResponse(academicClasses);
         }
+
+        [HttpPut("assign-lecturer")]
+        public async Task<ApiResponse<string>> AssignLecturerToClasses([FromBody] AssignLecturerToClassesDto assignLecturerDto)
+        {
+            try
+            {
+                var success = await _academicClassService.AssignLecturerToClassesAsync(assignLecturerDto);
+                
+                if (!success)
+                {
+                    return ApiResponse<string>.ErrorResponse(new List<string> { "Failed to assign lecturer - no academic classes found for the provided IDs." });
+                }
+
+                string message = $"Successfully assigned lecturer {assignLecturerDto.LecturerId} to {assignLecturerDto.AcademicClassIds.Count} academic class(es).";
+                
+                return ApiResponse<string>.SuccessResponse(message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<string>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.ErrorResponse(new List<string> { $"An error occurred while assigning lecturer: {ex.Message}" });
+            }
+        }
     }
 }

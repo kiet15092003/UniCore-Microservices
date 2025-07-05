@@ -175,6 +175,7 @@ namespace EnrollmentService.Controllers
                 return ApiResponse<CheckClassConflictResponse>.ErrorResponse([$"Error checking class conflicts: {ex.Message}"]);
             }
         }
+
         [HttpPost("start-by-class/{classId}")]
         public async Task<ApiResponse<bool>> StartEnrollmentsByAcademicClassId(Guid classId)
         {

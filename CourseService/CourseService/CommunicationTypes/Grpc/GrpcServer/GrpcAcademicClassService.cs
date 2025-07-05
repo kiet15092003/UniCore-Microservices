@@ -42,9 +42,18 @@ namespace CourseService.CommunicationTypes.Grpc.GrpcServer
                         Capacity = academicClassDto.Capacity,
                         IsRegistrable = academicClassDto.IsRegistrable,
                         SemesterId = academicClassDto.SemesterId.ToString(),
-                        CourseId = academicClassDto.CourseId.ToString()
+                        CourseId = academicClassDto.CourseId.ToString(),
+                        ParentTheoryAcademicClassId = academicClassDto.ParentTheoryAcademicClassId?.ToString() ?? ""
                     }
                 };
+
+                // Add child practice academic class IDs
+                if (academicClassDto.ChildPracticeAcademicClassIds != null && academicClassDto.ChildPracticeAcademicClassIds.Any())
+                {
+                    response.Data.ChildPracticeAcademicClassIds.AddRange(
+                        academicClassDto.ChildPracticeAcademicClassIds.Select(id => id.ToString())
+                    );
+                }
 
                 // Add list of weeks
                 if (academicClassDto.ListOfWeeks != null)
@@ -64,6 +73,7 @@ namespace CourseService.CommunicationTypes.Grpc.GrpcServer
                         IsActive = academicClassDto.Course.IsActive,
                         Credit = academicClassDto.Course.Credit,
                         PracticePeriod = academicClassDto.Course.PracticePeriod,
+                        TheoryPeriod = academicClassDto.Course.TheoryPeriod,
                         IsRequired = academicClassDto.Course.IsRequired,
                         Cost = academicClassDto.Course.Cost
                     };

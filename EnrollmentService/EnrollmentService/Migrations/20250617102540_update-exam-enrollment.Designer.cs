@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EnrollmentService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617102540_update-exam-enrollment")]
+    partial class updateexamenrollment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -230,7 +233,7 @@ namespace EnrollmentService.Migrations
                     b.Property<double>("Score")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("ScoreTypeId")
+                    b.Property<Guid?>("ScoreTypeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -286,15 +289,11 @@ namespace EnrollmentService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnrollmentService.Entities.ScoreType", "ScoreType")
+                    b.HasOne("EnrollmentService.Entities.ScoreType", null)
                         .WithMany("StudentResults")
-                        .HasForeignKey("ScoreTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ScoreTypeId");
 
                     b.Navigation("Enrollment");
-
-                    b.Navigation("ScoreType");
                 });
 
             modelBuilder.Entity("EnrollmentService.Entities.Enrollment", b =>

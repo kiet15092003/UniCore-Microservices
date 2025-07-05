@@ -7,6 +7,7 @@ using CourseService.DataAccess;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EnrollmentService.DataAccess.Repositories
 {    
@@ -349,20 +350,21 @@ namespace EnrollmentService.DataAccess.Repositories
             }
 
             var enrollments = await _context.Enrollments
-                .Where(e => e.AcademicClassId == classId && e.Status == 2)
+                .Where(e => e.AcademicClassId == classId && e.Status == 3)
                 .ToListAsync();
 
             if (enrollments.Any())
             {
                 foreach (var enrollment in enrollments)
                 {
-                    enrollment.Status = 7;
+                    //enrollment.Status = 3;
                     
                     // Get all score types
                     var scoreTypes = await _context.ScoreTypes.ToListAsync();
-                    
+
                     // Create StudentResults based on course conditions
-                    if (academicClass.Data.Course.PracticePeriod == academicClass.Data.Course.Credit)
+                    //if (academicClass.Data.Course.PracticePeriod == academicClass.Data.Course.Credit)
+                    if (!academicClass.Data.ParentTheoryAcademicClassId.IsNullOrEmpty())
                     {
                         // Create 2 StudentResults for Type 2 and 3
                         var studentResults = new List<StudentResult>
@@ -388,21 +390,7 @@ namespace EnrollmentService.DataAccess.Repositories
                         };
                         await _context.StudentResults.AddRangeAsync(studentResults);
                     }
-                    else if (academicClass.Data.Course.PracticePeriod == 0)
-                    {
-                        // Create 4 StudentResults for all types
-                        var studentResults = scoreTypes.Select(st => new StudentResult
-                        {
-                            Id = Guid.NewGuid(),
-                            Score = -1,
-                            EnrollmentId = enrollment.Id,
-                            ScoreTypeId = st.Id,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        }).ToList();
-                        await _context.StudentResults.AddRangeAsync(studentResults);
-                    }
-                    else
+                    else if (academicClass.Data.ChildPracticeAcademicClassIds.Count() > 0)
                     {
                         // Create 2 StudentResults for Type 1 and 4
                         var studentResults = new List<StudentResult>
@@ -427,6 +415,20 @@ namespace EnrollmentService.DataAccess.Repositories
                             }
                         };
                         await _context.StudentResults.AddRangeAsync(studentResults);
+                    }
+                    else
+                    {
+                        // Create 4 StudentResults for all types
+                        var studentResults = scoreTypes.Select(st => new StudentResult
+                        {
+                            Id = Guid.NewGuid(),
+                            Score = -1,
+                            EnrollmentId = enrollment.Id,
+                            ScoreTypeId = st.Id,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }).ToList();
+                        await _context.StudentResults.AddRangeAsync(studentResults);                      
                     }
                 }
 

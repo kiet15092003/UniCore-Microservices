@@ -4,6 +4,7 @@ using CourseService.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EnrollmentService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617094630_init-exam")]
+    partial class initexam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,10 +106,7 @@ namespace EnrollmentService.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("EnrollmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ExamId")
+                    b.Property<Guid?>("EnrollmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
@@ -128,53 +128,7 @@ namespace EnrollmentService.Migrations
 
                     b.HasIndex("EnrollmentId");
 
-                    b.HasIndex("ExamId");
-
-                    b.ToTable("EnrollmentExams");
-                });
-
-            modelBuilder.Entity("EnrollmentService.Entities.Exam", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AcademicClassId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ExamTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Group")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Exams");
+                    b.ToTable("EnrollmentExam");
                 });
 
             modelBuilder.Entity("EnrollmentService.Entities.ScoreType", b =>
@@ -230,7 +184,7 @@ namespace EnrollmentService.Migrations
                     b.Property<double>("Score")
                         .HasColumnType("float");
 
-                    b.Property<Guid>("ScoreTypeId")
+                    b.Property<Guid?>("ScoreTypeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -261,21 +215,9 @@ namespace EnrollmentService.Migrations
 
             modelBuilder.Entity("EnrollmentService.Entities.EnrollmentExam", b =>
                 {
-                    b.HasOne("EnrollmentService.Entities.Enrollment", "Enrollment")
+                    b.HasOne("EnrollmentService.Entities.Enrollment", null)
                         .WithMany("EnrollmentExams")
-                        .HasForeignKey("EnrollmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EnrollmentService.Entities.Exam", "Exam")
-                        .WithMany("EnrollmentExams")
-                        .HasForeignKey("ExamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Enrollment");
-
-                    b.Navigation("Exam");
+                        .HasForeignKey("EnrollmentId");
                 });
 
             modelBuilder.Entity("EnrollmentService.Entities.StudentResult", b =>
@@ -286,15 +228,11 @@ namespace EnrollmentService.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("EnrollmentService.Entities.ScoreType", "ScoreType")
+                    b.HasOne("EnrollmentService.Entities.ScoreType", null)
                         .WithMany("StudentResults")
-                        .HasForeignKey("ScoreTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ScoreTypeId");
 
                     b.Navigation("Enrollment");
-
-                    b.Navigation("ScoreType");
                 });
 
             modelBuilder.Entity("EnrollmentService.Entities.Enrollment", b =>
@@ -302,11 +240,6 @@ namespace EnrollmentService.Migrations
                     b.Navigation("EnrollmentExams");
 
                     b.Navigation("StudentResults");
-                });
-
-            modelBuilder.Entity("EnrollmentService.Entities.Exam", b =>
-                {
-                    b.Navigation("EnrollmentExams");
                 });
 
             modelBuilder.Entity("EnrollmentService.Entities.ScoreType", b =>

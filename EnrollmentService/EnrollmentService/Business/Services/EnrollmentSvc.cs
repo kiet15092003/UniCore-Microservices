@@ -1096,7 +1096,8 @@ namespace EnrollmentService.Business.Services
         private bool IsEveningShift(string shiftName)
         {
             return shiftName.Contains("evening") || shiftName.Contains("tối");
-        }        public async Task<int> BulkChangeEnrollmentStatusAsync(BulkStatusChangeDto bulkStatusChangeDto)
+        }        
+        public async Task<int> BulkChangeEnrollmentStatusAsync(BulkStatusChangeDto bulkStatusChangeDto)
         {
             try
             {
@@ -1108,6 +1109,11 @@ namespace EnrollmentService.Business.Services
                 var updatedCount = await _enrollmentRepository.BulkUpdateEnrollmentStatusByClassIdsAsync(
                     bulkStatusChangeDto.ClassIds, 
                     bulkStatusChangeDto.Status);
+
+                foreach(var classId in bulkStatusChangeDto.ClassIds)
+                {
+                    await _enrollmentRepository.StartEnrollmentsByAcademicClassIdAsync(classId);
+                }
 
                 return updatedCount;
             }

@@ -27,8 +27,9 @@ message CourseData {
   bool isActive = 5;
   int32 credit = 6;
   int32 practicePeriod = 7;
-  bool isRequired = 8;
-  double cost = 9;
+  int32 theoryPeriod = 8;
+  bool isRequired = 9;
+  double cost = 10;
 }
 
 message SemesterData {
@@ -62,6 +63,8 @@ message AcademicClassData {
   string courseId = 9;
   CourseData course = 10;
   repeated ScheduleInDayData scheduleInDays = 11;
+  repeated string childPracticeAcademicClassIds = 12;
+  string parentTheoryAcademicClassId = 13;
 }
 
 message AcademicClassResponse {

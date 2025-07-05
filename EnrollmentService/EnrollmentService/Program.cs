@@ -148,6 +148,10 @@ builder.Services.AddScoped<IDistributedLockService>(provider =>
 //Config DI
 //Register repositories
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+builder.Services.AddScoped<IExamRepository, ExamRepository>();
+//Register services
+builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
+builder.Services.AddScoped<IExamService, ExamService>();
 builder.Services.AddScoped<IStudentResultRepository, StudentResultRepository>();
 //Register services
 builder.Services.AddScoped<IEnrollmentService, EnrollmentSvc>();
@@ -164,6 +168,7 @@ builder.Logging.AddConsole();
 builder.Services.AddSingleton<AutoMapper.IConfigurationProvider>(new MapperConfiguration(cfg =>
 {
     cfg.AddProfile<EnrollmentMappingProfile>();
+    cfg.AddProfile<ExamMappingProfile>();
     cfg.AddProfile<StudentResultMappingProfile>();
 }));
 builder.Services.AddScoped<IMapper, Mapper>();

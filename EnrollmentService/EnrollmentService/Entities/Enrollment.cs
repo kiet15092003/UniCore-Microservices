@@ -6,5 +6,6 @@
         public Guid StudentId { get; set; }
         public Guid AcademicClassId { get; set; }
         public List<StudentResult> StudentResults { get; set; }
+        public List<EnrollmentExam> EnrollmentExams { get; set; } = new List<EnrollmentExam>();
     }
 }

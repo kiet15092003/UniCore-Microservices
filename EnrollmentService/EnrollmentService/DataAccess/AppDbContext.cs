@@ -16,6 +16,8 @@ namespace CourseService.DataAccess
         public DbSet<StudentResult> StudentResults { get; set; }
         public DbSet<AttendanceInDay> AttendanceInDays { get; set; }
         public DbSet<ScoreType> ScoreTypes { get; set; }
+        public DbSet<EnrollmentExam> EnrollmentExams { get; set; }
+        public DbSet<Exam> Exams { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
