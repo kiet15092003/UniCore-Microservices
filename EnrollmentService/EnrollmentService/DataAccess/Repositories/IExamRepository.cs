@@ -10,7 +10,8 @@ namespace EnrollmentService.DataAccess.Repositories
         Task<Exam?> GetExamByIdAsync(Guid id);
         Task<List<Exam>> GetExamsByAcademicClassIdAsync(Guid academicClassId);
         Task<Exam> CreateExamAsync(Exam exam);
-        Task<Exam> UpdateExamAsync(Exam exam);        Task<bool> DeleteExamAsync(Guid id);
+        Task<Exam> UpdateExamAsync(Exam exam);        
+        Task<bool> DeleteExamAsync(Guid id);
         Task<List<Exam>> GetAllExamsAsync();
         Task<PaginationResult<Exam>> GetAllExamsPaginationAsync(Pagination pagination, ExamListFilterParams filterParams, Order? order);
         Task<List<EnrollmentExam>> CreateEnrollmentExamsAsync(List<EnrollmentExam> enrollmentExams);

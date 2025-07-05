@@ -28,7 +28,8 @@ namespace EnrollmentService.Business.Services
             _roomClient = roomClient;
             _academicClassClient = academicClassClient;
             _logger = logger;
-        }        public async Task<ExamReadDto?> GetExamByIdAsync(Guid id)
+        }        
+        public async Task<ExamReadDto?> GetExamByIdAsync(Guid id)
         {
             var exam = await _examRepository.GetExamByIdAsync(id);
             if (exam == null)
@@ -54,7 +55,8 @@ namespace EnrollmentService.Business.Services
             }
             
             return examDtos;
-        }public async Task<ExamReadDto> CreateExamAsync(ExamCreateDto createDto)
+        }
+        public async Task<ExamReadDto> CreateExamAsync(ExamCreateDto createDto)
         {
             // Validate room and academic class exist via gRPC calls
             await ValidateExamDataAsync(createDto.RoomId, createDto.AcademicClassId);
@@ -180,7 +182,8 @@ namespace EnrollmentService.Business.Services
             {
                 throw new ArgumentException($"Academic class with ID {academicClassId} not found");
             }
-        }        private async Task PopulateExamStatisticsAsync(ExamReadDto examDto)
+        }        
+        private async Task PopulateExamStatisticsAsync(ExamReadDto examDto)
         {
             try
             {
@@ -243,7 +246,8 @@ namespace EnrollmentService.Business.Services
             {
                 examDto.TotalEnrollment = 0;
                 examDto.TotalPassed = 0;
-                examDto.TotalFailed = 0;                examDto.AverageScore = 0;
+                examDto.TotalFailed = 0;                
+                examDto.AverageScore = 0;
             }
         }
 

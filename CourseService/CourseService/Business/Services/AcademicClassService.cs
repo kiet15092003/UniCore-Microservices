@@ -765,5 +765,48 @@ namespace CourseService.Business.Services
             var result = await _academicClassRepository.DeleteAcademicClassAsync(id);
             return result;
         }
+
+        public async Task<bool> AssignLecturerToClassesAsync(AssignLecturerToClassesDto assignLecturerDto)
+        {
+            try
+            {
+                // Get all academic classes by IDs
+                var academicClasses = await _academicClassRepository.GetAcademicClassesByIdsAsync(assignLecturerDto.AcademicClassIds);
+                
+                if (academicClasses == null || academicClasses.Count == 0)
+                {
+                    _logger.LogWarning("No academic classes found for the provided IDs");
+                    return false;
+                }
+
+                // Check if all provided IDs were found
+                var foundIds = academicClasses.Select(ac => ac.Id).ToList();
+                var notFoundIds = assignLecturerDto.AcademicClassIds.Except(foundIds).ToList();
+                
+                if (notFoundIds.Any())
+                {
+                    _logger.LogWarning("Academic classes not found for IDs: {NotFoundIds}", string.Join(", ", notFoundIds));
+                    throw new KeyNotFoundException($"Academic classes not found for IDs: {string.Join(", ", notFoundIds)}");
+                }
+
+                // Assign lecturer to all academic classes
+                foreach (var academicClass in academicClasses)
+                {
+                    academicClass.LecturerId = assignLecturerDto.LecturerId;
+                    await _academicClassRepository.UpdateAcademicClassAsync(academicClass);
+                }
+
+                _logger.LogInformation("Successfully assigned lecturer {LecturerId} to {ClassCount} academic classes", 
+                    assignLecturerDto.LecturerId, academicClasses.Count);
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning lecturer {LecturerId} to academic classes {ClassIds}", 
+                    assignLecturerDto.LecturerId, string.Join(", ", assignLecturerDto.AcademicClassIds));
+                throw;
+            }
+        }
     }
 }
