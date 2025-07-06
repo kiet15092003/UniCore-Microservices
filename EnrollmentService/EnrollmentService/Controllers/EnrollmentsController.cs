@@ -11,10 +11,12 @@ namespace EnrollmentService.Controllers
     public class EnrollmentsController : ControllerBase
     {
         private readonly IEnrollmentService _enrollmentService;
+        private readonly ILogger<EnrollmentsController> _logger;
 
-        public EnrollmentsController(IEnrollmentService enrollmentService)
+        public EnrollmentsController(IEnrollmentService enrollmentService, ILogger<EnrollmentsController> logger)
         {
             _enrollmentService = enrollmentService;
+            _logger = logger;
         }
 
         [HttpGet("page")]
@@ -68,6 +70,27 @@ namespace EnrollmentService.Controllers
         {
             var enrollments = await _enrollmentService.GetEnrollmentsByStudentIdAsync(studentId, semesterId);
             return Ok(ApiResponse<List<EnrollmentReadDto>>.SuccessResponse(enrollments));
+        }
+
+        /// <summary>
+        /// Get enrollment scores by student ID
+        /// </summary>
+        /// <param name="studentId">Student ID</param>
+        /// <param name="semesterId">Optional semester ID filter</param>
+        /// <returns>List of enrollment scores for theory classes</returns>
+        [HttpGet("student/{studentId}/scores")]
+        public async Task<ActionResult<ApiResponse<List<EnrollmentScoreDto>>>> GetEnrollmentScoresByStudentId(Guid studentId, [FromQuery] Guid? semesterId = null)
+        {
+            try
+            {
+                var enrollmentScores = await _enrollmentService.GetEnrollmentScoresByStudentIdAsync(studentId, semesterId);
+                return Ok(ApiResponse<List<EnrollmentScoreDto>>.SuccessResponse(enrollmentScores));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting enrollment scores for student {StudentId}", studentId);
+                return StatusCode(500, ApiResponse<List<EnrollmentScoreDto>>.ErrorResponse(["Internal server error"]));
+            }
         }
 
         [HttpDelete("{id}")]

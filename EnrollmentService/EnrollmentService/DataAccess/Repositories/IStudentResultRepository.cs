@@ -18,5 +18,7 @@ namespace EnrollmentService.DataAccess.Repositories
         Task<List<StudentResult>> GetStudentResultsByClassIdAsync(Guid classId);
         Task<int> BulkUpdateScoresAsync(List<StudentResult> studentResults);
         Task<List<StudentResult>> GetStudentResultsByClassIdWithEnrollmentAsync(Guid classId);
+        Task<int> UpdateEnrollmentsAsync(List<Enrollment> enrollments);
+        Task<Enrollment?> GetEnrollmentByStudentIdAndClassIdAsync(Guid studentId, Guid classId);
     }
 } 
