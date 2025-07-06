@@ -20,5 +20,6 @@ namespace EnrollmentService.Business.Services
         Task<int> BulkChangeEnrollmentStatusAsync(BulkStatusChangeDto bulkStatusChangeDto);
         Task<int> StartEnrollmentsByAcademicClassIdAsync(Guid classId);
         Task<EnrollmentReadDto?> GetEnrollmentByStudentIdAndClassIdAsync(Guid studentId, Guid classId);
+        Task<List<EnrollmentScoreDto>> GetEnrollmentScoresByStudentIdAsync(Guid studentId, Guid? semesterId = null);
     }
 }

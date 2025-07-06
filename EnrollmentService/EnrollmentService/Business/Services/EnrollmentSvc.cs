@@ -13,6 +13,7 @@ namespace EnrollmentService.Business.Services
     public class EnrollmentSvc : IEnrollmentService
     {
         private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly IStudentResultRepository _studentResultRepository;
         private readonly IMapper _mapper;
         private readonly GrpcAcademicClassClientService _academicClassClient;
         private readonly GrpcStudentClientService _studentClient;
@@ -21,6 +22,7 @@ namespace EnrollmentService.Business.Services
 
         public EnrollmentSvc(
             IEnrollmentRepository enrollmentRepository,
+            IStudentResultRepository studentResultRepository,
             IMapper mapper,
             GrpcAcademicClassClientService academicClassClient,
             GrpcStudentClientService studentClient,
@@ -28,6 +30,7 @@ namespace EnrollmentService.Business.Services
             ILogger<EnrollmentSvc> logger)
         {
             _enrollmentRepository = enrollmentRepository;
+            _studentResultRepository = studentResultRepository;
             _mapper = mapper;
             _academicClassClient = academicClassClient;
             _studentClient = studentClient;
@@ -1193,6 +1196,133 @@ namespace EnrollmentService.Business.Services
             }
 
             return enrollmentDto;
+        }
+
+        public async Task<List<EnrollmentScoreDto>> GetEnrollmentScoresByStudentIdAsync(Guid studentId, Guid? semesterId = null)
+        {
+            try
+            {
+                var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId, semesterId);
+                var enrollmentScoreDtos = new List<EnrollmentScoreDto>();
+
+                foreach (var enrollment in enrollments)
+                {
+                    // Get academic class information
+                    var academicClassResponse = await _academicClassClient.GetAcademicClassById(enrollment.AcademicClassId.ToString());
+                    if (!academicClassResponse.Success || academicClassResponse.Data == null)
+                    {
+                        continue; // Skip if cannot get academic class info
+                    }
+
+                    var academicClass = academicClassResponse.Data;
+                    
+                    // Filter by semesterId if provided
+                    if (semesterId.HasValue)
+                    {
+                        var academicClassSemesterId = !string.IsNullOrEmpty(academicClass.SemesterId) ? Guid.Parse(academicClass.SemesterId) : Guid.Empty;
+                        if (academicClassSemesterId != semesterId.Value)
+                        {
+                            continue; // Skip this enrollment as it doesn't match the semester filter
+                        }
+                    }
+                    
+                    var isTheoryWithPractice = academicClass.ChildPracticeAcademicClassIds != null && 
+                                             academicClass.ChildPracticeAcademicClassIds.Any();
+
+                    // Only include theory classes (either theory-only or theory with practice)
+                    var isTheoryClass = !isTheoryWithPractice || 
+                                      (isTheoryWithPractice && !academicClass.ChildPracticeAcademicClassIds.Contains(enrollment.AcademicClassId.ToString()));
+
+                    if (!isTheoryClass)
+                    {
+                        continue; // Skip practice classes
+                    }
+
+                    var enrollmentScoreDto = new EnrollmentScoreDto
+                    {
+                        Id = enrollment.Id,
+                        StudentId = enrollment.StudentId,
+                        AcademicClassId = enrollment.AcademicClassId,
+                        AcademicClassName = academicClass.Name,
+                        OverallScore = enrollment.OverallScore,
+                        IsPassed = enrollment.IsPassed,
+                        ComponentScores = new List<ComponentScoreDto>(),
+                        PracticeScores = new List<PracticeScoreDto>()
+                    };
+
+                    // Set course information
+                    if (academicClass.Course != null)
+                    {
+                        enrollmentScoreDto.CourseName = academicClass.Course.Name;
+                        enrollmentScoreDto.CourseCode = academicClass.Course.Code;
+                    }
+
+                    // Get component scores for theory class
+                    var theoryResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(enrollment.Id);
+                    foreach (var result in theoryResults)
+                    {
+                        enrollmentScoreDto.ComponentScores.Add(new ComponentScoreDto
+                        {
+                            ScoreTypeId = result.ScoreTypeId,
+                            ScoreType = result.ScoreType?.Type ?? 0,
+                            Score = result.Score,
+                            Percentage = result.ScoreType?.Percentage ?? 0
+                        });
+                    }
+
+                    // Get practice scores if this is a theory class with practice
+                    if (isTheoryWithPractice)
+                    {
+                        foreach (var practiceClassId in academicClass.ChildPracticeAcademicClassIds)
+                        {
+                            if (!Guid.TryParse(practiceClassId, out var practiceClassGuid))
+                                continue;
+
+                            var practiceEnrollment = await _studentResultRepository.GetEnrollmentByStudentIdAndClassIdAsync(
+                                studentId, practiceClassGuid);
+
+                            if (practiceEnrollment != null)
+                            {
+                                // Get practice class information
+                                var practiceClassResponse = await _academicClassClient.GetAcademicClassById(practiceClassId);
+                                if (practiceClassResponse.Success && practiceClassResponse.Data != null)
+                                {
+                                    var practiceScoreDto = new PracticeScoreDto
+                                    {
+                                        PracticeClassId = practiceClassGuid,
+                                        PracticeClassName = practiceClassResponse.Data.Name,
+                                        ComponentScores = new List<ComponentScoreDto>()
+                                    };
+
+                                    // Get practice class scores
+                                    var practiceResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(practiceEnrollment.Id);
+                                    foreach (var result in practiceResults)
+                                    {
+                                        practiceScoreDto.ComponentScores.Add(new ComponentScoreDto
+                                        {
+                                            ScoreTypeId = result.ScoreTypeId,
+                                            ScoreType = result.ScoreType?.Type ?? 0,
+                                            Score = result.Score,
+                                            Percentage = result.ScoreType?.Percentage ?? 0
+                                        });
+                                    }
+
+                                    enrollmentScoreDto.PracticeScores.Add(practiceScoreDto);
+                                }
+                            }
+                        }
+                    }
+
+                    enrollmentScoreDtos.Add(enrollmentScoreDto);
+                }
+
+                return enrollmentScoreDtos;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting enrollment scores for student {StudentId}", studentId);
+                throw;
+            }
         }
     }
 }

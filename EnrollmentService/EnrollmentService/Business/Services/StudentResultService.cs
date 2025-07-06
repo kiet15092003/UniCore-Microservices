@@ -10,6 +10,7 @@ using ClosedXML.Excel;
 using System.Data;
 using Microsoft.AspNetCore.Http;
 using System;
+using System.Linq;
 
 namespace EnrollmentService.Business.Services
 {
@@ -87,7 +88,7 @@ namespace EnrollmentService.Business.Services
                 _mapper.Map(updateDto, studentResult);
                 var updatedResult = await _studentResultRepository.UpdateStudentResultAsync(studentResult);
                 
-                // Calculate and update overall score for the enrollment
+                // Calculate and update overall score and status for the enrollment
                 await CalculateAndUpdateOverallScoresAsync(studentResult.Enrollment.AcademicClassId, new List<StudentResult> { updatedResult });
                 
                 return _mapper.Map<StudentResultDto>(updatedResult);
@@ -768,6 +769,17 @@ namespace EnrollmentService.Business.Services
                         enrollment.OverallScore = null;
                     }
 
+                    // Only update status for theory class enrollments (not practice class enrollments)
+                    // Check if this is a theory class (either theory-only or theory with practice)
+                    var isTheoryClass = !isTheoryWithPractice || 
+                                      (isTheoryWithPractice && !academicClass.ChildPracticeAcademicClassIds.Contains(enrollment.AcademicClassId.ToString()));
+                    
+                    if (isTheoryClass)
+                    {
+                        // Update enrollment status based on overall score and all scores
+                        enrollment.IsPassed = await DetermineEnrollmentStatusAsync(enrollment);
+                    }
+
                     enrollment.UpdatedAt = DateTime.UtcNow;
                 }
 
@@ -844,6 +856,74 @@ namespace EnrollmentService.Business.Services
                 _logger.LogError(ex, "Error occurred while calculating overall score for theory with practice enrollment {EnrollmentId}", theoryEnrollment.Id);
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Determine enrollment status based on overall score and all individual scores
+        /// </summary>
+        private async Task<bool> DetermineEnrollmentStatusAsync(Enrollment enrollment)
+        {
+            try
+            {
+                // Check if overall score is valid and >= 5.0
+                if (!enrollment.OverallScore.HasValue || enrollment.OverallScore.Value < 5.0)
+                {
+                    return false; // Fail
+                }
+
+                // Get academic class information to check if it has practice classes
+                var academicClassResponse = await _academicClassClient.GetAcademicClassById(enrollment.AcademicClassId.ToString());
+                if (!academicClassResponse.Success || academicClassResponse.Data == null)
+                {
+                    _logger.LogWarning("Could not get academic class information for enrollment {EnrollmentId}", enrollment.Id);
+                    return enrollment.IsPassed; // Keep current status
+                }
+
+                var academicClass = academicClassResponse.Data;
+                var isTheoryWithPractice = academicClass.ChildPracticeAcademicClassIds != null && 
+                                         academicClass.ChildPracticeAcademicClassIds.Any();
+
+                if (isTheoryWithPractice)
+                {
+                    // Check all scores from theory and practice classes
+                    return await CheckAllScoresForTheoryWithPracticeAsync(enrollment, academicClass);
+                }
+                else
+                {
+                    // Check all scores from theory class only
+                    return await CheckAllScoresForTheoryOnlyAsync(enrollment);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while determining enrollment status for enrollment {EnrollmentId}", enrollment.Id);
+                return enrollment.IsPassed; // Keep current status on error
+            }
+        }
+
+        /// <summary>
+        /// Check all scores for theory-only class
+        /// </summary>
+        private async Task<bool> CheckAllScoresForTheoryOnlyAsync(Enrollment enrollment)
+        {
+            var studentResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(enrollment.Id);
+            
+            // Check if all scores are > 0
+            var allScoresValid = studentResults.All(sr => sr.Score > 0);
+            
+            return allScoresValid; // Pass if all scores > 0, otherwise Fail
+        }
+
+        /// <summary>
+        /// Check all scores for theory class with practice classes
+        /// </summary>
+        private async Task<bool> CheckAllScoresForTheoryWithPracticeAsync(Enrollment theoryEnrollment, dynamic academicClass)
+        {
+            // Check theory class scores only (since status is only updated for theory class)
+            var theoryResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(theoryEnrollment.Id);
+            var theoryScoresValid = theoryResults.All(sr => sr.Score > 0);
+
+            return theoryScoresValid; // Pass if all theory scores > 0, otherwise Fail
         }
     }
 } 
