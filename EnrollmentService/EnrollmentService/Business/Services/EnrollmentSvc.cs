@@ -1247,14 +1247,16 @@ namespace EnrollmentService.Business.Services
                         OverallScore = enrollment.OverallScore,
                         IsPassed = enrollment.IsPassed,
                         ComponentScores = new List<ComponentScoreDto>(),
-                        PracticeScores = new List<PracticeScoreDto>()
+                        PracticeScores = new List<PracticeScoreDto>(),
+                        TotalCredits = 0
                     };
 
-                    // Set course information
+                    // Set course information and calculate total credits
                     if (academicClass.Course != null)
                     {
                         enrollmentScoreDto.CourseName = academicClass.Course.Name;
                         enrollmentScoreDto.CourseCode = academicClass.Course.Code;
+                        enrollmentScoreDto.TotalCredits += academicClass.Course.Credit;
                     }
 
                     // Get component scores for theory class
@@ -1293,6 +1295,12 @@ namespace EnrollmentService.Business.Services
                                         PracticeClassName = practiceClassResponse.Data.Name,
                                         ComponentScores = new List<ComponentScoreDto>()
                                     };
+
+                                    // Add practice class credits to total
+                                    if (practiceClassResponse.Data.Course != null)
+                                    {
+                                        enrollmentScoreDto.TotalCredits += practiceClassResponse.Data.Course.Credit;
+                                    }
 
                                     // Get practice class scores
                                     var practiceResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(practiceEnrollment.Id);

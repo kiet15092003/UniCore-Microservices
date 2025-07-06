@@ -8,6 +8,7 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public string? AcademicClassName { get; set; }
         public string? CourseName { get; set; }
         public string? CourseCode { get; set; }
+        public int TotalCredits { get; set; }
         public double? OverallScore { get; set; }
         public bool IsPassed { get; set; }
         public List<ComponentScoreDto> ComponentScores { get; set; } = new List<ComponentScoreDto>();
