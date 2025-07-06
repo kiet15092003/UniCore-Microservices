@@ -185,5 +185,18 @@ namespace EnrollmentService.DataAccess.Repositories
                 .Where(sr => sr.Enrollment.AcademicClassId == classId)
                 .ToListAsync();
         }
+
+        public async Task<int> UpdateEnrollmentsAsync(List<Enrollment> enrollments)
+        {
+            _context.Enrollments.UpdateRange(enrollments);
+            return await _context.SaveChangesAsync();
+        }
+
+        public async Task<Enrollment?> GetEnrollmentByStudentIdAndClassIdAsync(Guid studentId, Guid classId)
+        {
+            return await _context.Enrollments
+                .Include(e => e.StudentResults)
+                .FirstOrDefaultAsync(e => e.StudentId == studentId && e.AcademicClassId == classId);
+        }
     }
 } 

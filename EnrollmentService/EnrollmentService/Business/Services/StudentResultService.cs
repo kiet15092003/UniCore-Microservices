@@ -9,6 +9,7 @@ using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
 using ClosedXML.Excel;
 using System.Data;
 using Microsoft.AspNetCore.Http;
+using System;
 
 namespace EnrollmentService.Business.Services
 {
@@ -18,17 +19,20 @@ namespace EnrollmentService.Business.Services
         private readonly IMapper _mapper;
         private readonly ILogger<StudentResultService> _logger;
         private readonly GrpcStudentClientService _studentClient;
+        private readonly GrpcAcademicClassClientService _academicClassClient;
 
         public StudentResultService(
             IStudentResultRepository studentResultRepository,
             IMapper mapper,
             ILogger<StudentResultService> logger,
-            GrpcStudentClientService studentClient)
+            GrpcStudentClientService studentClient,
+            GrpcAcademicClassClientService academicClassClient)
         {
             _studentResultRepository = studentResultRepository;
             _mapper = mapper;
             _logger = logger;
             _studentClient = studentClient;
+            _academicClassClient = academicClassClient;
         }
 
         public async Task<StudentResultDto?> GetStudentResultByIdAsync(Guid id)
@@ -82,6 +86,10 @@ namespace EnrollmentService.Business.Services
 
                 _mapper.Map(updateDto, studentResult);
                 var updatedResult = await _studentResultRepository.UpdateStudentResultAsync(studentResult);
+                
+                // Calculate and update overall score for the enrollment
+                await CalculateAndUpdateOverallScoresAsync(studentResult.Enrollment.AcademicClassId, new List<StudentResult> { updatedResult });
+                
                 return _mapper.Map<StudentResultDto>(updatedResult);
             }
             catch (Exception ex)
@@ -354,6 +362,9 @@ namespace EnrollmentService.Business.Services
                 if (studentResultsToUpdate.Any())
                 {
                     await _studentResultRepository.BulkUpdateScoresAsync(studentResultsToUpdate);
+                    
+                    // Calculate and update overall scores for affected enrollments
+                    await CalculateAndUpdateOverallScoresAsync(classId, studentResultsToUpdate);
                 }
 
                 result.SuccessCount = successes.Count;
@@ -608,6 +619,7 @@ namespace EnrollmentService.Business.Services
                 if (studentResultsToUpdate.Any())
                 {
                     await _studentResultRepository.BulkUpdateScoresAsync(studentResultsToUpdate);
+                    await CalculateAndUpdateOverallScoresAsync(batchDto.ClassId, studentResultsToUpdate);
                 }
 
                 result.SuccessCount = successes.Count;
@@ -683,9 +695,155 @@ namespace EnrollmentService.Business.Services
             if (studentResultsToUpdate.Any())
             {
                 await _studentResultRepository.BulkUpdateScoresAsync(studentResultsToUpdate);
+                
+                // Calculate and update overall scores for affected enrollments
+                await CalculateAndUpdateOverallScoresAsync(classId, studentResultsToUpdate);
+                
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Calculate and update overall scores for enrollments in a class
+        /// </summary>
+        private async Task CalculateAndUpdateOverallScoresAsync(Guid classId, List<StudentResult> updatedResults)
+        {
+            try
+            {
+                // Get academic class information
+                var academicClassResponse = await _academicClassClient.GetAcademicClassById(classId.ToString());
+                if (!academicClassResponse.Success || academicClassResponse.Data == null)
+                {
+                    _logger.LogWarning("Could not get academic class information for class {ClassId}", classId);
+                    return;
+                }
+
+                var academicClass = academicClassResponse.Data;
+                var isTheoryWithPractice = academicClass.ChildPracticeAcademicClassIds != null && 
+                                         academicClass.ChildPracticeAcademicClassIds.Any();
+
+                // Get all enrollments for this class
+                var enrollments = await _studentResultRepository.GetStudentResultsByClassIdWithEnrollmentAsync(classId);
+                var enrollmentGroups = enrollments.GroupBy(sr => sr.EnrollmentId).ToList();
+
+                foreach (var enrollmentGroup in enrollmentGroups)
+                {
+                    var enrollmentId = enrollmentGroup.Key;
+                    var enrollment = enrollmentGroup.First().Enrollment;
+                    
+                    double overallScore = 0;
+                    double totalWeight = 0;
+
+                    if (isTheoryWithPractice)
+                    {
+                        // Class has practice classes - calculate from both theory and practice enrollments
+                        overallScore = await CalculateOverallScoreForTheoryWithPracticeAsync(enrollment);
+                    }
+                    else
+                    {
+                        // Theory-only class - calculate from current class results only
+                        var studentResults = enrollmentGroup.ToList();
+                        foreach (var result in studentResults)
+                        {
+                            if (result.Score >= 0 && result.ScoreType != null)
+                            {
+                                overallScore += result.Score * (result.ScoreType.Percentage / 100.0);
+                                totalWeight += result.ScoreType.Percentage / 100.0;
+                            }
+                        }
+                    }
+
+                    // Update enrollment overall score
+                    if (totalWeight > 0)
+                    {
+                        enrollment.OverallScore = Math.Round(overallScore / totalWeight, 2);
+                    }
+                    else if (overallScore > 0)
+                    {
+                        enrollment.OverallScore = Math.Round(overallScore, 2);
+                    }
+                    else
+                    {
+                        enrollment.OverallScore = null;
+                    }
+
+                    enrollment.UpdatedAt = DateTime.UtcNow;
+                }
+
+                // Save all enrollment updates
+                await _studentResultRepository.UpdateEnrollmentsAsync(enrollmentGroups.Select(g => g.First().Enrollment).ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while calculating overall scores for class {ClassId}", classId);
+            }
+        }
+
+        /// <summary>
+        /// Calculate overall score for theory class with practice classes
+        /// </summary>
+        private async Task<double> CalculateOverallScoreForTheoryWithPracticeAsync(Enrollment theoryEnrollment)
+        {
+            try
+            {
+                // Get academic class information to find practice classes
+                var academicClassResponse = await _academicClassClient.GetAcademicClassById(theoryEnrollment.AcademicClassId.ToString());
+                if (!academicClassResponse.Success || academicClassResponse.Data == null)
+                {
+                    return 0;
+                }
+
+                var academicClass = academicClassResponse.Data;
+                if (academicClass.ChildPracticeAcademicClassIds == null || !academicClass.ChildPracticeAcademicClassIds.Any())
+                {
+                    return 0;
+                }
+
+                double totalScore = 0;
+                double totalWeight = 0;
+
+                // Calculate score from theory class
+                var theoryResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(theoryEnrollment.Id);
+                foreach (var result in theoryResults)
+                {
+                    if (result.Score >= 0 && result.ScoreType != null)
+                    {
+                        totalScore += result.Score * (result.ScoreType.Percentage / 100.0);
+                        totalWeight += result.ScoreType.Percentage / 100.0;
+                    }
+                }
+
+                // Calculate score from practice classes
+                foreach (var practiceClassId in academicClass.ChildPracticeAcademicClassIds)
+                {
+                    if (!Guid.TryParse(practiceClassId, out var practiceClassGuid))
+                        continue;
+
+                    var practiceEnrollment = await _studentResultRepository.GetEnrollmentByStudentIdAndClassIdAsync(
+                        theoryEnrollment.StudentId, practiceClassGuid);
+
+                    if (practiceEnrollment != null)
+                    {
+                        var practiceResults = await _studentResultRepository.GetStudentResultsByEnrollmentIdAsync(practiceEnrollment.Id);
+                        foreach (var result in practiceResults)
+                        {
+                            if (result.Score >= 0 && result.ScoreType != null)
+                            {
+                                totalScore += result.Score * (result.ScoreType.Percentage / 100.0);
+                                totalWeight += result.ScoreType.Percentage / 100.0;
+                            }
+                        }
+                    }
+                }
+
+                return totalWeight > 0 ? totalScore / totalWeight : 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while calculating overall score for theory with practice enrollment {EnrollmentId}", theoryEnrollment.Id);
+                return 0;
+            }
         }
     }
 } 

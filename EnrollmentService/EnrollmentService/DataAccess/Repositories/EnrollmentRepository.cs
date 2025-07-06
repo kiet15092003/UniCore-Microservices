@@ -715,5 +715,12 @@ namespace EnrollmentService.DataAccess.Repositories
 
             return enrollments.Count;
         }
+
+        public async Task<Enrollment?> GetEnrollmentByStudentIdAndClassIdAsync(Guid studentId, Guid classId)
+        {
+            return await _context.Enrollments
+                .Include(e => e.StudentResults)
+                .FirstOrDefaultAsync(e => e.StudentId == studentId && e.AcademicClassId == classId);
+        }
     }
 }

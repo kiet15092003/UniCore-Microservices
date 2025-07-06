@@ -1123,5 +1123,76 @@ namespace EnrollmentService.Business.Services
                 throw;
             }
         }
+
+        public async Task<EnrollmentReadDto?> GetEnrollmentByStudentIdAndClassIdAsync(Guid studentId, Guid classId)
+        {
+            var enrollment = await _enrollmentRepository.GetEnrollmentByStudentIdAndClassIdAsync(studentId, classId);
+            if (enrollment == null)
+            {
+                return null;
+            }
+
+            var enrollmentDto = _mapper.Map<EnrollmentReadDto>(enrollment);
+
+            // Get student data
+            var studentResponse = await _studentClient.GetStudentById(enrollment.StudentId.ToString());
+            if (studentResponse.Success && studentResponse.Data != null)
+            {
+                var userData = studentResponse.Data.User;
+                enrollmentDto.Student = new GrpcStudentData
+                {
+                    Id = Guid.Parse(studentResponse.Data.Id),
+                    StudentCode = studentResponse.Data.StudentCode,
+                    AccumulateCredits = studentResponse.Data.AccumulateCredits,
+                    AccumulateScore = studentResponse.Data.AccumulateScore,
+                    AccumulateActivityScore = studentResponse.Data.AccumulateActivityScore,
+                    MajorId = !string.IsNullOrEmpty(studentResponse.Data.MajorId) ? Guid.Parse(studentResponse.Data.MajorId) : Guid.Empty,
+                    BatchId = !string.IsNullOrEmpty(studentResponse.Data.BatchId) ? Guid.Parse(studentResponse.Data.BatchId) : Guid.Empty,
+                    ApplicationUserId = !string.IsNullOrEmpty(studentResponse.Data.ApplicationUserId) ? Guid.Parse(studentResponse.Data.ApplicationUserId) : Guid.Empty,
+                    User = userData != null ? new GrpcUserData
+                    {
+                        Id = !string.IsNullOrEmpty(userData.Id) ? Guid.Parse(userData.Id) : Guid.Empty,
+                        FirstName = userData.FirstName,
+                        LastName = userData.LastName,
+                        Email = userData.Email,
+                        PhoneNumber = userData.PhoneNumber,
+                        PersonId = userData.PersonId,
+                        ImageUrl = userData.ImageUrl
+                    } : null
+                };
+            }
+
+            // Get academic class data
+            var academicClassResponse = await _academicClassClient.GetAcademicClassById(enrollment.AcademicClassId.ToString());
+            if (academicClassResponse.Success && academicClassResponse.Data != null)
+            {
+                var acClass = academicClassResponse.Data;
+                enrollmentDto.AcademicClass = new GrpcAcademicClassData
+                {
+                    Id = Guid.Parse(acClass.Id),
+                    Name = acClass.Name,
+                    GroupNumber = acClass.GroupNumber,
+                    Capacity = acClass.Capacity,
+                    ListOfWeeks = acClass.ListOfWeeks != null ? new List<int>(acClass.ListOfWeeks) : null,
+                    IsRegistrable = acClass.IsRegistrable,
+                    SemesterId = !string.IsNullOrEmpty(acClass.SemesterId) ? Guid.Parse(acClass.SemesterId) : Guid.Empty,
+                    CourseId = !string.IsNullOrEmpty(acClass.CourseId) ? Guid.Parse(acClass.CourseId) : Guid.Empty,
+                    Course = acClass.Course != null ? new GrpcCourseData
+                    {
+                        Id = Guid.Parse(acClass.Course.Id),
+                        Code = acClass.Course.Code,
+                        Name = acClass.Course.Name,
+                        Description = acClass.Course.Description,
+                        IsActive = acClass.Course.IsActive,
+                        Credit = acClass.Course.Credit,
+                        PracticePeriod = acClass.Course.PracticePeriod,
+                        IsRequired = acClass.Course.IsRequired,
+                        Cost = acClass.Course.Cost
+                    } : null
+                };
+            }
+
+            return enrollmentDto;
+        }
     }
 }
