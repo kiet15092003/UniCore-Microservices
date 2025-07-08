@@ -13,5 +13,6 @@ namespace EnrollmentService.Business.Services
         Task<bool> DeleteExamAsync(Guid id);
         Task<List<ExamReadDto>> GetAllExamsAsync();
         Task<List<EnrollmentExamDto>> AddEnrollmentToExamAsync(AddEnrollmentToExamDto addEnrollmentDto);
+        Task<List<ExamReadDto>> GetExamsByStudentIdAsync(Guid studentId);
     }
 }

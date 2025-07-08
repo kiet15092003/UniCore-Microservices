@@ -14,7 +14,8 @@ namespace EnrollmentService.DataAccess.Repositories
         public ExamRepository(AppDbContext context)
         {
             _context = context;
-        }        public async Task<Exam?> GetExamByIdAsync(Guid id)
+        }
+        public async Task<Exam?> GetExamByIdAsync(Guid id)
         {
             return await _context.Exams
                 .Include(e => e.EnrollmentExams)
@@ -61,12 +62,12 @@ namespace EnrollmentService.DataAccess.Repositories
 
         public async Task<List<Exam>> GetAllExamsAsync()
         {
-            return await _context.Exams.ToListAsync();
+            return await _context.Exams.Include(e => e.EnrollmentExams).ToListAsync();
         }
 
         public async Task<PaginationResult<Exam>> GetAllExamsPaginationAsync(Pagination pagination, ExamListFilterParams filterParams, Order? order)
         {
-            var query = _context.Exams.AsQueryable();
+            var query = _context.Exams.Include(e => e.EnrollmentExams).AsQueryable();
 
             // Apply filters
             if (filterParams.AcademicClassId.HasValue)
@@ -144,6 +145,17 @@ namespace EnrollmentService.DataAccess.Repositories
             _context.EnrollmentExams.AddRange(enrollmentExams);
             await _context.SaveChangesAsync();
             return enrollmentExams;
+        }
+
+        public async Task<List<Exam>> GetExamsByEnrollmentIdsAsync(List<Guid> enrollmentIds)
+        {
+            if (enrollmentIds == null || enrollmentIds.Count == 0)
+                return new List<Exam>();
+
+            return await _context.Exams
+                .Include(e => e.EnrollmentExams)
+                .Where(e => e.EnrollmentExams.Any(ee => enrollmentIds.Contains(ee.EnrollmentId)))
+                .ToListAsync();
         }
     }
 }

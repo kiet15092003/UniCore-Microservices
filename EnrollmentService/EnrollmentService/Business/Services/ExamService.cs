@@ -1,4 +1,5 @@
 using AutoMapper;
+using EnrollmentService.Business.Dtos.Enrollment;
 using EnrollmentService.Business.Dtos.Exam;
 using EnrollmentService.CommunicationTypes.Grpc.GrpcClient;
 using EnrollmentService.DataAccess.Repositories;
@@ -15,20 +16,25 @@ namespace EnrollmentService.Business.Services
         private readonly GrpcRoomClientService _roomClient;
         private readonly GrpcAcademicClassClientService _academicClassClient;
         private readonly ILogger<ExamService> _logger;
-
+        private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly GrpcStudentClientService _studentClient;
         public ExamService(
             IExamRepository examRepository,
             IMapper mapper,
             GrpcRoomClientService roomClient,
             GrpcAcademicClassClientService academicClassClient,
-            ILogger<ExamService> logger)
+            ILogger<ExamService> logger,
+            IEnrollmentRepository enrollmentRepository,
+            GrpcStudentClientService studentClient)
         {
             _examRepository = examRepository;
             _mapper = mapper;
             _roomClient = roomClient;
             _academicClassClient = academicClassClient;
             _logger = logger;
-        }        
+            _enrollmentRepository = enrollmentRepository;
+            _studentClient = studentClient;
+        }
         public async Task<ExamReadDto?> GetExamByIdAsync(Guid id)
         {
             var exam = await _examRepository.GetExamByIdAsync(id);
@@ -36,9 +42,62 @@ namespace EnrollmentService.Business.Services
                 return null;
 
             var examDto = _mapper.Map<ExamReadDto>(exam);
+
+            examDto.EnrollmentExams = await BuildEnrollmentExamReadDtos(exam.EnrollmentExams);
+
             await PopulateExamDataAsync(examDto);
             PopulateExamStatisticsFromEntity(examDto, exam);
             return examDto;
+        }
+
+        private async Task<List<EnrollmentExamReadDto>> BuildEnrollmentExamReadDtos(List<EnrollmentExam> enrollmentExams)
+        {
+            var result = new List<EnrollmentExamReadDto>();
+            foreach (var enrollmentExam in enrollmentExams)
+            {
+                var enrollment = await _enrollmentRepository.GetEnrollmentByIdAsync(enrollmentExam.EnrollmentId);
+                var student = await PopulateStudentDataForEnrollmentExamsAsync(enrollment!.StudentId);
+                result.Add(new EnrollmentExamReadDto
+                {
+                    StudentId = enrollment!.StudentId,
+                    EnrollmentId = enrollment!.Id,
+                    Student = student
+                });
+            }
+            return result;
+        }
+
+        private async Task<GrpcStudentData> PopulateStudentDataForEnrollmentExamsAsync(Guid StudentId)
+        {
+
+            var studentResponse = await _studentClient.GetStudentById(StudentId.ToString());
+            if (studentResponse.Success && studentResponse.Data != null)
+            {
+                var userData = studentResponse.Data.User;
+                return new GrpcStudentData
+                {
+                    Id = Guid.Parse(studentResponse.Data.Id),
+                    StudentCode = studentResponse.Data.StudentCode,
+                    AccumulateCredits = studentResponse.Data.AccumulateCredits,
+                    AccumulateScore = studentResponse.Data.AccumulateScore,
+                    AccumulateActivityScore = studentResponse.Data.AccumulateActivityScore,
+                    MajorId = !string.IsNullOrEmpty(studentResponse.Data.MajorId) ? Guid.Parse(studentResponse.Data.MajorId) : Guid.Empty,
+                    BatchId = !string.IsNullOrEmpty(studentResponse.Data.BatchId) ? Guid.Parse(studentResponse.Data.BatchId) : Guid.Empty,
+                    ApplicationUserId = !string.IsNullOrEmpty(studentResponse.Data.ApplicationUserId) ? Guid.Parse(studentResponse.Data.ApplicationUserId) : Guid.Empty,
+                    User = userData != null ? new GrpcUserData
+                    {
+                        Id = !string.IsNullOrEmpty(userData.Id) ? Guid.Parse(userData.Id) : Guid.Empty,
+                        FirstName = userData.FirstName,
+                        LastName = userData.LastName,
+                        Email = userData.Email,
+                        PhoneNumber = userData.PhoneNumber,
+                        PersonId = userData.PersonId,
+                        ImageUrl = userData.ImageUrl
+                    } : null
+                };
+                
+            }
+            return null;              
         }
 
         public async Task<List<ExamReadDto>> GetExamsByAcademicClassIdAsync(Guid academicClassId)
@@ -56,6 +115,7 @@ namespace EnrollmentService.Business.Services
             
             return examDtos;
         }
+
         public async Task<ExamReadDto> CreateExamAsync(ExamCreateDto createDto)
         {
             // Validate room and academic class exist via gRPC calls
@@ -192,34 +252,17 @@ namespace EnrollmentService.Business.Services
                 {
                     var enrollmentExams = examWithEnrollments.EnrollmentExams;
                     
-                    examDto.TotalEnrollment = enrollmentExams.Count;
-                    examDto.TotalPassed = enrollmentExams.Count(ee => ee.Status == 2); // Status 2 = Passed
-                    examDto.TotalFailed = enrollmentExams.Count(ee => ee.Status == 3); // Status 3 = Failed
-                    
-                    if (enrollmentExams.Any())
-                    {
-                        examDto.AverageScore = enrollmentExams.Average(ee => ee.Score);
-                    }
-                    else
-                    {
-                        examDto.AverageScore = 0;
-                    }
+                    examDto.TotalEnrollment = enrollmentExams.Count;                   
                 }
                 else
                 {
                     examDto.TotalEnrollment = 0;
-                    examDto.TotalPassed = 0;
-                    examDto.TotalFailed = 0;
-                    examDto.AverageScore = 0;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to populate exam statistics for exam {ExamId}", examDto.Id);
                 examDto.TotalEnrollment = 0;
-                examDto.TotalPassed = 0;
-                examDto.TotalFailed = 0;
-                examDto.AverageScore = 0;
             }
         }
 
@@ -230,24 +273,10 @@ namespace EnrollmentService.Business.Services
                 var enrollmentExams = exam.EnrollmentExams;
                 
                 examDto.TotalEnrollment = enrollmentExams.Count;
-                examDto.TotalPassed = enrollmentExams.Count(ee => ee.Status == 2); // Status 2 = Passed
-                examDto.TotalFailed = enrollmentExams.Count(ee => ee.Status == 3); // Status 3 = Failed
-                
-                if (enrollmentExams.Any())
-                {
-                    examDto.AverageScore = enrollmentExams.Average(ee => ee.Score);
-                }
-                else
-                {
-                    examDto.AverageScore = 0;
-                }
             }
             else
             {
                 examDto.TotalEnrollment = 0;
-                examDto.TotalPassed = 0;
-                examDto.TotalFailed = 0;                
-                examDto.AverageScore = 0;
             }
         }
 
@@ -289,8 +318,6 @@ namespace EnrollmentService.Business.Services
                     {
                         ExamId = addEnrollmentDto.ExamId,
                         EnrollmentId = enrollmentId,
-                        Status = 0, // Initial status
-                        Score = 0   // Initial score
                     };
                     enrollmentExams.Add(enrollmentExam);
                 }
@@ -308,6 +335,27 @@ namespace EnrollmentService.Business.Services
                 _logger.LogError(ex, "Error adding enrollments to exam {ExamId}", addEnrollmentDto.ExamId);
                 throw;
             }
+        }
+
+        public async Task<List<ExamReadDto>> GetExamsByStudentIdAsync(Guid studentId)
+        {
+            // Get all enrollments for the student
+            var enrollments = await _enrollmentRepository.GetEnrollmentsByStudentIdAsync(studentId);
+            if (enrollments == null || enrollments.Count == 0)
+                return new List<ExamReadDto>();
+
+            // Get all enrollment IDs
+            var enrollmentIds = enrollments.Select(e => e.Id).ToList();
+
+            // Use repository method to get exams for these enrollments
+            var examsForStudent = await _examRepository.GetExamsByEnrollmentIdsAsync(enrollmentIds);
+
+            var examDtos = _mapper.Map<List<ExamReadDto>>(examsForStudent);
+            foreach (var examDto in examDtos)
+            {
+                await PopulateExamDataAsync(examDto);
+            }
+            return examDtos;
         }
     }
 }

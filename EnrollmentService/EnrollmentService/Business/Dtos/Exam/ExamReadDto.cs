@@ -28,17 +28,9 @@ namespace EnrollmentService.Business.Dtos.Exam
         public int Duration { get; set; }
         public Guid AcademicClassId { get; set; }
         public Guid RoomId { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-
-        // Statistics
         public int TotalEnrollment { get; set; }
-        public int TotalPassed { get; set; }
-        public int TotalFailed { get; set; }
-        public double AverageScore { get; set; }
-
-        // Navigation properties from gRPC calls
         public ExamGrpcRoomData? Room { get; set; }
         public ExamGrpcAcademicClassData? AcademicClass { get; set; }
+        public List<EnrollmentExamReadDto>? EnrollmentExams { get; set; }
     }
 }

@@ -15,5 +15,6 @@ namespace EnrollmentService.DataAccess.Repositories
         Task<List<Exam>> GetAllExamsAsync();
         Task<PaginationResult<Exam>> GetAllExamsPaginationAsync(Pagination pagination, ExamListFilterParams filterParams, Order? order);
         Task<List<EnrollmentExam>> CreateEnrollmentExamsAsync(List<EnrollmentExam> enrollmentExams);
+        Task<List<Exam>> GetExamsByEnrollmentIdsAsync(List<Guid> enrollmentIds);
     }
 }
