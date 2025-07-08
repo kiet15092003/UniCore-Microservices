@@ -14,7 +14,8 @@ namespace EnrollmentService.Controllers
         public ExamsController(IExamService examService)
         {
             _examService = examService;
-        }        
+        }   
+     
         [HttpGet]
         public async Task<ApiResponse<List<ExamReadDto>>> GetAllExams()
         {
@@ -119,6 +120,13 @@ namespace EnrollmentService.Controllers
             {
                 return ApiResponse<List<EnrollmentExamDto>>.ErrorResponse([$"Error adding enrollments to exam: {ex.Message}"]);
             }
+        }
+
+        [HttpGet("student/{studentId}")]
+        public async Task<ApiResponse<List<ExamReadDto>>> GetExamsByStudentId(Guid studentId)
+        {
+            var exams = await _examService.GetExamsByStudentIdAsync(studentId);
+            return ApiResponse<List<ExamReadDto>>.SuccessResponse(exams);
         }
     }
 }
