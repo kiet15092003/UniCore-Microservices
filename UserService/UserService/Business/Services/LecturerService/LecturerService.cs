@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using UserService.Utils;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
+using UserService.DataAccess.Repositories.AddressRepo;
 
 namespace UserService.Business.Services.LecturerService
 {
@@ -25,13 +26,15 @@ namespace UserService.Business.Services.LecturerService
         private readonly GrpcDepartmentClientService _departmentService;
         private readonly ILogger<LecturerService> _logger;
         private readonly IKafkaProducerService _kafkaProducer;
+        private readonly IAddressRepo _addressRepo;
         public LecturerService(
             ILecturerRepo lecturerRepo,
             IMapper mapper,
             UserManager<ApplicationUser> userManager,
             GrpcDepartmentClientService departmentService,
             ILogger<LecturerService> logger,
-            IKafkaProducerService kafkaProducer)
+            IKafkaProducerService kafkaProducer,
+            IAddressRepo addressRepo)
         {
             _lecturerRepo = lecturerRepo;
             _mapper = mapper;
@@ -39,6 +42,7 @@ namespace UserService.Business.Services.LecturerService
             _departmentService = departmentService;
             _logger = logger;
             _kafkaProducer = kafkaProducer;
+            _addressRepo = addressRepo;
         }
 
 
@@ -97,41 +101,10 @@ namespace UserService.Business.Services.LecturerService
                     user.Dob = dob;
                 }
 
-                // Update address if provided
+                // Map address if provided (repo sẽ xử lý logic xóa/tạo Address)
                 if (updateLecturerDto.Address != null)
                 {
-                    // If the user doesn't have an address yet, create one
-                    if (user.Address == null)
-                    {
-                        user.Address = new Address
-                        {
-                            Id = Guid.NewGuid(),
-                            Country = updateLecturerDto.Address.Country,
-                            City = updateLecturerDto.Address.City,
-                            District = updateLecturerDto.Address.District,
-                            Ward = updateLecturerDto.Address.Ward,
-                            AddressDetail = updateLecturerDto.Address.AddressDetail
-                        };
-                        user.AddressId = user.Address.Id;
-                    }
-                    else
-                    {
-                        // Update existing address properties only if provided
-                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.Country))
-                            user.Address.Country = updateLecturerDto.Address.Country;
-                            
-                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.City))
-                            user.Address.City = updateLecturerDto.Address.City;
-                            
-                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.District))
-                            user.Address.District = updateLecturerDto.Address.District;
-                            
-                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.Ward))
-                            user.Address.Ward = updateLecturerDto.Address.Ward;
-                            
-                        if (!string.IsNullOrEmpty(updateLecturerDto.Address.AddressDetail))
-                            user.Address.AddressDetail = updateLecturerDto.Address.AddressDetail;
-                    }
+                    user.Address = _mapper.Map<Address>(updateLecturerDto.Address);
                 }
 
                 await _lecturerRepo.UpdateAsync(lecturer);
@@ -293,6 +266,7 @@ namespace UserService.Business.Services.LecturerService
 
                 // Create user with password
                 var password = PasswordGenerator.GenerateSecurePassword();
+                _logger.LogInformation("269---------------Password: {Password}", password);
                 var result = await _userManager.CreateAsync(user, password);
                 if (!result.Succeeded)
                 {
