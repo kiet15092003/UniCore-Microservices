@@ -15,6 +15,8 @@ using UserService.Utils;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer;
 using UserService.CommunicationTypes.KafkaService.KafkaProducer.Templates;
 using UserService.DataAccess.Repositories.AddressRepo;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 
 namespace UserService.Business.Services.LecturerService
 {
@@ -27,6 +29,7 @@ namespace UserService.Business.Services.LecturerService
         private readonly ILogger<LecturerService> _logger;
         private readonly IKafkaProducerService _kafkaProducer;
         private readonly IAddressRepo _addressRepo;
+        private readonly Cloudinary _cloudinary;
         public LecturerService(
             ILecturerRepo lecturerRepo,
             IMapper mapper,
@@ -34,7 +37,8 @@ namespace UserService.Business.Services.LecturerService
             GrpcDepartmentClientService departmentService,
             ILogger<LecturerService> logger,
             IKafkaProducerService kafkaProducer,
-            IAddressRepo addressRepo)
+            IAddressRepo addressRepo,
+            IConfiguration configuration)
         {
             _lecturerRepo = lecturerRepo;
             _mapper = mapper;
@@ -43,6 +47,13 @@ namespace UserService.Business.Services.LecturerService
             _logger = logger;
             _kafkaProducer = kafkaProducer;
             _addressRepo = addressRepo;
+
+            // Setup Cloudinary
+            var cloudinaryAccount = new Account(
+                configuration["Cloudinary:CloudName"],
+                configuration["Cloudinary:ApiKey"],
+                configuration["Cloudinary:ApiSecret"]);
+            _cloudinary = new Cloudinary(cloudinaryAccount);
         }
 
 
@@ -170,7 +181,32 @@ namespace UserService.Business.Services.LecturerService
 
         public async Task<string> UpdateUserImageAsync(UpdateUserImageDto updateUserImageDto)
         {
-            return await _lecturerRepo.UpdateLecturerImageAsync(updateUserImageDto.Id, updateUserImageDto.ImageUrl);
+            var imageUrl = await UploadImageToCloudinary(updateUserImageDto.ImageFile);
+            return await _lecturerRepo.UpdateLecturerImageAsync(updateUserImageDto.Id, imageUrl);
+        }
+
+        private async Task<string> UploadImageToCloudinary(IFormFile imageFile)
+        {
+            using var stream = imageFile.OpenReadStream();
+            
+            // Create upload parameters
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(imageFile.FileName, stream),
+                Folder = "lecturer_profile_images",
+                Transformation = new Transformation().Width(500).Height(500).Crop("fill").Gravity("face")
+            };
+            
+            // Upload to Cloudinary
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            
+            if (uploadResult.Error != null)
+            {
+                throw new Exception($"Failed to upload image: {uploadResult.Error.Message}");
+            }
+            
+            // Return the secure URL
+            return uploadResult.SecureUrl.ToString();
         }
 
         public async Task<LecturerDto> GetLecturerByEmailAsync(string email)
@@ -316,8 +352,8 @@ namespace UserService.Business.Services.LecturerService
         private async Task<string> GenerateEmailFromName(string lastName, string firstName)
         {
             // Remove accents and convert to lowercase
-            string normalizedLastName = RemoveAccents(lastName).ToLower();
-            string normalizedFirstName = RemoveAccents(firstName).ToLower();
+            string normalizedLastName = RemoveAccents(lastName).ToLower().Trim().Replace(" ", "");
+            string normalizedFirstName = RemoveAccents(firstName).ToLower().Trim().Replace(" ", "");
             
             // Create base email
             string baseEmail = $"{normalizedLastName}{normalizedFirstName}@unicore.edu.vn";
