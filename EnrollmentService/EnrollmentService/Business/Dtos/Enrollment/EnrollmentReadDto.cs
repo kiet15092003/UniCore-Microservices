@@ -8,6 +8,7 @@ namespace EnrollmentService.Business.Dtos.Enrollment
         public Guid AcademicClassId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public double? OverallScore { get; set; }
 
         public GrpcStudentData? Student { get; set; }
         public GrpcAcademicClassData? AcademicClass { get; set; }

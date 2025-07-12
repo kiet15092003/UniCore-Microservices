@@ -31,7 +31,13 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.ChildPracticeAcademicClassIds, opt => opt.MapFrom(src => src.ChildPracticeAcademicClassIds))
                 .ForMember(dest => dest.ChildPracticeAcademicClasses, opt => opt.MapFrom(src => src.ChildPracticeAcademicClasses))
                 .ForMember(dest => dest.LecturerId, opt => opt.MapFrom(src => src.LecturerId));
-            
+
+            // Map analytics DTO (inherits from AcademicClassReadDto)
+            CreateMap<AcademicClass, AcademicClassAnalyticsDto>()
+                .IncludeBase<AcademicClass, AcademicClassReadDto>();
+
+            CreateMap<AcademicClassReadDto, AcademicClassAnalyticsDto>();
+
             CreateMap<AcademicClassCreateDto, AcademicClass>();
             CreateMap<ScheduleInDayCreateForClassDto, ScheduleInDay>();
             

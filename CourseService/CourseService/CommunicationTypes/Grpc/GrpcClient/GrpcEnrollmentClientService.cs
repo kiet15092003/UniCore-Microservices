@@ -52,5 +52,45 @@ namespace CourseService.CommunicationTypes.Grpc.GrpcClient
                 return 0;
             }
         }
+
+        public async Task<double> GetAverageScoreAsync(string academicClassId)
+        {
+            var grpcUrl = _configuration["GrpcSettings:EnrollmentServiceUrl"];
+
+            using var channel = GrpcChannel.ForAddress(grpcUrl);
+            var client = new GrpcEnrollment.GrpcEnrollmentClient(channel);
+
+            try
+            {
+                var request = new GetAverageScoreRequest { AcademicClassId = academicClassId };
+                var response = await client.GetAverageScoreAsync(request);
+
+                return response.Success ? response.AverageScore : 0.0;
+            }
+            catch (Exception)
+            {
+                return 0.0;
+            }
+        }
+
+        public async Task<(int totalPassed, int totalFailed)> GetPassFailCountAsync(string academicClassId)
+        {
+            var grpcUrl = _configuration["GrpcSettings:EnrollmentServiceUrl"];
+
+            using var channel = GrpcChannel.ForAddress(grpcUrl);
+            var client = new GrpcEnrollment.GrpcEnrollmentClient(channel);
+
+            try
+            {
+                var request = new GetPassFailCountRequest { AcademicClassId = academicClassId };
+                var response = await client.GetPassFailCountAsync(request);
+
+                return response.Success ? (response.TotalPassed, response.TotalFailed) : (0, 0);
+            }
+            catch (Exception)
+            {
+                return (0, 0);
+            }
+        }
     }
 }

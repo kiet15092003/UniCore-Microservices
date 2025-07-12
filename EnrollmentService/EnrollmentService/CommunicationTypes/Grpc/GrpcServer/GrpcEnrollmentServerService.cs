@@ -1,15 +1,18 @@
 using Grpc.Core;
 using EnrollmentService.Business.Services;
+using EnrollmentService.DataAccess.Repositories;
 
 namespace EnrollmentService.CommunicationTypes.Grpc.GrpcServer
 {
     public class GrpcEnrollmentServerService : GrpcEnrollment.GrpcEnrollmentBase
     {
         private readonly IEnrollmentService _enrollmentService;
+        private readonly IEnrollmentRepository _enrollmentRepository;
 
-        public GrpcEnrollmentServerService(IEnrollmentService enrollmentService)
+        public GrpcEnrollmentServerService(IEnrollmentService enrollmentService, IEnrollmentRepository enrollmentRepository)
         {
             _enrollmentService = enrollmentService;
+            _enrollmentRepository = enrollmentRepository;
         }
 
         public override async Task<EnrollmentCountResponse> GetEnrollmentCount(EnrollmentCountRequest request, ServerCallContext context)
@@ -82,7 +85,9 @@ namespace EnrollmentService.CommunicationTypes.Grpc.GrpcServer
                     Error = { ex.Message }
                 };
             }
-        }        public override async Task<GetFirstEnrollmentStatusResponse> GetFirstEnrollmentStatus(GetFirstEnrollmentStatusRequest request, ServerCallContext context)
+        }       
+        
+        public override async Task<GetFirstEnrollmentStatusResponse> GetFirstEnrollmentStatus(GetFirstEnrollmentStatusRequest request, ServerCallContext context)
         {
             try
             {
@@ -119,6 +124,118 @@ namespace EnrollmentService.CommunicationTypes.Grpc.GrpcServer
                 {
                     Success = false,
                     Status = 0,
+                    Error = { ex.Message }
+                };
+            }
+        }
+    
+public override async Task<GetAverageScoreResponse> GetAverageScore(GetAverageScoreRequest request, ServerCallContext context)
+        {
+            try
+            {
+                if (!Guid.TryParse(request.AcademicClassId, out var academicClassId))
+                {
+                    return new GetAverageScoreResponse
+                    {
+                        Success = false,
+                        AverageScore = 0,
+                        Error = { "Invalid academic class ID format" }
+                    };
+                }
+
+                // Fetch enrollments for the class
+                var enrollments = await _enrollmentService.GetEnrollmentsByAcademicClassIdAsync(academicClassId);
+
+                if (enrollments == null || !enrollments.Any())
+                {
+                    return new GetAverageScoreResponse
+                    {
+                        Success = false,
+                        AverageScore = 0,
+                        Error = { "No enrollments found for this class." }
+                    };
+                }
+
+                // Safely handle nullable OverallScore values
+                var validScores = enrollments
+                    .Where(e => e.OverallScore.HasValue)
+                    .Select(e => e.OverallScore!.Value)
+                    .ToList();
+
+                if (!validScores.Any())
+                {
+                    return new GetAverageScoreResponse
+                    {
+                        Success = false,
+                        AverageScore = 0,
+                        Error = { "No valid OverallScore values found for this class." }
+                    };
+                }
+
+                double avg = validScores.Average();
+
+                return new GetAverageScoreResponse
+                {
+                    Success = true,
+                    AverageScore = avg
+                };
+            }
+            catch (Exception ex)
+            {
+                return new GetAverageScoreResponse
+                {
+                    Success = false,
+                    AverageScore = 0,
+                    Error = { ex.Message }
+                };
+            }
+        }
+
+        public override async Task<GetPassFailCountResponse> GetPassFailCount(GetPassFailCountRequest request, ServerCallContext context)
+        {
+            try
+            {
+                if (!Guid.TryParse(request.AcademicClassId, out var academicClassId))
+                {
+                    return new GetPassFailCountResponse
+                    {
+                        Success = false,
+                        TotalPassed = 0,
+                        TotalFailed = 0,
+                        Error = { "Invalid academic class ID format" }
+                    };
+                }
+
+                var enrollments = await _enrollmentService.GetEnrollmentsByAcademicClassIdAsync(academicClassId);
+
+                if (enrollments == null || !enrollments.Any())
+                {
+                    return new GetPassFailCountResponse
+                    {
+                        Success = false,
+                        TotalPassed = 0,
+                        TotalFailed = 0,
+                        Error = { "No enrollments found for this class." }
+                    };
+                }
+
+                int totalPassed = enrollments.Count(e => e.OverallScore.HasValue && e.OverallScore.Value >= 5);
+                int totalFailed = enrollments.Count(e => e.OverallScore.HasValue && e.OverallScore.Value < 5);
+
+                return new GetPassFailCountResponse
+                {
+                    Success = true,
+                    TotalPassed = totalPassed,
+                    TotalFailed = totalFailed
+                };
+            }
+            catch (Exception ex)
+            {
+                return new GetPassFailCountResponse
+                {
+                    Success = false,
+                    TotalPassed = 0,
+                    TotalFailed = 0,
                     Error = { ex.Message }
                 };
             }
