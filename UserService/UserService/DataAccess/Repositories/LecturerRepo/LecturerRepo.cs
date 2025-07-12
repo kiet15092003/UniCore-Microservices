@@ -155,11 +155,65 @@ namespace UserService.DataAccess.Repositories.LecturerRepo
             return lecturer;
         }
 
-        public async Task<Lecturer> UpdateAsync(Lecturer lecturer)
+        public async Task<Lecturer> UpdateAsync(Lecturer lecturerFromDto)
         {
-            _context.Lecturers.Update(lecturer);
+            // Load existing lecturer từ DB
+            var existingLecturer = await _context.Lecturers
+                .Include(l => l.ApplicationUser)
+                .ThenInclude(u => u.Address)
+                .FirstOrDefaultAsync(l => l.Id == lecturerFromDto.Id);
+
+            if (existingLecturer == null)
+                throw new KeyNotFoundException("Lecturer not found");
+
+            // Update các trường của Lecturer
+            existingLecturer.Degree = lecturerFromDto.Degree;
+            existingLecturer.Salary = lecturerFromDto.Salary;
+            existingLecturer.DepartmentId = lecturerFromDto.DepartmentId;
+            existingLecturer.WorkingStatus = lecturerFromDto.WorkingStatus;
+            existingLecturer.MainMajor = lecturerFromDto.MainMajor;
+
+            // Update ApplicationUser nếu có
+            if (existingLecturer.ApplicationUser != null && lecturerFromDto.ApplicationUser != null)
+            {
+                existingLecturer.ApplicationUser.FirstName = lecturerFromDto.ApplicationUser.FirstName;
+                existingLecturer.ApplicationUser.LastName = lecturerFromDto.ApplicationUser.LastName;
+                existingLecturer.ApplicationUser.PhoneNumber = lecturerFromDto.ApplicationUser.PhoneNumber;
+                existingLecturer.ApplicationUser.PersonId = lecturerFromDto.ApplicationUser.PersonId;
+                existingLecturer.ApplicationUser.Dob = lecturerFromDto.ApplicationUser.Dob;
+            }
+
+            // Update Address nếu có
+            if (lecturerFromDto.ApplicationUser?.Address != null)
+            {
+                // Nếu đã có Address, xóa Address cũ
+                if (existingLecturer.ApplicationUser.AddressId != null && existingLecturer.ApplicationUser.AddressId != Guid.Empty)
+                {
+                    var oldAddress = await _context.Addresses.FindAsync(existingLecturer.ApplicationUser.AddressId.Value);
+                    if (oldAddress != null)
+                    {
+                        _context.Addresses.Remove(oldAddress);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                // Tạo Address mới
+                var newAddress = new Address
+                {
+                    Country = lecturerFromDto.ApplicationUser.Address.Country,
+                    City = lecturerFromDto.ApplicationUser.Address.City,
+                    District = lecturerFromDto.ApplicationUser.Address.District,
+                    Ward = lecturerFromDto.ApplicationUser.Address.Ward,
+                    AddressDetail = lecturerFromDto.ApplicationUser.Address.AddressDetail
+                };
+                _context.Addresses.Add(newAddress);
+                await _context.SaveChangesAsync();
+                existingLecturer.ApplicationUser.AddressId = newAddress.Id;
+            }
+
+            _context.Lecturers.Update(existingLecturer);
             await SaveChangesAsync();
-            return lecturer;
+            return existingLecturer;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
