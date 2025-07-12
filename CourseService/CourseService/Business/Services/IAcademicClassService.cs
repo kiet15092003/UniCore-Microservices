@@ -21,5 +21,10 @@ namespace CourseService.Business.Services
         Task<bool> ScheduleRegistrationAsync(ClassRegistrationScheduleDto scheduleDto);
         Task<bool> DeleteAcademicClassAsync(Guid id);
         Task<bool> AssignLecturerToClassesAsync(AssignLecturerToClassesDto assignLecturerDto);
+        Task<AcademicClassAnalyticsListResponse> GetAcademicClassesAnalyticsPaginationAsync(
+            Pagination pagination,
+            AcademicClassFilterParams? filterParams,
+            Order? order);
+        Task<AcademicClassAnalyticsSummaryResponse> GetAcademicClassesAnalyticsSummaryAsync(AcademicClassFilterParams? filterParams);
     }
 }

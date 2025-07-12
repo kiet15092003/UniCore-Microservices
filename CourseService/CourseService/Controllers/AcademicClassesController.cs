@@ -3,6 +3,7 @@ using CourseService.Business.Services;
 using CourseService.Entities;
 using Microsoft.AspNetCore.Mvc;
 using CourseService.Middleware;
+using CourseService.Utils.Filter;
 
 namespace CourseService.Controllers
 {
@@ -144,6 +145,20 @@ namespace CourseService.Controllers
             {
                 return ApiResponse<string>.ErrorResponse(new List<string> { $"An error occurred while assigning lecturer: {ex.Message}" });
             }
+        }
+
+        [HttpGet("analytics")]
+        public async Task<ApiResponse<AcademicClassAnalyticsListResponse>> GetAcademicClassesAnalyticsPagination([FromQuery] GetAcademicClassByPaginationParam param)
+        {
+            var result = await _academicClassService.GetAcademicClassesAnalyticsPaginationAsync(param.Pagination, param.Filter, param.Order);
+            return ApiResponse<AcademicClassAnalyticsListResponse>.SuccessResponse(result);
+        }
+
+        [HttpGet("analytics-summary")]
+        public async Task<ApiResponse<AcademicClassAnalyticsSummaryResponse>> GetAcademicClassesAnalyticsSummary([FromQuery] AcademicClassFilterParams filter)
+        {
+            var result = await _academicClassService.GetAcademicClassesAnalyticsSummaryAsync(filter);
+            return ApiResponse<AcademicClassAnalyticsSummaryResponse>.SuccessResponse(result);
         }
     }
 }

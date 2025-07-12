@@ -6,6 +6,8 @@ service GrpcEnrollment {
   rpc GetEnrollmentCount (EnrollmentCountRequest) returns (EnrollmentCountResponse);
   rpc GetEnrollmentsByClassId (GetEnrollmentsByClassIdRequest) returns (GetEnrollmentsByClassIdResponse);
   rpc GetFirstEnrollmentStatus (GetFirstEnrollmentStatusRequest) returns (GetFirstEnrollmentStatusResponse);
+  rpc GetAverageScore (GetAverageScoreRequest) returns (GetAverageScoreResponse);
+  rpc GetPassFailCount (GetPassFailCountRequest) returns (GetPassFailCountResponse);
 }
 
 message EnrollmentCountRequest {
@@ -43,5 +45,26 @@ message GetFirstEnrollmentStatusResponse {
   bool success = 1;
   int32 status = 2;
   bool hasStatus = 3;
+  repeated string error = 4;
+}
+
+message GetAverageScoreRequest {
+  string academicClassId = 1;
+}
+
+message GetAverageScoreResponse {
+  bool success = 1;
+  double averageScore = 2;
+  repeated string error = 3;
+}
+
+message GetPassFailCountRequest {
+  string academicClassId = 1;
+}
+
+message GetPassFailCountResponse {
+  bool success = 1;
+  int32 totalPassed = 2;
+  int32 totalFailed = 3;
   repeated string error = 4;
 }

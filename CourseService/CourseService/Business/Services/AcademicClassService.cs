@@ -808,5 +808,99 @@ namespace CourseService.Business.Services
                 throw;
             }
         }
+
+        public async Task<AcademicClassAnalyticsListResponse> GetAcademicClassesAnalyticsPaginationAsync(
+            Pagination pagination,
+            AcademicClassFilterParams? filterParams,
+            Order? order)
+        {
+            // 1. Get the filtered, paginated list using the existing method
+            var pagedClasses = await GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);
+
+            // 2. For each class, add analytics fields
+            var analyticsList = new List<AcademicClassAnalyticsDto>();
+            int totalEnrollment = 0;
+            int totalPassed = 0;
+            int totalFailed = 0;
+            double totalAverageScore = 0;
+            int classCount = 0;
+            foreach (var classDto in pagedClasses.Data)
+            {
+                var analyticsDto = _mapper.Map<AcademicClassAnalyticsDto>(classDto);
+
+                // Get average score
+                analyticsDto.AverageScore = await _enrollmentClientService.GetAverageScoreAsync(classDto.Id.ToString());
+
+                // Get pass/fail counts
+                var (classPassed, classFailed) = await _enrollmentClientService.GetPassFailCountAsync(classDto.Id.ToString());
+                analyticsDto.TotalPassed = classPassed;
+                analyticsDto.TotalFailed = classFailed;
+
+                analyticsList.Add(analyticsDto);
+
+                // Aggregate for summary
+                totalEnrollment += classDto.EnrollmentCount;
+                totalPassed += classPassed;
+                totalFailed += classFailed;
+                totalAverageScore += analyticsDto.AverageScore;
+                classCount++;
+            }
+
+            double avgScore = classCount > 0 ? totalAverageScore / classCount : 0;
+
+            return new AcademicClassAnalyticsListResponse
+            {
+                Data = analyticsList,
+                Total = pagedClasses.Total,
+                PageSize = pagedClasses.PageSize,
+                PageIndex = pagedClasses.PageIndex,
+                TotalEnrollment = totalEnrollment,
+                TotalPassed = totalPassed,
+                TotalFailed = totalFailed,
+                TotalAverageScore = avgScore
+            };
+        }
+
+        public async Task<AcademicClassAnalyticsSummaryResponse> GetAcademicClassesAnalyticsSummaryAsync(
+            AcademicClassFilterParams? filterParams)
+        {
+            // Get all matching classes (no pagination)
+            var allClassesQuery = _academicClassRepository.GetQueryWithIncludes();
+            var filteredQuery = _academicClassRepository.ApplyFiltersToQuery(allClassesQuery, filterParams);
+            var allClasses = await filteredQuery.ToListAsync();
+            var allClassDtos = _mapper.Map<List<AcademicClassReadDto>>(allClasses);
+
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(allClassDtos);
+
+            int totalEnrollment = 0;
+            int totalPassed = 0;
+            int totalFailed = 0;
+            double totalAverageScore = 0;
+            int classCount = 0;
+
+            foreach (var classDto in allClassDtos)
+            {
+                totalEnrollment += classDto.EnrollmentCount;
+                // Get pass/fail counts
+                var (classPassed, classFailed) = await _enrollmentClientService.GetPassFailCountAsync(classDto.Id.ToString());
+                totalPassed += classPassed;
+                totalFailed += classFailed;
+                // Get average score
+                double avgScore = await _enrollmentClientService.GetAverageScoreAsync(classDto.Id.ToString());
+                totalAverageScore += avgScore;
+                classCount++;
+            }
+
+            double avgScoreAll = classCount > 0 ? totalAverageScore / classCount : 0;
+
+            return new AcademicClassAnalyticsSummaryResponse
+            {
+                TotalEnrollment = totalEnrollment,
+                TotalPassed = totalPassed,
+                TotalFailed = totalFailed,
+                TotalAverageScore = avgScoreAll
+            };
+        }
     }
 }
