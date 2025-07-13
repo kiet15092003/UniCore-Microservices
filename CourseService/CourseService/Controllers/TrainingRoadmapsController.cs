@@ -18,12 +18,23 @@ namespace CourseService.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<  ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
+        public async Task<ApiResponse<TrainingRoadmapReadDto>> GetTrainingRoadmapById(Guid id)
         {
             var result = await _trainingRoadmapService.GetTrainingRoadmapByIdAsync(id);
             if (result == null)
             {
                 return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { "Training roadmap not found" });
+            }
+            return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
+        }
+
+        [HttpGet("major/{majorId}/batch/{batchId}")]
+        public async Task<ApiResponse<TrainingRoadmapReadDto>> GetSingleTrainingRoadmapForMajorIdAndBatchId(Guid majorId, Guid batchId)
+        {
+            var result = await _trainingRoadmapService.GetTrainingRoadmapByMajorIdAndBatchIdAsync(majorId, batchId);
+            if (result == null)
+            {
+                return ApiResponse<TrainingRoadmapReadDto>.ErrorResponse(new List<string> { "Training roadmap not found for the specified major and batch" });
             }
             return ApiResponse<TrainingRoadmapReadDto>.SuccessResponse(result);
         }
