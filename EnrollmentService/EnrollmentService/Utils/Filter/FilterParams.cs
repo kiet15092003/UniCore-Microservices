@@ -13,5 +13,7 @@ namespace EnrollmentService.Utils.Filter
         public Guid? CourseId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public string? LecturerName { get; set; }
+        public string? ClassName { get; set; }
     }
 }

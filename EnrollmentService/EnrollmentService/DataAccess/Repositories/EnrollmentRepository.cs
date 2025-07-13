@@ -61,6 +61,7 @@ namespace EnrollmentService.DataAccess.Repositories
                     query = query.Where(e => e.AcademicClassId == filterParams.AcademicClassId.Value);
                 }
 
+
                 if (filterParams.Status.HasValue)
                 {
                     query = query.Where(e => e.Status == filterParams.Status.Value);
@@ -95,7 +96,24 @@ namespace EnrollmentService.DataAccess.Repositories
                     var toDate = filterParams.ToDate.Value.Date.AddDays(1).AddTicks(-1);
                     query = query.Where(e => e.CreatedAt <= toDate);
                 }
-            }            // Apply ordering
+
+                // Filter by class name if specified
+                if (!string.IsNullOrEmpty(filterParams.ClassName))
+                {
+                    var matchingClassIds = await GetMatchingClassIdsByNameAsync(filterParams.ClassName);
+                    if (matchingClassIds.Any())
+                    {
+                        query = query.Where(e => matchingClassIds.Contains(e.AcademicClassId));
+                    }
+                    else
+                    {
+                        // If no matching classes found, return empty result
+                        query = query.Where(e => false);
+                    }
+                }
+            }
+
+            // Apply ordering
             if (order != null)
             {
                 switch (order.OrderBy.ToLower())
@@ -130,7 +148,9 @@ namespace EnrollmentService.DataAccess.Repositories
             else
             {
                 query = query.OrderBy(e => e.CreatedAt);
-            }            // Get total count
+            }
+
+            // Get total count
             var totalCount = await query.CountAsync();
 
             // Check if we need complex sorting that requires external data
@@ -530,6 +550,37 @@ namespace EnrollmentService.DataAccess.Repositories
                 }
             }
 
+            return matchingIds;
+        }
+
+        private async Task<List<Guid>> GetMatchingClassIdsByNameAsync(string className)
+        {
+            var matchingIds = new List<Guid>();
+            var academicClassIds = await _context.Enrollments
+                .Select(e => e.AcademicClassId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var academicClassId in academicClassIds)
+            {
+                try
+                {
+                    var academicClassResponse = await _grpcAcademicClassClient.GetAcademicClassById(academicClassId.ToString());
+                    if (academicClassResponse?.Success == true && academicClassResponse.Data != null)
+                    {
+                        var academicClass = academicClassResponse.Data;
+                        if (academicClass.Name.Equals(className, StringComparison.OrdinalIgnoreCase))
+                        {
+                            matchingIds.Add(academicClassId);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // If gRPC call fails, skip this academic class
+                    continue;
+                }
+            }
             return matchingIds;
         }
 
