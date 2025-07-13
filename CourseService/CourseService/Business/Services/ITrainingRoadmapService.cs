@@ -9,6 +9,7 @@ namespace CourseService.Business.Services
         Task<TrainingRoadmapListResponse> GetTrainingRoadmapsByPagination(Pagination pagination, TrainingRoadmapFilterParams filterParams, Order? order);
         Task<TrainingRoadmapReadDto> UpdateTrainingRoadmapAsync(Guid id, TrainingRoadmapUpdateDto updateDto);
         Task<TrainingRoadmapReadDto> GetTrainingRoadmapByIdAsync(Guid id);
+        Task<TrainingRoadmapReadDto> GetTrainingRoadmapByMajorIdAndBatchIdAsync(Guid majorId, Guid batchId);
         Task<TrainingRoadmapReadDto> AddTrainingRoadmapComponentsAsync(TrainingRoadmapAddComponentsDto componentsDto);
         Task<TrainingRoadmapReadDto> DeactivateTrainingRoadmapAsync(Guid id);
         Task<TrainingRoadmapReadDto> ActivateTrainingRoadmapAsync(Guid id);
