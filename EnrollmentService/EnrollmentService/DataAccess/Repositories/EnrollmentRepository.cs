@@ -41,13 +41,30 @@ namespace EnrollmentService.DataAccess.Repositories
             // Apply filters
             if (filterParams != null)
             {
+                // Search filter - search in both student code and class name
+                if (!string.IsNullOrEmpty(filterParams.Search))
+                {
+                    var studentIds = await GetStudentIdsByCodeAsync(filterParams.Search);
+                    var classIds = await GetClassIdsByNameAsync(filterParams.Search);
+                    
+                    if (studentIds.Any() || classIds.Any())
+                    {
+                        query = query.Where(e => studentIds.Contains(e.StudentId) || classIds.Contains(e.AcademicClassId));
+                    }
+                    else
+                    {
+                        // If no matches found, return empty result
+                        query = query.Where(e => false);
+                    }
+                }
+
+                // Filter by student code
                 if (!string.IsNullOrEmpty(filterParams.StudentCode))
                 {
-                    // Get student ID from student code
-                    var studentId = await GetStudentIdByCodeAsync(filterParams.StudentCode);
-                    if (studentId.HasValue)
+                    var studentIds = await GetStudentIdsByCodeAsync(filterParams.StudentCode);
+                    if (studentIds.Any())
                     {
-                        query = query.Where(e => e.StudentId == studentId.Value);
+                        query = query.Where(e => studentIds.Contains(e.StudentId));
                     }
                     else
                     {
@@ -61,11 +78,12 @@ namespace EnrollmentService.DataAccess.Repositories
                     query = query.Where(e => e.AcademicClassId == filterParams.AcademicClassId.Value);
                 }
 
-
                 if (filterParams.Status.HasValue)
                 {
                     query = query.Where(e => e.Status == filterParams.Status.Value);
-                }                // Filter by semester and course if specified
+                }
+
+                // Filter by semester and course if specified
                 if (filterParams.SemesterId.HasValue || filterParams.CourseId.HasValue)
                 {
                     // Get all academic class IDs that match the semester and/or course criteria
@@ -100,10 +118,10 @@ namespace EnrollmentService.DataAccess.Repositories
                 // Filter by class name if specified
                 if (!string.IsNullOrEmpty(filterParams.ClassName))
                 {
-                    var matchingClassIds = await GetMatchingClassIdsByNameAsync(filterParams.ClassName);
-                    if (matchingClassIds.Any())
+                    var classIds = await GetClassIdsByNameAsync(filterParams.ClassName);
+                    if (classIds.Any())
                     {
-                        query = query.Where(e => matchingClassIds.Contains(e.AcademicClassId));
+                        query = query.Where(e => classIds.Contains(e.AcademicClassId));
                     }
                     else
                     {
@@ -553,49 +571,19 @@ namespace EnrollmentService.DataAccess.Repositories
             return matchingIds;
         }
 
-        private async Task<List<Guid>> GetMatchingClassIdsByNameAsync(string className)
+        private async Task<List<Guid>> GetStudentIdsByCodeAsync(string studentCode)
         {
-            var matchingIds = new List<Guid>();
-            var academicClassIds = await _context.Enrollments
-                .Select(e => e.AcademicClassId)
-                .Distinct()
-                .ToListAsync();
-
-            foreach (var academicClassId in academicClassIds)
-            {
-                try
-                {
-                    var academicClassResponse = await _grpcAcademicClassClient.GetAcademicClassById(academicClassId.ToString());
-                    if (academicClassResponse?.Success == true && academicClassResponse.Data != null)
-                    {
-                        var academicClass = academicClassResponse.Data;
-                        if (academicClass.Name.Equals(className, StringComparison.OrdinalIgnoreCase))
-                        {
-                            matchingIds.Add(academicClassId);
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    // If gRPC call fails, skip this academic class
-                    continue;
-                }
-            }
-            return matchingIds;
-        }
-
-        private async Task<Guid?> GetStudentIdByCodeAsync(string studentCode)
-        {
+            var studentIds = new List<Guid>();
             try
             {
                 // Get all unique student IDs from enrollments
-                var studentIds = await _context.Enrollments
+                var allStudentIds = await _context.Enrollments
                     .Select(e => e.StudentId)
                     .Distinct()
                     .ToListAsync();
 
                 // For each student ID, check if it matches the student code
-                foreach (var studentId in studentIds)
+                foreach (var studentId in allStudentIds)
                 {
                     try
                     {
@@ -603,9 +591,10 @@ namespace EnrollmentService.DataAccess.Repositories
                         
                         if (studentResponse?.Success == true && 
                             studentResponse.Data != null && 
-                            studentResponse.Data.StudentCode.Equals(studentCode, StringComparison.OrdinalIgnoreCase))
+                            studentResponse.Data.StudentCode != null &&
+                            studentResponse.Data.StudentCode.Contains(studentCode, StringComparison.OrdinalIgnoreCase))
                         {
-                            return studentId;
+                            studentIds.Add(studentId);
                         }
                     }
                     catch (Exception)
@@ -615,12 +604,55 @@ namespace EnrollmentService.DataAccess.Repositories
                     }
                 }
 
-                return null;
+                return studentIds;
             }
             catch (Exception)
             {
-                // If any error occurs, return null
-                return null;
+                // If any error occurs, return empty list
+                return new List<Guid>();
+            }
+        }
+
+        private async Task<List<Guid>> GetClassIdsByNameAsync(string className)
+        {
+            var classIds = new List<Guid>();
+            try
+            {
+                // Get all unique academic class IDs from enrollments
+                var allClassIds = await _context.Enrollments
+                    .Select(e => e.AcademicClassId)
+                    .Distinct()
+                    .ToListAsync();
+
+                // For each academic class ID, check if it matches the class name
+                foreach (var classId in allClassIds)
+                {
+                    try
+                    {
+                        var academicClassResponse = await _grpcAcademicClassClient.GetAcademicClassById(classId.ToString());
+                        if (academicClassResponse?.Success == true && academicClassResponse.Data != null)
+                        {
+                            var academicClass = academicClassResponse.Data;
+                            // Support partial matching (case-insensitive)
+                            if (academicClass.Name != null && 
+                                academicClass.Name.Contains(className, StringComparison.OrdinalIgnoreCase))
+                            {
+                                classIds.Add(classId);
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // If gRPC call fails, skip this academic class
+                        continue;
+                    }
+                }
+                return classIds;
+            }
+            catch (Exception)
+            {
+                // If any error occurs, return empty list
+                return new List<Guid>();
             }
         }
 

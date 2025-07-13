@@ -6,6 +6,7 @@ namespace EnrollmentService.Utils.Filter
     }
     public class EnrollmentListFilterParams
     {
+        public string? Search { get; set; }
         public string? StudentCode { get; set; }
         public Guid? AcademicClassId { get; set; }
         public int? Status { get; set; }
