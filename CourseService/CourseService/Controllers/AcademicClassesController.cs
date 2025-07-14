@@ -147,6 +147,32 @@ namespace CourseService.Controllers
             }
         }
 
+        [HttpPut("bulk-change-status")]
+        public async Task<ApiResponse<string>> BulkChangeStatus([FromBody] BulkChangeStatusDto bulkChangeStatusDto)
+        {
+            try
+            {
+                var success = await _academicClassService.BulkChangeStatusAsync(bulkChangeStatusDto);
+                
+                if (!success)
+                {
+                    return ApiResponse<string>.ErrorResponse(new List<string> { "Failed to change status - no academic classes found for the provided IDs." });
+                }
+
+                string message = $"Successfully changed status to {bulkChangeStatusDto.Status} for {bulkChangeStatusDto.AcademicClassIds.Count} academic class(es).";
+                
+                return ApiResponse<string>.SuccessResponse(message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<string>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.ErrorResponse(new List<string> { $"An error occurred while changing status: {ex.Message}" });
+            }
+        }
+
         [HttpGet("analytics")]
         public async Task<ApiResponse<AcademicClassAnalyticsListResponse>> GetAcademicClassesAnalyticsPagination([FromQuery] GetAcademicClassByPaginationParam param)
         {

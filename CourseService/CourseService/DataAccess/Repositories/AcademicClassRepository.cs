@@ -170,6 +170,11 @@ namespace CourseService.DataAccess.Repositories
                 queryable = queryable.Where(ac => ac.LecturerId == filterParams.LecturerId.Value);
             }
 
+            if (filterParams.EnrollmentStatus.HasValue)
+            {
+                queryable = queryable.Where(ac => ac.Status == filterParams.EnrollmentStatus.Value);
+            }
+
             return queryable;
         }
 

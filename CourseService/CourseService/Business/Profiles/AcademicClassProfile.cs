@@ -19,8 +19,8 @@ namespace CourseService.Business.Profiles
             // Map basic academic class (for avoiding circular references)
             CreateMap<AcademicClass, AcademicClassBasicDto>()
                 .ForMember(dest => dest.ScheduleInDays, opt => opt.MapFrom(src => src.ScheduleInDays))
-                .ForMember(dest => dest.LecturerId, opt => opt.MapFrom(src => src.LecturerId));  
-            
+                .ForMember(dest => dest.LecturerId, opt => opt.MapFrom(src => src.LecturerId));
+
             // Map academic class
             CreateMap<AcademicClass, AcademicClassReadDto>()
                 .ForMember(dest => dest.Course, opt => opt.MapFrom(src => src.Course))
@@ -30,7 +30,8 @@ namespace CourseService.Business.Profiles
                 .ForMember(dest => dest.ParentTheoryAcademicClass, opt => opt.MapFrom(src => src.ParentTheoryAcademicClass))
                 .ForMember(dest => dest.ChildPracticeAcademicClassIds, opt => opt.MapFrom(src => src.ChildPracticeAcademicClassIds))
                 .ForMember(dest => dest.ChildPracticeAcademicClasses, opt => opt.MapFrom(src => src.ChildPracticeAcademicClasses))
-                .ForMember(dest => dest.LecturerId, opt => opt.MapFrom(src => src.LecturerId));
+                .ForMember(dest => dest.LecturerId, opt => opt.MapFrom(src => src.LecturerId))
+                .ForMember(dest => dest.EnrollmentStatus, opt => opt.MapFrom(src => src.Status));
 
             // Map analytics DTO (inherits from AcademicClassReadDto)
             CreateMap<AcademicClass, AcademicClassAnalyticsDto>()
