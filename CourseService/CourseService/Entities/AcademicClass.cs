@@ -20,5 +20,6 @@
         public List<Guid> ChildPracticeAcademicClassIds { get; set; } = new List<Guid>();
         public List<AcademicClass> ChildPracticeAcademicClasses { get; set; } = new List<AcademicClass>();
         public List<ScheduleInDay> ScheduleInDays { get; set; } = new List<ScheduleInDay>();
+        public int Status { get; set; }
     }
 }

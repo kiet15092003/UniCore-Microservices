@@ -21,6 +21,7 @@ namespace CourseService.Business.Services
         Task<bool> ScheduleRegistrationAsync(ClassRegistrationScheduleDto scheduleDto);
         Task<bool> DeleteAcademicClassAsync(Guid id);
         Task<bool> AssignLecturerToClassesAsync(AssignLecturerToClassesDto assignLecturerDto);
+        Task<bool> BulkChangeStatusAsync(BulkChangeStatusDto bulkChangeStatusDto);
         Task<AcademicClassAnalyticsListResponse> GetAcademicClassesAnalyticsPaginationAsync(
             Pagination pagination,
             AcademicClassFilterParams? filterParams,

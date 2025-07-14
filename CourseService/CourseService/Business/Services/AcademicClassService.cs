@@ -5,6 +5,7 @@ using CourseService.DataAccess.Repositories;
 using CourseService.Entities;
 using CourseService.Utils.Filter;
 using CourseService.Utils.Pagination;
+using CourseService.Utils.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace CourseService.Business.Services
@@ -49,6 +50,7 @@ namespace CourseService.Business.Services
                 CourseId = academicClassCreateDto.CourseId,
                 SemesterId = academicClassCreateDto.SemesterId,
                 ParentTheoryAcademicClassId = academicClassCreateDto.ParentTheoryAcademicClassId,
+                Status = AcademicClassStatus.Pending, // Default status: 1 = "Pending"
                 // Initialize with empty lists
                 ChildPracticeAcademicClassIds = new List<Guid>(),
                 ScheduleInDays = new List<ScheduleInDay>()
@@ -203,17 +205,17 @@ namespace CourseService.Business.Services
             }
 
             // Get enrollment status for the main academic class
-            try
-            {
-                var enrollmentStatus = await _enrollmentClientService.GetFirstEnrollmentStatusAsync(id.ToString());
-                academicClassDto.EnrollmentStatus = enrollmentStatus;
-            }
-            catch (Exception ex)
-            {
-                // Log the error but continue with null enrollment status
-                _logger.LogError(ex, "Error fetching enrollment status for academic class {AcademicClassId}", id);
-                academicClassDto.EnrollmentStatus = null;
-            }
+            //try
+            //{
+            //    var enrollmentStatus = await _enrollmentClientService.GetFirstEnrollmentStatusAsync(id.ToString());
+            //    academicClassDto.EnrollmentStatus = enrollmentStatus;
+            //}
+            //catch (Exception ex)
+            //{
+            //    // Log the error but continue with null enrollment status
+            //    _logger.LogError(ex, "Error fetching enrollment status for academic class {AcademicClassId}", id);
+            //    academicClassDto.EnrollmentStatus = null;
+            //}
 
             // Get enrollment count and status for child practice classes
             if (academicClassDto.ChildPracticeAcademicClasses != null && academicClassDto.ChildPracticeAcademicClasses.Count > 0)
@@ -441,17 +443,17 @@ namespace CourseService.Business.Services
                 }
 
                 // Populate enrollment status for the main academic class
-                try
-                {
-                   var enrollmentStatus = await _enrollmentClientService.GetFirstEnrollmentStatusAsync(academicClass.Id.ToString());
-                   academicClass.EnrollmentStatus = enrollmentStatus;
-                }
-                catch (Exception ex)
-                {
-                   // Log the error but continue with null enrollment status
-                   _logger.LogError(ex, "Error fetching enrollment status for academic class {AcademicClassId}", academicClass.Id);
-                   academicClass.EnrollmentStatus = null;
-                }
+                //try
+                //{
+                //   var enrollmentStatus = await _enrollmentClientService.GetFirstEnrollmentStatusAsync(academicClass.Id.ToString());
+                //   academicClass.EnrollmentStatus = enrollmentStatus;
+                //}
+                //catch (Exception ex)
+                //{
+                //   // Log the error but continue with null enrollment status
+                //   _logger.LogError(ex, "Error fetching enrollment status for academic class {AcademicClassId}", academicClass.Id);
+                //   academicClass.EnrollmentStatus = null;
+                //}
 
                 // Populate enrollment count and status for child practice classes
                 if (academicClass.ChildPracticeAcademicClasses != null && academicClass.ChildPracticeAcademicClasses.Count > 0)
@@ -496,158 +498,174 @@ namespace CourseService.Business.Services
             Pagination pagination,
             AcademicClassFilterParams? filterParams,
             Order? order)
-        {            
-            // If enrollment status filtering is requested, we need to get all data first
-            // then filter and paginate manually to ensure correct results
-            if (filterParams?.EnrollmentStatus.HasValue == true)
+        {
+            var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);
+            var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
+
+            // Populate room data for each academic class
+            await PopulateRoomDataForClasses(academicClassDtos);
+
+            // Populate enrollment count for each academic class
+            await PopulateEnrollmentCountForClasses(academicClassDtos);
+
+            return new AcademicClassListResponse
             {
-                // Get all academic classes with includes using repository method
-                var allClassesQuery = _academicClassRepository.GetQueryWithIncludes();
+                Data = academicClassDtos,
+                Total = paginationResult.Total,
+                PageSize = paginationResult.PageSize,
+                PageIndex = paginationResult.PageIndex
+            };
+            //// If enrollment status filtering is requested, we need to get all data first
+            //// then filter and paginate manually to ensure correct results
+            //if (filterParams?.EnrollmentStatus.HasValue == true)
+            //{
+            //    // Get all academic classes with includes using repository method
+            //    var allClassesQuery = _academicClassRepository.GetQueryWithIncludes();
 
-                // Apply basic filters (without enrollment status) using repository method
-                var tempFilterParams = new AcademicClassFilterParams
-                {
-                    Name = filterParams.Name,
-                    GroupNumber = filterParams.GroupNumber,
-                    MinCapacity = filterParams.MinCapacity,
-                    MaxCapacity = filterParams.MaxCapacity,
-                    StartDate = filterParams.StartDate,
-                    EndDate = filterParams.EndDate,
-                    IsRegistrable = filterParams.IsRegistrable,
-                    CourseId = filterParams.CourseId,
-                    SemesterId = filterParams.SemesterId,
-                    RoomId = filterParams.RoomId,
-                    ShiftId = filterParams.ShiftId,
-                    ScheduleInDayIds = filterParams.ScheduleInDayIds
-                    // Note: Exclude EnrollmentStatus from basic filtering
-                };
+            //    // Apply basic filters (without enrollment status) using repository method
+            //    var tempFilterParams = new AcademicClassFilterParams
+            //    {
+            //        Name = filterParams.Name,
+            //        GroupNumber = filterParams.GroupNumber,
+            //        MinCapacity = filterParams.MinCapacity,
+            //        MaxCapacity = filterParams.MaxCapacity,
+            //        StartDate = filterParams.StartDate,
+            //        EndDate = filterParams.EndDate,
+            //        IsRegistrable = filterParams.IsRegistrable,
+            //        CourseId = filterParams.CourseId,
+            //        SemesterId = filterParams.SemesterId,
+            //        RoomId = filterParams.RoomId,
+            //        ShiftId = filterParams.ShiftId,
+            //        ScheduleInDayIds = filterParams.ScheduleInDayIds
+            //        // Note: Exclude EnrollmentStatus from basic filtering
+            //    };
 
-                // Apply filters and sorting using repository methods
-                var filteredQuery = _academicClassRepository.ApplyFiltersToQuery(allClassesQuery, tempFilterParams);
+            //    // Apply filters and sorting using repository methods
+            //    var filteredQuery = _academicClassRepository.ApplyFiltersToQuery(allClassesQuery, tempFilterParams);
 
-                // Apply sorting if specified
-                if (order != null && !string.IsNullOrEmpty(order.By))
-                {
-                    if (order.IsDesc)
-                    {
-                        filteredQuery = filteredQuery.OrderByDescending(e => EF.Property<object>(e, order.By));
-                    }
-                    else
-                    {
-                        filteredQuery = filteredQuery.OrderBy(e => EF.Property<object>(e, order.By));
-                    }
-                }
-                else
-                {
-                    filteredQuery = filteredQuery.OrderByDescending(s => s.CreatedAt);
-                }
+            //    // Apply sorting if specified
+            //    if (order != null && !string.IsNullOrEmpty(order.By))
+            //    {
+            //        if (order.IsDesc)
+            //        {
+            //            filteredQuery = filteredQuery.OrderByDescending(e => EF.Property<object>(e, order.By));
+            //        }
+            //        else
+            //        {
+            //            filteredQuery = filteredQuery.OrderBy(e => EF.Property<object>(e, order.By));
+            //        }
+            //    }
+            //    else
+            //    {
+            //        filteredQuery = filteredQuery.OrderByDescending(s => s.CreatedAt);
+            //    }
 
-                // Execute query to get all filtered results
-                var allFilteredClasses = await filteredQuery.ToListAsync();
-                var allAcademicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(allFilteredClasses);
+            //    // Execute query to get all filtered results
+            //    var allFilteredClasses = await filteredQuery.ToListAsync();
+            //    var allAcademicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(allFilteredClasses);
 
-                // Filter out child practice classes where IsRegistrable = false
-                foreach (var academicClass in allAcademicClassDtos)
-                {
-                    academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
-                        .Where(child => child.IsRegistrable)
-                        .ToList();
-                }
+            //    // Filter out child practice classes where IsRegistrable = false
+            //    foreach (var academicClass in allAcademicClassDtos)
+            //    {
+            //        academicClass.ChildPracticeAcademicClasses = academicClass.ChildPracticeAcademicClasses
+            //            .Where(child => child.IsRegistrable)
+            //            .ToList();
+            //    }
 
-                // Now filter by enrollment status via gRPC calls
-                var filteredByEnrollmentStatus = new List<AcademicClassReadDto>();
+            //    // Now filter by enrollment status via gRPC calls
+            //    var filteredByEnrollmentStatus = new List<AcademicClassReadDto>();
 
-                foreach (var academicClass in allAcademicClassDtos)
-                {
-                    try
-                    {
-                        // Get the first enrollment status for this academic class via gRPC
-                        var enrollmentStatus = await _enrollmentClientService.GetFirstEnrollmentStatusAsync(academicClass.Id.ToString());
+            //    foreach (var academicClass in allAcademicClassDtos)
+            //    {
+            //        try
+            //        {
+            //            // Get the first enrollment status for this academic class via gRPC
+            //            var enrollmentStatus = await _enrollmentClientService.GetFirstEnrollmentStatusAsync(academicClass.Id.ToString());
 
-                        // Map the actual enrollment status to the filter status
-                        // Filter status: 1=pending, 2=approved, 3=started (includes 3,4,5), 6=rejected
-                        int? mappedStatus = null;
-                        if (enrollmentStatus != 0)
-                        {
-                            switch (enrollmentStatus)
-                            {
-                                case 1:
-                                    mappedStatus = 1; // pending
-                                    break;
-                                case 2:
-                                    mappedStatus = 2; // approved
-                                    break;
-                                case 3:
-                                case 4:
-                                case 5:
-                                    mappedStatus = 3; // started (includes 3, 4, 5)
-                                    break;
-                                case 6:
-                                    mappedStatus = 6; // rejected
-                                    break;
-                                default:
-                                    mappedStatus = 0; // unknown status
-                                    break;
-                            }
-                        }
+            //            // Map the actual enrollment status to the filter status
+            //            // Filter status: 1=pending, 2=approved, 3=started (includes 3,4,5), 6=rejected
+            //            int? mappedStatus = null;
+            //            if (enrollmentStatus != 0)
+            //            {
+            //                switch (enrollmentStatus)
+            //                {
+            //                    case 1:
+            //                        mappedStatus = 1; // pending
+            //                        break;
+            //                    case 2:
+            //                        mappedStatus = 2; // approved
+            //                        break;
+            //                    case 3:
+            //                    case 4:
+            //                    case 5:
+            //                        mappedStatus = 3; // started (includes 3, 4, 5)
+            //                        break;
+            //                    case 6:
+            //                        mappedStatus = 6; // rejected
+            //                        break;
+            //                    default:
+            //                        mappedStatus = 0; // unknown status
+            //                        break;
+            //                }
+            //            }
 
-                        // If mapped enrollment status matches the filter criteria, include the class
-                        if (mappedStatus.HasValue && mappedStatus.Value == filterParams.EnrollmentStatus.Value)
-                        {
-                            filteredByEnrollmentStatus.Add(academicClass);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log error but continue processing other classes
-                        _logger.LogWarning(ex, "Failed to get enrollment status for academic class {ClassId}", academicClass.Id);
+            //            // If mapped enrollment status matches the filter criteria, include the class
+            //            if (mappedStatus.HasValue && mappedStatus.Value == filterParams.EnrollmentStatus.Value)
+            //            {
+            //                filteredByEnrollmentStatus.Add(academicClass);
+            //            }
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            // Log error but continue processing other classes
+            //            _logger.LogWarning(ex, "Failed to get enrollment status for academic class {ClassId}", academicClass.Id);
 
-                        // Optionally include the class if gRPC call fails (depending on business logic)
-                        // For now, we'll exclude it from results when gRPC fails
-                    }
-                }
+            //            // Optionally include the class if gRPC call fails (depending on business logic)
+            //            // For now, we'll exclude it from results when gRPC fails
+            //        }
+            //    }
 
-                // Apply manual pagination on the filtered results
-                var totalCount = filteredByEnrollmentStatus.Count;
-                var pagedResults = filteredByEnrollmentStatus
-                    .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
-                    .Take(pagination.ItemsPerpage)
-                    .ToList();
+            //    // Apply manual pagination on the filtered results
+            //    var totalCount = filteredByEnrollmentStatus.Count;
+            //    var pagedResults = filteredByEnrollmentStatus
+            //        .Skip((pagination.PageNumber - 1) * pagination.ItemsPerpage)
+            //        .Take(pagination.ItemsPerpage)
+            //        .ToList();
 
-                // Populate room data for each academic class
-                await PopulateRoomDataForClasses(pagedResults);
+            //    // Populate room data for each academic class
+            //    await PopulateRoomDataForClasses(pagedResults);
 
-                // Populate enrollment count for each academic class
-                await PopulateEnrollmentCountForClasses(pagedResults);
+            //    // Populate enrollment count for each academic class
+            //    await PopulateEnrollmentCountForClasses(pagedResults);
 
-                return new AcademicClassListResponse
-                {
-                    Data = pagedResults,
-                    Total = totalCount,
-                    PageSize = pagination.ItemsPerpage,
-                    PageIndex = pagination.PageNumber
-                };
-            }
-            else
-            {
-                // Normal pagination without enrollment status filtering
-                var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);
-                var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
+            //    return new AcademicClassListResponse
+            //    {
+            //        Data = pagedResults,
+            //        Total = totalCount,
+            //        PageSize = pagination.ItemsPerpage,
+            //        PageIndex = pagination.PageNumber
+            //    };
+            //}
+            //else
+            //{
+            //    // Normal pagination without enrollment status filtering
+            //    var paginationResult = await _academicClassRepository.GetAllAcademicClassesPaginationAsync(pagination, filterParams, order);
+            //    var academicClassDtos = _mapper.Map<List<AcademicClassReadDto>>(paginationResult.Data);
 
-                // Populate room data for each academic class
-                await PopulateRoomDataForClasses(academicClassDtos);
+            //    // Populate room data for each academic class
+            //    await PopulateRoomDataForClasses(academicClassDtos);
 
-                // Populate enrollment count for each academic class
-                await PopulateEnrollmentCountForClasses(academicClassDtos);
+            //    // Populate enrollment count for each academic class
+            //    await PopulateEnrollmentCountForClasses(academicClassDtos);
 
-                return new AcademicClassListResponse
-                {
-                    Data = academicClassDtos,
-                    Total = paginationResult.Total,
-                    PageSize = paginationResult.PageSize,
-                    PageIndex = paginationResult.PageIndex
-                };
-            }
+            //    return new AcademicClassListResponse
+            //    {
+            //        Data = academicClassDtos,
+            //        Total = paginationResult.Total,
+            //        PageSize = paginationResult.PageSize,
+            //        PageIndex = paginationResult.PageIndex
+            //    };
+            //}
         }
 
         /// <summary>
@@ -809,6 +827,49 @@ namespace CourseService.Business.Services
             }
         }
 
+        public async Task<bool> BulkChangeStatusAsync(BulkChangeStatusDto bulkChangeStatusDto)
+        {
+            try
+            {
+                // Get all academic classes by IDs
+                var academicClasses = await _academicClassRepository.GetAcademicClassesByIdsAsync(bulkChangeStatusDto.AcademicClassIds);
+                
+                if (academicClasses == null || academicClasses.Count == 0)
+                {
+                    _logger.LogWarning("No academic classes found for the provided IDs");
+                    return false;
+                }
+
+                // Check if all provided IDs were found
+                var foundIds = academicClasses.Select(ac => ac.Id).ToList();
+                var notFoundIds = bulkChangeStatusDto.AcademicClassIds.Except(foundIds).ToList();
+                
+                if (notFoundIds.Any())
+                {
+                    _logger.LogWarning("Academic classes not found for IDs: {NotFoundIds}", string.Join(", ", notFoundIds));
+                    throw new KeyNotFoundException($"Academic classes not found for IDs: {string.Join(", ", notFoundIds)}");
+                }
+
+                // Change status for all academic classes
+                foreach (var academicClass in academicClasses)
+                {
+                    academicClass.Status = bulkChangeStatusDto.Status;
+                    await _academicClassRepository.UpdateAcademicClassAsync(academicClass);
+                }
+
+                _logger.LogInformation("Successfully changed status to {Status} for {ClassCount} academic classes", 
+                    bulkChangeStatusDto.Status, academicClasses.Count);
+                
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing status to {Status} for academic classes {ClassIds}", 
+                    bulkChangeStatusDto.Status, string.Join(", ", bulkChangeStatusDto.AcademicClassIds));
+                throw;
+            }
+        }
+
         public async Task<AcademicClassAnalyticsListResponse> GetAcademicClassesAnalyticsPaginationAsync(
             Pagination pagination,
             AcademicClassFilterParams? filterParams,
@@ -882,10 +943,13 @@ namespace CourseService.Business.Services
                 var (classPassed, classFailed) = await _enrollmentClientService.GetPassFailCountAsync(classDto.Id.ToString());
                 totalPassed += classPassed;
                 totalFailed += classFailed;
-                // Get average score
-                double avgScore = await _enrollmentClientService.GetAverageScoreAsync(classDto.Id.ToString());
-                totalAverageScore += avgScore;
-                classCount++;
+                // Only include classes with at least one enrollment in the average
+                if (classDto.EnrollmentCount > 0)
+                {
+                    double avgScore = await _enrollmentClientService.GetAverageScoreAsync(classDto.Id.ToString());
+                    totalAverageScore += avgScore;
+                    classCount++;
+                }
             }
 
             double avgScoreAll = classCount > 0 ? totalAverageScore / classCount : 0;
