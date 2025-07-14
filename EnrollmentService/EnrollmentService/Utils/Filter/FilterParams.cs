@@ -6,6 +6,7 @@ namespace EnrollmentService.Utils.Filter
     }
     public class EnrollmentListFilterParams
     {
+        public string? Search { get; set; }
         public string? StudentCode { get; set; }
         public Guid? AcademicClassId { get; set; }
         public int? Status { get; set; }
@@ -13,5 +14,7 @@ namespace EnrollmentService.Utils.Filter
         public Guid? CourseId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public string? LecturerName { get; set; }
+        public string? ClassName { get; set; }
     }
 }
