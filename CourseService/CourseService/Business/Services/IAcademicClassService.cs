@@ -8,6 +8,7 @@ namespace CourseService.Business.Services
     public interface IAcademicClassService
     {
         Task<AcademicClassReadDto> CreateAcademicClassAsync(AcademicClassCreateDto academicClassCreateDto);
+        Task<AcademicClassReadDto> UpdateAcademicClassAsync(Guid id, AcademicClassUpdateDto academicClassUpdateDto);
         Task<AcademicClassReadDto> GetAcademicClassByIdAsync(Guid id);        
         Task<List<AcademicClassReadDto>> GetAcademicClassesByCourseIdAsync(Guid courseId);
         Task<List<AcademicClassReadDto>> GetAcademicClassesBySemesterIdAsync(Guid semesterId);

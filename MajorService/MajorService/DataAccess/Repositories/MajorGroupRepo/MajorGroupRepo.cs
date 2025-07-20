@@ -40,6 +40,26 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             
             return majorGroup;
         }
+
+        public async Task<MajorGroup> UpdateMajorGroupAsync(MajorGroup majorGroup)
+        {
+            var existingMajorGroup = await _context.MajorGroups.FindAsync(majorGroup.Id);
+            if (existingMajorGroup == null)
+            {
+                throw new KeyNotFoundException("MajorGroup not found");
+            }
+            
+            existingMajorGroup.Name = majorGroup.Name;
+            existingMajorGroup.DepartmentId = majorGroup.DepartmentId;
+            existingMajorGroup.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            // Return the updated major group with includes
+            return await _context.MajorGroups
+                .Include(mg => mg.Department)
+                .FirstOrDefaultAsync(mg => mg.Id == majorGroup.Id);
+        }
           public async Task<bool> DeactivateMajorGroupAsync(Guid id)
         {
             var majorGroup = await _context.MajorGroups.FirstOrDefaultAsync(mg => mg.Id == id);
@@ -143,6 +163,12 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
         {
             return await _context.MajorGroups
                 .AnyAsync(mg => mg.Name.ToLower() == name.ToLower());
+        }
+
+        public async Task<bool> IsMajorGroupNameExistsForOtherAsync(Guid id, string name)
+        {
+            return await _context.MajorGroups
+                .AnyAsync(mg => mg.Id != id && mg.Name.ToLower() == name.ToLower());
         }
         
         public async Task<string> GenerateUniqueCodeAsync()

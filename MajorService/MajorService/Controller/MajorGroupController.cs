@@ -46,6 +46,28 @@ namespace MajorService.Controller
             {
                 return ApiResponse<MajorGroup>.ErrorResponse([ex.Message]);
             }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<MajorGroup>> UpdateMajorGroupAsync(Guid id, [FromBody] UpdateMajorGroupDto request)
+        {
+            try
+            {
+                var majorGroup = await _majorGroupSvc.UpdateMajorGroupAsync(id, request);
+                return ApiResponse<MajorGroup>.SuccessResponse(majorGroup);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<MajorGroup>.ErrorResponse([ex.Message]);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<MajorGroup>.ErrorResponse([ex.Message]);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<MajorGroup>.ErrorResponse([$"An error occurred while updating the major group: {ex.Message}"]);
+            }
         }          
         [HttpPost("{id}/deactivate")]
         public async Task<ApiResponse<bool>> DeactivateMajorGroupAsync(Guid id)

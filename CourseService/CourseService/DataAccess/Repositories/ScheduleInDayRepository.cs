@@ -47,5 +47,26 @@ namespace CourseService.DataAccess.Repositories
             await _context.SaveChangesAsync();
             return scheduleInDay;
         }
+
+        public async Task<List<ScheduleInDay>> GetScheduleInDaysByAcademicClassIdAsync(Guid academicClassId)
+        {
+            return await _context.ScheduleInDays
+                .Include(s => s.Shift)
+                .Where(s => s.AcademicClassId == academicClassId)
+                .ToListAsync();
+        }
+
+        public async Task<bool> DeleteScheduleInDayAsync(Guid id)
+        {
+            var scheduleInDay = await _context.ScheduleInDays.FindAsync(id);
+            if (scheduleInDay == null)
+            {
+                return false;
+            }
+
+            _context.ScheduleInDays.Remove(scheduleInDay);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

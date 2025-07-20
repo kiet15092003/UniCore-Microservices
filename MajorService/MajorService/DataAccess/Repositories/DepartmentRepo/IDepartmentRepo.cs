@@ -9,6 +9,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
         Task<Department> GetDepartmentByIdAsync(Guid id);
         Task<List<Department>> GetAllDepartmentsAsync();
         Task<Department> CreateDepartmentAsync(Department department);
+        Task<Department> UpdateDepartmentAsync(Department department);
         Task<bool> DeactivateDepartmentAsync(Guid id);
         Task<bool> ActivateDepartmentAsync(Guid id);
         Task<PaginationResult<Department>> GetDepartmentsByPaginationAsync(
@@ -16,6 +17,7 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             DepartmentListFilterParams departmentListFilterParams,
             Order? order);
         Task<bool> IsDepartmentNameExistsAsync(string name);
+        Task<bool> IsDepartmentNameExistsForOtherAsync(Guid id, string name);
         Task<string> GenerateUniqueCodeAsync();
         Task<bool> DeleteDepartmentAsync(Guid id);
         Task<List<MajorGroup>> GetMajorGroupsByDepartmentIdAsync(Guid departmentId);

@@ -63,6 +63,32 @@ namespace MajorService.Business.Services.MajorGroupServices
             
             return await _majorGroupRepo.CreateMajorGroupAsync(majorGroup);
         }
+
+        public async Task<MajorGroup> UpdateMajorGroupAsync(Guid id, UpdateMajorGroupDto dto)
+        {
+            // Check if major group exists
+            var existingMajorGroup = await _majorGroupRepo.GetMajorGroupByIdAsync(id);
+            if (existingMajorGroup == null)
+            {
+                throw new KeyNotFoundException($"Major group with ID '{id}' not found.");
+            }
+            
+            // Check if name already exists for other major groups
+            bool nameExists = await _majorGroupRepo.IsMajorGroupNameExistsForOtherAsync(id, dto.Name);
+            if (nameExists)
+            {
+                throw new InvalidOperationException($"Major group with name '{dto.Name}' already exists.");
+            }
+            
+            // Update the major group
+            existingMajorGroup.Name = dto.Name;
+            if (dto.DepartmentId.HasValue)
+            {
+                existingMajorGroup.DepartmentId = dto.DepartmentId.Value;
+            }
+            
+            return await _majorGroupRepo.UpdateMajorGroupAsync(existingMajorGroup);
+        }
           public async Task<bool> DeactivateMajorGroupAsync(DeactivateDto deactivateDto)
         {
             return await _majorGroupRepo.DeactivateMajorGroupAsync(deactivateDto.Id);

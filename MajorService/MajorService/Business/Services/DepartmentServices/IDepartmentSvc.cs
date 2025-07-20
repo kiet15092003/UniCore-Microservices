@@ -9,6 +9,7 @@ namespace MajorService.Business.Services.DepartmentServices
     {        Task<List<Department>> GetAllDepartmentsAsync();
         Task<Department> GetDepartmentByIdAsync(Guid id);
         Task<Department> CreateNewDepartmentAsync(string departmentName);
+        Task<Department> UpdateDepartmentAsync(Guid id, UpdateDepartmentDto dto);
         Task<bool> DeactivateDepartmentAsync(DeactivateDto deactivateDto);
         Task<bool> ActivateDepartmentAsync(ActivateDto activateDto);
         Task<DepartmentListResponse> GetDepartmentsByPaginationAsync(

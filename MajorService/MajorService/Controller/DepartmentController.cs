@@ -46,6 +46,28 @@ namespace MajorService.Controller
             {
                 return ApiResponse<Department>.ErrorResponse([ex.Message]);
             }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<Department>> UpdateDepartmentAsync(Guid id, [FromBody] UpdateDepartmentDto request)
+        {
+            try
+            {
+                var department = await _departmentSvc.UpdateDepartmentAsync(id, request);
+                return ApiResponse<Department>.SuccessResponse(department);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<Department>.ErrorResponse([ex.Message]);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<Department>.ErrorResponse([ex.Message]);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<Department>.ErrorResponse([$"An error occurred while updating the department: {ex.Message}"]);
+            }
         }          
         [HttpPost("{id}/deactivate")]
         public async Task<ApiResponse<bool>> DeactivateDepartmentAsync(Guid id)

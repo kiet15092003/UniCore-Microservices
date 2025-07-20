@@ -136,10 +136,15 @@ namespace EnrollmentService.Business.Services
             if (exam == null)
                 throw new ArgumentException($"Exam with ID {id} not found");
 
-            // Validate room and academic class exist via gRPC calls
-            await ValidateExamDataAsync(updateDto.RoomId, updateDto.AcademicClassId);
+            // Store the original academic class and semester IDs to preserve relationships
+            var originalAcademicClassId = exam.AcademicClassId;
 
+            // Map the update DTO to the exam entity
             _mapper.Map(updateDto, exam);
+            
+            // Restore the original academic class and semester IDs to prevent breaking relationships
+            exam.AcademicClassId = originalAcademicClassId;
+            
             var updatedExam = await _examRepository.UpdateExamAsync(exam);
             
             var examDto = _mapper.Map<ExamReadDto>(updatedExam);

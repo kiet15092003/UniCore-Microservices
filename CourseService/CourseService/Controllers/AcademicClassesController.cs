@@ -70,6 +70,28 @@ namespace CourseService.Controllers
             var createdAcademicClass = await _academicClassService.CreateAcademicClassAsync(academicClassCreateDto);
 
             return ApiResponse<AcademicClassReadDto>.SuccessResponse(createdAcademicClass);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<AcademicClassReadDto>> UpdateAcademicClass(Guid id, AcademicClassUpdateDto academicClassUpdateDto)
+        {
+            try
+            {
+                var updatedAcademicClass = await _academicClassService.UpdateAcademicClassAsync(id, academicClassUpdateDto);
+                return ApiResponse<AcademicClassReadDto>.SuccessResponse(updatedAcademicClass);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<AcademicClassReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<AcademicClassReadDto>.ErrorResponse(new List<string> { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<AcademicClassReadDto>.ErrorResponse(new List<string> { $"An error occurred while updating the academic class: {ex.Message}" });
+            }
         }        
         // The registration scheduling functionality has been consolidated into a single endpoint: /registration/schedule-with-times/// <summary>
         /// Sets the registration open and close times for multiple academic classes at once.

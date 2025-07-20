@@ -49,6 +49,28 @@ namespace MajorService.Business.Services.DepartmentServices
             
             return await _departmentRepo.CreateDepartmentAsync(department);
         }
+
+        public async Task<Department> UpdateDepartmentAsync(Guid id, UpdateDepartmentDto dto)
+        {
+            // Check if department exists
+            var existingDepartment = await _departmentRepo.GetDepartmentByIdAsync(id);
+            if (existingDepartment == null)
+            {
+                throw new KeyNotFoundException($"Department with ID '{id}' not found.");
+            }
+            
+            // Check if name already exists for other departments
+            bool nameExists = await _departmentRepo.IsDepartmentNameExistsForOtherAsync(id, dto.Name);
+            if (nameExists)
+            {
+                throw new InvalidOperationException($"Department with name '{dto.Name}' already exists.");
+            }
+            
+            // Update the department
+            existingDepartment.Name = dto.Name;
+            
+            return await _departmentRepo.UpdateDepartmentAsync(existingDepartment);
+        }
           public async Task<bool> DeactivateDepartmentAsync(DeactivateDto deactivateDto)
         {
             return await _departmentRepo.DeactivateDepartmentAsync(deactivateDto.Id);

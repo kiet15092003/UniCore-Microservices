@@ -9,6 +9,7 @@ namespace UserService.Business.Services.StudentService
     public interface IStudentService
     {
         Task<IActionResult> CreateStudentByExcelAsync(CreateStudentByExcelDto createStudentByExcelDto);
+        Task<IActionResult> CreateStudentAsync(CreateStudentDto createStudentDto);
         Task<StudentDto> UpdateStudentAsync(Guid id, UpdateStudentDto updateStudentDto);
         Task<bool> DeleteStudentAsync(Guid id);  
         Task<StudentListResponse> GetAllStudentsAsync(Pagination pagination, StudentListFilterParams filter, Order? order);

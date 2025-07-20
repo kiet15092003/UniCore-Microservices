@@ -47,6 +47,28 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             
             return major;
         }
+
+        public async Task<Major> UpdateMajorAsync(Major major)
+        {
+            var existingMajor = await _context.Majors.FindAsync(major.Id);
+            if (existingMajor == null)
+            {
+                throw new KeyNotFoundException("Major not found");
+            }
+            
+            existingMajor.Name = major.Name;
+            existingMajor.CostPerCredit = major.CostPerCredit;
+            existingMajor.MajorGroupId = major.MajorGroupId;
+            existingMajor.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            // Return the updated major with includes
+            return await _context.Majors
+                .Include(m => m.MajorGroup)
+                .ThenInclude(mg => mg.Department)
+                .FirstOrDefaultAsync(m => m.Id == major.Id);
+        }
           public async Task<bool> DeactivateMajorAsync(Guid id)
         {
             var major = await _context.Majors.FirstOrDefaultAsync(m => m.Id == id);
@@ -152,6 +174,12 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
         {
             return await _context.Majors
                 .AnyAsync(m => m.Name.ToLower() == name.ToLower());
+        }
+
+        public async Task<bool> IsMajorNameExistsForOtherAsync(Guid id, string name)
+        {
+            return await _context.Majors
+                .AnyAsync(m => m.Id != id && m.Name.ToLower() == name.ToLower());
         }
         
         public async Task<string> GenerateUniqueCodeAsync()

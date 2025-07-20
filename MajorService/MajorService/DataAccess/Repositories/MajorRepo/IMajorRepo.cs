@@ -10,6 +10,7 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
         Task<Major> GetMajorByIdAsync(Guid Id);
         Task<List<Major>> GetAllMajorAsync();
         Task<Major> CreateMajorAsync(Major major);
+        Task<Major> UpdateMajorAsync(Major major);
         Task<bool> DeactivateMajorAsync(Guid id);
         Task<bool> ActivateMajorAsync(Guid id);
         Task<PaginationResult<Major>> GetMajorsByPaginationAsync(
@@ -17,6 +18,7 @@ namespace MajorService.DataAccess.Repositories.MajorRepo
             MajorListFilterParams majorListFilterParams,
             Order? order);
         Task<bool> IsMajorNameExistsAsync(string name);
+        Task<bool> IsMajorNameExistsForOtherAsync(Guid id, string name);
         Task<string> GenerateUniqueCodeAsync();
         Task<bool> DeleteMajorAsync(Guid id);
     }

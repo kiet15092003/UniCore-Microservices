@@ -382,6 +382,130 @@ namespace UserService.Business.Services.StudentService
             }
         }
 
+        public async Task<IActionResult> CreateStudentAsync(CreateStudentDto createStudentDto)
+        {
+            MajorResponse major = await _grpcMajorClient.GetMajorByIdAsync(createStudentDto.MajorId.ToString());
+
+            if (!major.Success)
+            {
+                throw new KeyNotFoundException("Major not found");
+            }
+
+            try
+            {
+                var batchId = createStudentDto.BatchId;
+                var majorId = createStudentDto.MajorId;
+
+                // Get batch to extract StartYear
+                var batch = await _batchRepository.GetByIdAsync(batchId);
+                if (batch == null)
+                {
+                    return new BadRequestObjectResult("Batch not found");
+                }
+
+                // Get major code from the response
+                string majorCode = major.Data.Code;
+                if (string.IsNullOrEmpty(majorCode) || majorCode.Length < 3)
+                {
+                    return new BadRequestObjectResult("Invalid major code");
+                }
+
+                // Extract the first 3 digits of the major code
+                string majorPrefix = majorCode.Substring(0, 3);
+
+                // Extract the last 2 digits of the batch year
+                string batchSuffix = (batch.StartYear % 100).ToString("00");
+
+                // Generate student code - we'll use a timestamp-based approach for single student
+                string timestamp = DateTime.Now.ToString("HHmmss");
+                string studentCode = $"{majorPrefix}{batchSuffix}{timestamp}";
+
+                var email = $"{studentCode.ToLower()}@unicore.edu.vn";
+
+                // Create ApplicationUser
+                var user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    FirstName = createStudentDto.FirstName,
+                    LastName = createStudentDto.LastName,
+                    Dob = createStudentDto.Dob,
+                    PersonId = createStudentDto.PersonId,
+                    PhoneNumber = createStudentDto.PhoneNumber,
+                    Status = 1
+                };
+
+                // Create Student
+                var student = new Entities.Student
+                {
+                    StudentCode = studentCode,
+                    AccumulateCredits = 0,
+                    AccumulateScore = 0,
+                    AccumulateActivityScore = 0,
+                    MajorId = majorId,
+                    BatchId = batchId
+                };
+
+                var userStudentPair = new List<(ApplicationUser User, Entities.Student Student)>
+                {
+                    (user, student)
+                };
+
+                var userPrivateEmails = new Dictionary<string, string>
+                {
+                    [email] = createStudentDto.PrivateEmail
+                };
+
+                // Generate password for the user
+                var userPasswords = new Dictionary<string, string>
+                {
+                    [email] = Utils.PasswordGenerator.GenerateSecurePassword()
+                };
+
+                try
+                {
+                    var (createdUsers, createdStudents) = await _studentRepository.AddStudentsWithUsersAsync(userStudentPair, userPasswords);
+                    _logger.LogInformation("Successfully created student {StudentCode}", studentCode);
+
+                    // Publish Kafka event for user import
+                    var userImportedEvent = new UserImportedEventDTO
+                    {
+                        Data = new UserImportedEventData
+                        {
+                            Users = createdUsers.Select(user => new UserImportedEventDataSingleData
+                            {
+                                UserEmail = user.Email ?? string.Empty,
+                                Password = user.Email != null && userPasswords.ContainsKey(user.Email)
+                                    ? userPasswords[user.Email]
+                                    : string.Empty,
+                                PrivateEmail = user.Email != null && userPrivateEmails.ContainsKey(user.Email)
+                                    ? userPrivateEmails[user.Email]
+                                    : string.Empty
+                            }).ToList()
+                        }
+                    };
+
+                    await _kafkaProducer.PublishMessageAsync("UserImportedEvent", userImportedEvent);
+
+                    return new OkObjectResult(new { 
+                        StudentCode = studentCode,
+                        Email = email,
+                        Message = "Student created successfully"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error creating student");
+                    return new BadRequestObjectResult($"Error creating student: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in CreateStudentAsync");
+                return new BadRequestObjectResult($"Unexpected error: {ex.Message}");
+            }
+        }
+
         public async Task<StudentDetailDto> GetStudentDetailByIdAsync(Guid id)
         {
             try

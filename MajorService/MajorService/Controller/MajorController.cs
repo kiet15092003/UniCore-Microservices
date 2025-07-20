@@ -39,6 +39,28 @@ namespace MajorService.Controller
             {
                 return ApiResponse<MajorReadDto>.ErrorResponse([ex.Message]);
             }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse<MajorReadDto>> UpdateMajorAsync(Guid id, [FromBody] UpdateMajorDto request)
+        {
+            try
+            {
+                var major = await _majorSvc.UpdateMajorAsync(id, request);
+                return ApiResponse<MajorReadDto>.SuccessResponse(major);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return ApiResponse<MajorReadDto>.ErrorResponse([ex.Message]);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ApiResponse<MajorReadDto>.ErrorResponse([ex.Message]);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<MajorReadDto>.ErrorResponse([$"An error occurred while updating the major: {ex.Message}"]);
+            }
         }        
         [HttpPost("{id}/deactivate")]
         public async Task<ApiResponse<bool>> DeactivateMajorAsync(Guid id)

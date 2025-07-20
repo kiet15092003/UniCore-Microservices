@@ -9,6 +9,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
         Task<MajorGroup> GetMajorGroupByIdAsync(Guid id);
         Task<List<MajorGroup>> GetAllMajorGroupsAsync();
         Task<MajorGroup> CreateMajorGroupAsync(MajorGroup majorGroup);
+        Task<MajorGroup> UpdateMajorGroupAsync(MajorGroup majorGroup);
         Task<bool> DeactivateMajorGroupAsync(Guid id);
         Task<bool> ActivateMajorGroupAsync(Guid id);
         Task<PaginationResult<MajorGroup>> GetMajorGroupsByPaginationAsync(
@@ -16,6 +17,7 @@ namespace MajorService.DataAccess.Repositories.MajorGroupRepo
             MajorGroupListFilterParams majorGroupListFilterParams,
             Order? order);
         Task<bool> IsMajorGroupNameExistsAsync(string name);
+        Task<bool> IsMajorGroupNameExistsForOtherAsync(Guid id, string name);
         Task<string> GenerateUniqueCodeAsync();
         Task<bool> DeleteMajorGroupAsync(Guid id);
         Task<List<Major>> GetMajorsByMajorGroupIdAsync(Guid majorGroupId);

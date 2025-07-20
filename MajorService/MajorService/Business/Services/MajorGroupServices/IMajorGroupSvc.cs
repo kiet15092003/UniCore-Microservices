@@ -9,8 +9,10 @@ namespace MajorService.Business.Services.MajorGroupServices
     public interface IMajorGroupSvc
     {
         Task<List<MajorGroup>> GetAllMajorGroupsAsync();
-        Task<MajorGroup> GetMajorGroupByIdAsync(Guid id);        Task<MajorGroup> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto);
+        Task<MajorGroup> GetMajorGroupByIdAsync(Guid id);
+        Task<MajorGroup> CreateMajorGroupAsync(MajorGroupCreateDto majorGroupCreateDto);
         Task<MajorGroup> CreateNewMajorGroupAsync(CreateNewMajorGroupDto dto);
+        Task<MajorGroup> UpdateMajorGroupAsync(Guid id, UpdateMajorGroupDto dto);
         Task<bool> DeactivateMajorGroupAsync(DeactivateDto deactivateDto);
         Task<bool> ActivateMajorGroupAsync(ActivateDto activateDto);
         Task<MajorGroupListResponse> GetMajorGroupsByPaginationAsync(

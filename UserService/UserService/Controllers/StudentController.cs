@@ -49,6 +49,29 @@ namespace UserService.Controllers
             }
         }
 
+        [HttpPost("register")]
+        public async Task<ApiResponse<object>> RegisterStudent(CreateStudentDto model)
+        {
+            try
+            {
+                var result = await _studentService.CreateStudentAsync(model);
+                if (result is OkObjectResult okResult)
+                {
+                    return ApiResponse<object>.SuccessResponse(okResult.Value);
+                }
+                else if (result is BadRequestObjectResult badRequest)
+                {
+                    return ApiResponse<object>.ErrorResponse([badRequest.Value.ToString()]);
+                }
+                return ApiResponse<object>.ErrorResponse(["Unknown error occurred"]);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating student");
+                return ApiResponse<object>.ErrorResponse([$"Error creating student: {ex.Message}"]);
+            }
+        }
+
         [HttpGet("all")]
         public async Task<ApiResponse<StudentListResponse>> GetAllStudents(
             [FromQuery] Pagination pagination,
@@ -131,4 +154,5 @@ namespace UserService.Controllers
         }
     }
 }
+
 

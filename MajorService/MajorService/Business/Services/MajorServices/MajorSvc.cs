@@ -62,6 +62,34 @@ namespace MajorService.Business.Services.MajorServices
             var createdMajor = await _majorRepo.CreateMajorAsync(major);
             return _mapper.Map<MajorReadDto>(createdMajor);
         }
+
+        public async Task<MajorReadDto> UpdateMajorAsync(Guid id, UpdateMajorDto dto)
+        {
+            // Check if major exists
+            var existingMajor = await _majorRepo.GetMajorByIdAsync(id);
+            if (existingMajor == null)
+            {
+                throw new KeyNotFoundException($"Major with ID '{id}' not found.");
+            }
+            
+            // Check if name already exists for other majors
+            bool nameExists = await _majorRepo.IsMajorNameExistsForOtherAsync(id, dto.Name);
+            if (nameExists)
+            {
+                throw new InvalidOperationException($"Major with name '{dto.Name}' already exists.");
+            }
+            
+            // Update the major
+            existingMajor.Name = dto.Name;
+            existingMajor.CostPerCredit = dto.CostPerCredit;
+            if (dto.MajorGroupId.HasValue)
+            {
+                existingMajor.MajorGroupId = dto.MajorGroupId.Value;
+            }
+            
+            var updatedMajor = await _majorRepo.UpdateMajorAsync(existingMajor);
+            return _mapper.Map<MajorReadDto>(updatedMajor);
+        }
           public async Task<bool> DeactivateMajorAsync(DeactivateDto deactivateDto)
         {
             return await _majorRepo.DeactivateMajorAsync(deactivateDto.Id);

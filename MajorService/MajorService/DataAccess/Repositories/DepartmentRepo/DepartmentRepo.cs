@@ -40,6 +40,22 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
             
             return department;
         }
+
+        public async Task<Department> UpdateDepartmentAsync(Department department)
+        {
+            var existingDepartment = await _context.Departments.FindAsync(department.Id);
+            if (existingDepartment == null)
+            {
+                throw new KeyNotFoundException("Department not found");
+            }
+            
+            existingDepartment.Name = department.Name;
+            existingDepartment.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            return existingDepartment;
+        }
           public async Task<bool> DeactivateDepartmentAsync(Guid id)
         {
             var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == id);
@@ -141,6 +157,12 @@ namespace MajorService.DataAccess.Repositories.DepartmentRepo
         {
             return await _context.Departments
                 .AnyAsync(d => d.Name.ToLower() == name.ToLower());
+        }
+
+        public async Task<bool> IsDepartmentNameExistsForOtherAsync(Guid id, string name)
+        {
+            return await _context.Departments
+                .AnyAsync(d => d.Id != id && d.Name.ToLower() == name.ToLower());
         }
         
         public async Task<string> GenerateUniqueCodeAsync()

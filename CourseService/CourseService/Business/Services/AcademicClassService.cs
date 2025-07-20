@@ -34,6 +34,161 @@ namespace CourseService.Business.Services
             _mapper = mapper;
             _logger = logger;
         }
+        public async Task<AcademicClassReadDto> UpdateAcademicClassAsync(Guid id, AcademicClassUpdateDto academicClassUpdateDto)
+        {
+            // Get the existing academic class
+            var existingAcademicClass = await _academicClassRepository.GetAcademicClassByIdAsync(id);
+            if (existingAcademicClass == null)
+            {
+                throw new KeyNotFoundException($"Academic class with ID {id} not found");
+            }
+
+            // Update only the fields that are provided (not null)
+            if (academicClassUpdateDto.Name != null)
+            {
+                existingAcademicClass.Name = academicClassUpdateDto.Name;
+            }
+
+            if (academicClassUpdateDto.GroupNumber.HasValue)
+            {
+                existingAcademicClass.GroupNumber = academicClassUpdateDto.GroupNumber.Value;
+            }
+
+            if (academicClassUpdateDto.Capacity.HasValue)
+            {
+                existingAcademicClass.Capacity = academicClassUpdateDto.Capacity.Value;
+            }
+
+            if (academicClassUpdateDto.ListOfWeeks != null)
+            {
+                existingAcademicClass.ListOfWeeks = academicClassUpdateDto.ListOfWeeks;
+            }
+
+            if (academicClassUpdateDto.IsRegistrable.HasValue)
+            {
+                existingAcademicClass.IsRegistrable = academicClassUpdateDto.IsRegistrable.Value;
+            }
+
+            if (academicClassUpdateDto.MinEnrollmentRequired.HasValue)
+            {
+                existingAcademicClass.MinEnrollmentRequired = academicClassUpdateDto.MinEnrollmentRequired.Value;
+            }
+
+            // Note: CourseId and SemesterId are not updated to prevent breaking relationships
+            // These fields should only be set during creation
+
+            if (academicClassUpdateDto.ParentTheoryAcademicClassId.HasValue)
+            {
+                // Handle parent theory class relationship
+                var newParentId = academicClassUpdateDto.ParentTheoryAcademicClassId.Value;
+                var oldParentId = existingAcademicClass.ParentTheoryAcademicClassId;
+
+                // Remove from old parent's child list
+                if (oldParentId.HasValue && oldParentId != newParentId)
+                {
+                    var oldParent = await _academicClassRepository.GetAcademicClassByIdAsync(oldParentId.Value);
+                    if (oldParent != null && oldParent.ChildPracticeAcademicClassIds != null)
+                    {
+                        oldParent.ChildPracticeAcademicClassIds.Remove(id);
+                        await _academicClassRepository.UpdateAcademicClassAsync(oldParent);
+                    }
+                }
+
+                // Add to new parent's child list
+                if (newParentId != oldParentId)
+                {
+                    var newParent = await _academicClassRepository.GetAcademicClassByIdAsync(newParentId);
+                    if (newParent != null)
+                    {
+                        if (newParent.ChildPracticeAcademicClassIds == null)
+                        {
+                            newParent.ChildPracticeAcademicClassIds = new List<Guid>();
+                        }
+                        if (!newParent.ChildPracticeAcademicClassIds.Contains(id))
+                        {
+                            newParent.ChildPracticeAcademicClassIds.Add(id);
+                        }
+                        await _academicClassRepository.UpdateAcademicClassAsync(newParent);
+                    }
+                }
+
+                existingAcademicClass.ParentTheoryAcademicClassId = newParentId;
+            }
+
+            // Update schedules if provided
+            if (academicClassUpdateDto.ScheduleInDays != null)
+            {
+                // Remove existing schedules
+                var existingSchedules = await _scheduleInDayRepository.GetScheduleInDaysByAcademicClassIdAsync(id);
+                foreach (var schedule in existingSchedules)
+                {
+                    await _scheduleInDayRepository.DeleteScheduleInDayAsync(schedule.Id);
+                }
+
+                // Add new schedules
+                foreach (var scheduleDto in academicClassUpdateDto.ScheduleInDays)
+                {
+                    var scheduleInDay = new ScheduleInDay
+                    {
+                        DayOfWeek = scheduleDto.DayOfWeek,
+                        RoomId = scheduleDto.RoomId,
+                        ShiftId = scheduleDto.ShiftId,
+                        AcademicClassId = id
+                    };
+
+                    await _scheduleInDayRepository.CreateScheduleInDayAsync(scheduleInDay);
+                }
+            }
+
+            // Update the academic class
+            await _academicClassRepository.UpdateAcademicClassAsync(existingAcademicClass);
+
+            // Get the updated academic class with all relationships
+            var updatedAcademicClass = await _academicClassRepository.GetAcademicClassByIdAsync(id);
+            var academicClassDto = _mapper.Map<AcademicClassReadDto>(updatedAcademicClass);
+
+            // Populate room data for schedules
+            if (academicClassDto.ScheduleInDays != null && academicClassDto.ScheduleInDays.Count > 0)
+            {
+                foreach (var schedule in academicClassDto.ScheduleInDays)
+                {
+                    try
+                    {
+                        var roomResponse = await _roomClientService.GetRoomByIdAsync(schedule.RoomId.ToString());
+                        if (roomResponse != null && roomResponse.Success)
+                        {
+                            schedule.Room = roomResponse.Data;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error fetching room data for schedule {ScheduleId}", schedule.Id);
+                    }
+                }
+            }
+
+            // Get enrollment count
+            try
+            {
+                var enrollmentCountResponse = await _enrollmentClientService.GetEnrollmentCountAsync(id.ToString());
+                if (enrollmentCountResponse != null && enrollmentCountResponse.Success)
+                {
+                    academicClassDto.EnrollmentCount = enrollmentCountResponse.Count;
+                }
+                else
+                {
+                    academicClassDto.EnrollmentCount = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching enrollment count for academic class {AcademicClassId}", id);
+                academicClassDto.EnrollmentCount = 0;
+            }
+
+            return academicClassDto;
+        }
+
         public async Task<AcademicClassReadDto> CreateAcademicClassAsync(AcademicClassCreateDto academicClassCreateDto)
         {
             // Validate schedule conflicts before creating the academic class

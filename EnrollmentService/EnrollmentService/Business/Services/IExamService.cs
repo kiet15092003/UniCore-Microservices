@@ -9,7 +9,8 @@ namespace EnrollmentService.Business.Services
         Task<ExamReadDto?> GetExamByIdAsync(Guid id);
         Task<List<ExamReadDto>> GetExamsByAcademicClassIdAsync(Guid academicClassId);
         Task<ExamListResponse> GetExamsByPagination(Pagination pagination, ExamListFilterParams filterParams, Order? order);
-        Task<ExamReadDto> CreateExamAsync(ExamCreateDto createDto);        Task<ExamReadDto> UpdateExamAsync(Guid id, ExamCreateDto updateDto);
+        Task<ExamReadDto> CreateExamAsync(ExamCreateDto createDto);        
+        Task<ExamReadDto> UpdateExamAsync(Guid id, ExamCreateDto updateDto);
         Task<bool> DeleteExamAsync(Guid id);
         Task<List<ExamReadDto>> GetAllExamsAsync();
         Task<List<EnrollmentExamDto>> AddEnrollmentToExamAsync(AddEnrollmentToExamDto addEnrollmentDto);
