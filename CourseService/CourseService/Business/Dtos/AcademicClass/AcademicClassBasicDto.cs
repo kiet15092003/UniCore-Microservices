@@ -26,5 +26,6 @@ namespace CourseService.Business.Dtos.AcademicClass
         public int EnrollmentCount { get; set; }
         public int? EnrollmentStatus { get; set; }
         public Guid LecturerId { get; set; }
+        public int Status { get; set; }
     }
 }

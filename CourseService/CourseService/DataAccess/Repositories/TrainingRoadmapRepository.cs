@@ -38,6 +38,18 @@ namespace CourseService.DataAccess.Repositories
                     .ThenInclude(cgs => cgs.CoursesGroup)
                 .FirstOrDefaultAsync(t => t.Id == id);
         }
+
+        public async Task<TrainingRoadmap> GetTrainingRoadmapByMajorIdAndBatchIdAsync(Guid majorId, Guid batchId)
+        {
+            return await _context.TrainingRoadmaps
+                .Include(t => t.TrainingRoadmapCourses)
+                    .ThenInclude(trc => trc.Course)
+                .Include(t => t.CoursesGroupSemesters)
+                    .ThenInclude(cgs => cgs.CoursesGroup)
+                .FirstOrDefaultAsync(t => t.MajorId == majorId && 
+                                         t.BatchIds.Contains(batchId) && 
+                                         t.IsActive);
+        }
         
         public async Task<TrainingRoadmap> UpdateTrainingRoadmapAsync(TrainingRoadmap trainingRoadmap)
         {
