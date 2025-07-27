@@ -854,10 +854,6 @@ namespace CourseService.Business.Services
                 Total = pagedClasses.Total,
                 PageSize = pagedClasses.PageSize,
                 PageIndex = pagedClasses.PageIndex,
-                TotalEnrollment = totalEnrollment,
-                TotalPassed = totalPassed,
-                TotalFailed = totalFailed,
-                TotalAverageScore = avgScore
             };
         }
 
