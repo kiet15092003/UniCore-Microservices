@@ -914,7 +914,7 @@ namespace CourseService.Business.Services
                 Data = analyticsList,
                 Total = pagedClasses.Total,
                 PageSize = pagedClasses.PageSize,
-                PageIndex = pagedClasses.PageIndex
+                PageIndex = pagedClasses.PageIndex,
             };
         }
 
